@@ -1,0 +1,9 @@
+body {background: #efefef; font-family: Helvetica, 'Arial'; color: #777; font-size: 11px;}
+
+#canvas { background: #fff; position: absolute; top: 70px; left: 20px; right: 240px; bottom: 20px; border: 1px solid #ccc; overflow: auto;}
+
+#info { padding: 10px; background: #fff; position: absolute; width: 200px; right: 10px; top: 70px; bottom: 20px; border: 1px solid #ccc; overflow: auto; }
+
+h1 {margin-top: 0px; padding-top: 0px; padding: 12px; color: #777;}
+
+div.notice { font-style: italic; font-size: 10px; }

@@ -1,0 +1,238 @@
+h1. Collection API (Draft)
+
+A Collection is a simple data abstraction format where a data-set under investigation conforms to a collection that describes all facets of the underlying data in a simple and universal way. You can think of a collection as a table of data, except it provides precise information about the data contained (meta-data). The collection API is the main building block (internal data struture) of "Envision":http://github.com/michael/envision, a visual interface for browsing and analyzing semantically rich, structured data
+
+
+h2. Object Model
+
+h3. Item
+
+An item of the collection conforms to a row in data table, except one 'cell' can have arbitrary many values (non-unique attributes).
+
+h3. Property
+
+Meta-data (data about data) is represented as a set of properties that belongs to a collection. A property (cmp. a column in a table) holds a key, a name (cmp. a header of a column) and a type (telling whether the data is numeric or textual, etc.).
+
+
+h2. Usage
+
+Collections are usually constructed by passing a JSON hash to the Collection constructor.
+
+Once loaded, the Collection is represented in memory as a network of Node Objects, a graph so to say. Having this multi-partit graph at hands allows for efficient operations on the Collection by traversing the graph instead of iterating over all items, values etc.
+
+!http://ma.zive.at/collection_internals.png(Collection Internals)!
+
+Most objects of the Collection API (like Property, Item, Value) inherit from Node so the Collection API is closely related to the "Node API":http://github.com/michael/node.
+
+h3. Construction
+
+<pre>
+<code>
+  var countries = new Collection({
+    "properties": "properties": {
+      "name": {
+        "name": "Country Name",
+        "type": "string",
+        "unique": true
+      },
+      "official_language": {
+        "name": "Official language",
+        "type": "string",
+        "unique": true
+      },
+      "form_of_government": {
+        "name": "Form of governmennt",
+        "type": "string",
+        "unique": false
+      },
+      "currency_used": {
+        "name": "Currency used",
+        "type": "string",
+        "unique": true
+      },
+      "population": {
+        "name": "Population",
+        "type": "number",
+        "unique": true
+      },
+      "gdp_nominal": {
+        "name": "GDP nominal",
+        "type": "number",
+        "unique": true
+      },
+      "area": {
+        "name": "Area",
+        "type": "number",
+        "unique": true
+      },
+      "date_founded": {
+        "name": "Date founded",
+        "type": "date",
+        "unqiue": true
+      }
+    },
+    "items": {
+      "arg": {
+        "name": "Argentina",
+        "official_language": "Spanish Language",
+        "form_of_government": [
+          "Federal republic",
+          "Presidential system"
+        ],
+        "currency_used": "Argentinian Peso",
+        "population": 39745613,
+        "gdp_nominal": 338700000000.0,
+        "area": 2780403.0,
+        "date_founded": "1816-07-09"
+      },
+      ...
+    },
+  });
+
+</code>
+</pre>
+
+
+h3. Node
+
+Please also have a look at the "Node API":http://github.com/michael/node, which is the data structure used for modeling the internal structure of a collection, which is a graph. Be aware that Collection, Property and Item objects inherit from Node, so the full Node API is available on such objects.
+
+
+h3. SortedHash
+
+The "SortedHash":http://github.com/michael/sorted_hash data-structure (available as a separate library) is heavily used within the Collection API. It's highly recommended to take a look at the Documentation to understand what's going on.
+
+Since heavily used throughout the examples we introduce the following notation:
+
+
+h4. For Raw Values (e.g. Country Names)
+
+<pre>
+<code>
+  [String#at, String#de]
+</code>
+</pre>  
+
+h4. For Nodes (e.g. Languages)
+
+<pre>
+<code>
+  [Node#german, Node#english]
+</code>
+</pre>
+
+
+
+
+h3. Properties
+
+<pre>
+<code>
+  // Access the Collection's properties
+  // properties are returned as a SortedHash data structure
+  var properties = countries.all('properties');
+
+  // You can also access them directly
+  var population = countries.get('properties', 'population');
+  
+  // Property inspection
+  population.type; // => 'string'
+  population.name; // => 'Population'
+  population.unique; // => true
+  
+</code>
+</pre>
+
+
+h3. Items
+
+<pre>
+<code>
+  // List all items
+  var items = countries.all('items'); // => SortedHash containing Item objects
+  
+  // Or access them directly
+  var argentina = countries.get('items', 'argentina');
+  
+  // Inspect item values
+  argentina.value('name'); // => 'Argentina'
+  argentina.value('currency_used'); // => Argentinian Peso
+  
+  // Non-unique properties have more that one value
+  argentina.values('form_of_government'); // => [String#Federal_Republic, String#Presidential_system]
+  
+  // You can easily iterate over values using SortedHash#each
+  argentina.values('form_of_government').each(function(index, gf) {
+    gf; // => e.g. 'Presidential System'
+  });
+  
+</code>
+</pre>
+
+
+h3. Values
+
+You can not only view values on raw level but also as Nodes, which provide useful meta-information
+about connections etc.
+
+<pre>
+<code>
+  // List all items
+  var items = countries.all('items'); // => SortedHash containing Item objects
+  
+  // inspect the value 'Federal republic'
+  federal_republic = argentina.all('form_of_government').first() // => Node#Federal_Republic
+  
+  // Which other countries also have this government form?
+  federal_republic.all('items'); // => [Node#austria, Node#usa]
+</code>
+</pre>
+
+
+h3. Set operations
+
+Since OrderedHashes conform to a set in mathematical respect, some interesting operations can be performed.
+
+<pre>
+<code>
+  var english = countries.all('item').select(function(key, i) {
+    return i.value('official_language') === 'English'; 
+  });
+    
+  var french = countries.all('item').select(function(key, i) {
+    return i.value('official_language') === 'French'; 
+  });
+  
+  // english and french speaking countries
+  var english_and_french = english.intersect(french); // => [Node#canada]
+  
+  // english or french speaking countries
+  var english_or_french = english.union(french); // => [Node#uk, Node#france, Node#Switzerland, ...]
+  
+</code>
+</pre>
+
+h2. Operations
+
+
+I was able to implement co-occurrence analysis on top of the Envision browser. Basically it's implemented as an instance of a Collection Operation. That means, that those algorithms can be performed on arbitrary collections as long as the underlying property is is a non-unique String.
+
+Currently supported Operations:
+
+* Pachet approach
+* Baccigalupo approach
+
+Under development:
+
+* Group
+* Correlation based on the correlation coefficient
+
+
+h2. Available collections
+
+Some sample collections are available through "Collectionize":http://github.com/michael/collectionize, a dedicated aggregator service, that translates interesting web services to the collection format. Those collections that are represented in a readable JSON format can then be displayed by Envision.
+
+Currently available:
+
+* Countries fetched from Freebase.com (_/countries_)
+* Last.fm Playlists (_/playlists_)

@@ -1,0 +1,96 @@
+h1. Node API for JavaScript
+
+JavaScript Graph implementation that hides graph complexity from the interface. It introduces properties, which group types of edges together. Therefore multi-partit graphs are possible without any hassle. Every Node simply contains properties which conform to outgoing edges. It makes heavy use of hashing through  JavaScript object properties to allow random access whenever possible.
+
+If I've got it right, it should perform sufficiently fast in future, allowing speedy graph traversals. 
+
+
+h3. SortedHash
+
+The Node API heavily relies on "SortedHash":http://github.com/michael/sorted_hash, which is available as a separate library. Please have a look at the documentation before you start.
+
+
+h3. Collection
+
+The Node API is the main building block of the Collection API, a simple data abstraction format, which is internally represented as a network of nodes.
+
+!http://ma.zive.at/collection_internals.png(Collection Internals)!
+
+h2. Construction
+
+<pre>
+<code>
+  // Initialize a plain Node
+  var austria = new Node(),
+      germany = new Node(),
+      uk = new Node();
+  
+  // initialize with raw Value (raw values are typically stored in leave nodes)
+  var eu = new Node({value: 'European Union'}),
+      austrian = new Node({value: 'Austrian'}),
+      english = new Node({value: 'English'}),
+      german = new Node({value: 'German'}),
+      barroso = new Node({value: 'Barroso'});
+      
+</code>
+</pre>
+
+
+h2. Connect nodes through properties
+
+<pre>
+<code>
+  austria.set('languages', 'at', austrian);
+  austria.set('languages', 'ger', german); 
+  
+  eu.set('president', 'barroso', barroso);
+  
+  // Backlinks
+  german.set('spoken_in', {
+    'at': austria,
+    'de': germany
+  });
+</code>
+</pre>
+
+h2. Get connected nodes
+
+<pre>
+<code>
+  austria.all('languages') // => [Node#austrian, Node#german]
+  eu.first('president') // => [Node#barroso]
+  german.all('spoken_in') // => [Node#austria, Node#germany]
+</code>
+</pre>
+
+
+h2. Iteration
+
+h3. each
+
+<pre>
+<code>
+  austria.all('languages').each(function(index, node) {
+    node; // => Node#at | Node#ger
+    index; // => 0 | 1
+  });
+
+</code>
+</pre>
+
+
+h3. eachKey
+
+<pre>
+<code>
+  austria.all('languages').eachKey(function(key, node) {
+    node; // => Node#at | Node#ger
+    key; // => 'at' | 'ger'
+  });
+</code>
+</pre>
+
+
+h2. Testsuite
+
+* 20 / 20 tests passing
