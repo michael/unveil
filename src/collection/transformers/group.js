@@ -35,9 +35,7 @@ uv.Collection.transformers.group = function(c, params) {
     
     var i = new uv.Item(c2, value.val, aggregatedItem);
   });
-  
-  // console.log(c2);
-  
+    
   return c2;
 };
 

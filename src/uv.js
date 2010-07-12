@@ -2,8 +2,6 @@
 var uv = {};
 
 
-
-
 /**
 * @private Returns a prototype object suitable for extending the given class
 * <tt>f</tt>. Rather than constructing a new instance of <tt>f</tt> to serve as
@@ -41,7 +39,7 @@ Object.create = function (o) {
 // Usage:
 // 
 // ["a","b", "c"].eachItem(function(item, index) {
-//   console.log(item);
+//   item
 // });
 
 if (!Array.prototype.eachItem) {

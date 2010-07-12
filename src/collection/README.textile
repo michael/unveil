@@ -1,6 +1,6 @@
 h1. Collection API (Draft)
 
-A Collection is a simple data abstraction format where a data-set under investigation conforms to a collection that describes all facets of the underlying data in a simple and universal way. You can think of a collection as a table of data, except it provides precise information about the data contained (meta-data). The collection API is the main building block (internal data struture) of "Envision":http://github.com/michael/envision, a visual interface for browsing and analyzing semantically rich, structured data
+A Collection is a simple data abstraction format where a data-set under investigation conforms to a collection that describes all facets of the underlying data in a simple and universal way. You can think of a collection as a table of data, except it provides precise information about the data contained (meta-data). The collection API is the main building block (internal data struture) of "Envision":http://github.com/michael/envision, a visual interface for browsing and analyzing semantically rich, structured data.
 
 
 h2. Object Model

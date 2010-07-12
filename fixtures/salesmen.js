@@ -8,14 +8,14 @@ var salesmen_fixture = {
     "hardware_turnover": {
       name: "Hardware Turnover",
       descr: "Monthly hardware turnover (in EUR)",
-      type: "number_series",
+      type: "number",
       unique: false,
       categories: ["2005", "2006", "2007", "2008", "2009", "2010"]
     },
     "solution_turnover": {
       name: "Solution Turnover",
       descr: "Monthly solution turnover (in EUR)",
-      type: "number_series",
+      type: "number",
       unique: false,
       categories: ["2005", "2006", "2007", "2008", "2009", "2010"]
     }

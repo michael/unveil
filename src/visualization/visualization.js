@@ -3,7 +3,6 @@
 // 
 // Functionality is shared with all implemented visualizations
 
-
 uv.Visualization = new Class({
   constructor: function (collection, options) {
       this.collection = collection;
@@ -23,7 +22,12 @@ uv.Visualization = new Class({
     // checks for a given measure if it conforms to a given spec
     function isComplient(idx, mspec) {
       var p = that.property(idx);
-      return p && mspec.types.indexOf(p.type) >= 0 && p.unique === mspec.unique;
+
+      // handle optional measures
+      if (mspec.optional && !p)
+        return true;
+      
+      return (p && mspec.types.indexOf(p.type) >= 0 && (p.unique === mspec.unique || mspec.unique === undefined));
     }
     
     $.each(this.constructor.spec.measures, function(index, mspec) {
@@ -41,7 +45,7 @@ uv.Visualization = new Class({
       }
     });
     
-    return idx === this.measures.length ? valid : false;
+    return idx >= this.measures.length ? valid : false;
   },
   // returns a property object at given index i
   property: function(i) {

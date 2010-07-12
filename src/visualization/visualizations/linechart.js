@@ -105,7 +105,6 @@ uv.Linechart = uv.Visualization.extend({
         .left(function(d) { return x(yProp.categories[this.index]); })
         .bottom(function(d) { return y(d); })
         .strokeStyle(function(d) { return colors(this.parent.data().key); })
-        // .strokeStyle(colors)
         .lineWidth(3);
       
       // The dots
@@ -130,8 +129,6 @@ uv.Linechart = uv.Visualization.extend({
          .top(function() { return this.index * 30 })
          .size(70)
          .strokeStyle(null)
-         // .fillStyle('red')
-         // .fillStyle(function() { console.log(this.index); })
          .fillStyle(function(d) { return colors(d.key); })
       .anchor("right").add(pv.Label)
         .left(10)
@@ -199,7 +196,7 @@ uv.Linechart = uv.Visualization.extend({
 uv.Linechart.spec = {
   measures: [
     {
-      types: ['number_series'],
+      types: ['number'],
       unique: false,
       cardinality: 1,
     }

@@ -120,7 +120,7 @@ uv.Node.prototype.value = function(property) {
 //   => [SortedHash] List of Node values
 uv.Node.prototype.values = function(property) {
   // TODO: check why this fails sometimes
-  if (!this.all(property)) return new SortedHash();
+  if (!this.all(property)) return new uv.SortedHash();
   
   return this.all(property).map(function(n) {
     return n.val;
