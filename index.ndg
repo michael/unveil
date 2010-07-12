@@ -1,0 +1,591 @@
+Unveil.js
+================================================================================
+
+Unveil is a data exploration and visualization toolkit that utilizes data-driven
+software design. It features several modules.
+
+
+Collection API
+================================================================================
+
+Collections are the main building block of the toolkit. A Collection is a simple
+data abstraction format where a data-set under investigation conforms to a 
+collection of data items that describes all facets of the underlying data in a 
+simple and universal way.
+
+You can think of a `Collection` as a table of data, except it provides precise
+information about the data contained (meta-data). 
+
+Collections are represented as a JSON string, which serves as an exchange format.
+Since JSON is heavily used in web-services, its perfectly suited for usage in a
+cloud-like scenario. Your collections can be constructed on the fly using live
+data from web services that either provides data directly in the Collection format
+or through a translator service that serves as an adapter for an existing service.
+
+After passing the raw format to the `Collection` constructor, they are
+internally represented as a network of nodes (a graph so to say), that allows
+efficient operations on the Collection by traversing the graph instead of 
+iterating over all items, values etc. Also operations like filtering, grouping
+etc. are already supported.
+
+Construction
+--------------------------------------------------------------------------------
+
+$ var countries = new Collection({
+$   "properties": "properties": {
+$     "name": {
+$       "name": "Country Name",
+$       "type": "string",
+$       "unique": true
+$     },
+$     "official_language": {
+$       "name": "Official language",
+$       "type": "string",
+$       "unique": true
+$     },
+$     "form_of_government": {
+$       "name": "Form of governmennt",
+$       "type": "string",
+$       "unique": false
+$     },
+$     "currency_used": {
+$       "name": "Currency used",
+$       "type": "string",
+$       "unique": true
+$     },
+$     "population": {
+$       "name": "Population",
+$       "type": "number",
+$       "unique": true
+$     },
+$     "gdp_nominal": {
+$       "name": "GDP nominal",
+$       "type": "number",
+$       "unique": true
+$     },
+$     "area": {
+$       "name": "Area",
+$       "type": "number",
+$       "unique": true
+$     },
+$     "date_founded": {
+$       "name": "Date founded",
+$       "type": "date",
+$       "unqiue": true
+$     }
+$   },
+$   "items": {
+$     "arg": {
+$       "name": "Argentina",
+$       "official_language": "Spanish Language",
+$       "form_of_government": [
+$         "Federal republic",
+$         "Presidential system"
+$       ],
+$       "currency_used": "Argentinian Peso",
+$       "population": 39745613,
+$       "gdp_nominal": 338700000000.0,
+$       "area": 2780403.0,
+$       "date_founded": "1816-07-09"
+$     },
+$     ...
+$   },
+$ });
+
+The Collection constructor takes a collection represented as a JavaScript object,
+which conforms to a parsed JSON collection string. Once created you can query
+the information contained.
+
+The API features a simple object model for working with such in-memory
+collections. The collection object gives you access to the `Properties` and 
+`Items` contained. 
+
+Please make yourself familiar with the "Node API"[NODE], which is the data
+structure used for modeling the internal structure of a collection, which is a
+graph. Be aware that `Collection`, `Property`, `Item` and `Value` objects inherit
+from Node, so the full Node API is available on such objects.
+
+
+Properties
+--------------------------------------------------------------------------------
+
+Meta-data (data about data) is represented as a set of properties that belongs
+to a collection. A property (cmp. a column in a table) holds a key, a name 
+(cmp. a header of a column) and a type (telling whether the data is numeric or
+textual, etc.).
+
+Access the Collection's properties:
+
+$ var properties = countries.all('properties'); // => SortedHash
+
+You can also access them directly:
+
+$ var population = countries.get('properties', 'population');
+
+And you can use property inspection:
+
+$ population.type; // => 'string'
+$ population.name; // => 'Population'
+$ population.unique; // => true
+
+Items
+--------------------------------------------------------------------------------
+
+An item of the collection conforms to a row in a data table, except one ‘cell’
+can have arbitrary many values (non-unique attributes).
+
+List all items:
+
+$ var items = countries.all('items'); // => SortedHash containing Item objects
+
+Or access them directly:
+
+$ var argentina = countries.get('items', 'arg'); -> Item#arg
+
+Inspect item values:
+
+$ argentina.value('name'); // => 'Argentina'
+$ argentina.value('currency_used'); // => 'Argentinian Peso'
+
+Non-unique properties have more that one value:
+
+$ argentina.values('form_of_government');
+$ // => [String#Federal_Republic, String#Presidential_system]
+
+You can easily iterate over values using `SortedHash#each`:
+
+$ argentina.values('form_of_government').each(function(index, gf) {
+$   gf; // => e.g. 'Presidential System'
+$ });
+
+Values
+--------------------------------------------------------------------------------
+
+You can not only view values on a raw level but also as Nodes, which provide
+useful meta-information about connections etc.
+
+List all items:
+
+$ var items = countries.all('items'); // => SortedHash containing Item objects
+
+inspect the value 'Federal republic':
+
+$ federal_republic = argentina.all('form_of_government').first();
+$ // => Node#Federal_Republic
+
+Which other countries also have this government form?
+
+$ federal_republic.all('items'); // => [Node#austria, Node#usa]
+
+
+Set operations
+--------------------------------------------------------------------------------
+
+Since OrderedHashes conform to a set in mathematical respect, some interesting
+operations can be performed.
+
+$ var english = countries.all('item').select(function(key, i) {
+$   return i.value('official_language') === 'English'; 
+$ });
+$   
+$ var french = countries.all('item').select(function(key, i) {
+$   return i.value('official_language') === 'French'; 
+$ });
+$ 
+$ // english and french speaking countries
+$ var english_and_french = english.intersect(french); // => [Node#canada]
+$ 
+$ // english or french speaking countries
+$ var english_or_french = english.union(french);
+$ // => [Node#uk, Node#france, Node#Switzerland, ...]
+
+
+Transformers                                                     [$TRANSFORMERS]
+--------------------------------------------------------------------------------
+
+Transformers are used to do operations on the desired collection. A commonly
+used one is the group transformation.
+
+The following code does a grouping by the `official_language` property and sums
+up all numeric properties (like population, area). What you get is a modified
+collection that shows aggregated values for all occurring languages.
+
+$ var languages = countries.transform('group', {
+$   property: 'official_language',
+$   aggregator: 'SUM'
+$ });
+
+The resulting collection looks like this
+
+$ {
+$   "properties": "properties": {
+$     "official_language": {
+$       "name": "Official language",
+$       "type": "string",
+$       "unique": true
+$     },
+$     "population": {
+$       "name": "Population",
+$       "type": "number",
+$       "unique": true
+$     },
+$     "gdp_nominal": {
+$       "name": "GDP nominal",
+$       "type": "number",
+$       "unique": true
+$     },
+$     "area": {
+$       "name": "Area",
+$       "type": "number",
+$       "unique": true
+$     }
+$   },
+$   "items": {
+$     "English": {
+$       "population": 397445613,
+$       "gdp_nominal": 4341700000000.0,
+$       "area": 2780403.0,
+$     },
+$     "German": {
+$       "population": 91560000,
+$       "gdp_nominal": 4341700000000.0,
+$       "area": 2780403.0,
+$     },
+$     ...
+$   }
+$ };
+
+
+Transformers are non-destructive. The original collection is not modified unless
+you re-assign the result.
+
+Implement your own Transformer
+--------------------------------------------------------------------------------
+
+All you have to do is to assign a new property on the pv.Collection.transformers
+property, which holds a transformer function. This function takes an input
+collection and a params hash.
+
+$ pv.Collection.transformers.group = function(c, params) {
+$   // hardcore grouping action that yields a modified output collection
+$   return outputColletion;
+$ };
+
+See the implementation of the group transformation, to see how it's done.
+
+
+Transformer specification:
+
+You need to define a specification for your transformation, which gives it a
+human readable name and describes the parameters your transformation takes.
+
+$ pv.Collection.transformers.group.label = "Group By";
+$ pv.Collection.transformers.group.params = {
+$   properties: {
+$     name: "Property",
+$     type: "property_list"
+$   },
+$   aggregator: {
+$     name: "Aggregator Function",
+$     type: "aggregator"
+$   }
+$ }
+
+Available Collections
+--------------------------------------------------------------------------------
+
+Some sample collections are available through Collectionize, a dedicated
+aggregator service, that translates interesting web services to the collection
+format.
+
+Currently available:
+
+* [COUNTRIES]
+* [PLAYLISTS]
+
+
+
+Visualization API                                                         [$VIS]
+================================================================================
+
+The visualization API provides a simple abstraction layer for visualizations to ease
+the process of creating re-usable data-driven visualizations. 
+
+The appearance of the result is determined by the underlying data rather than by user
+defined plotting options. Visualizations directly access data trough a well defined
+interface, the Collection API, so there's no longer a gap between domain data and
+data used by the visualization engine.
+
+Such visualization can be re-used in terms of putting in arbitrary data in. 
+This works as long as the data is a valid Collection and satisfies the
+visualization specification (some visualizations exclusively use numbers as their
+input, others use dates (e.g. Timeline plots), and so on...).
+
+
+Usage
+--------------------------------------------------------------------------------
+
+$ // load some data (represented as a Collection)
+$ c = new uv.Collection(countries);
+$ 
+$ // construct a visualization based on that data
+$ vis = new uv.Linechart(c, {
+$   measures: ['population'],
+$   params: {scale: 'linear'}
+$ });
+$ vis.render();
+
+
+Creating visualizations
+--------------------------------------------------------------------------------
+
+In order to create your own visualizations you need to setup a new class that
+inherits from uv.Visualization.
+
+$ var MyChart = uv.Visualization.extend({
+$   constructor: function(collection, options) {
+$     uv.Visualization.call(this, collection, options);
+$   },
+$   render: function() {
+$     // hardcore rendering action
+$   }
+$ });
+
+All you have to do is to imlement `render()`. It's totally up to you whether you
+want to use a visualization library (I can recommend [PROTOVIS] and [PJS]) or
+work with the native API's (Canvas, SVG).
+
+
+Visualization Specification:
+
+There are various types of visualizations. Some exclusively use numbers as their
+input, some use dates (e.g. Timeline plots) others visualize relationships between
+data items (e.g. which countries share the same currency). There are further
+visualizations that use various combinations of measure types.
+
+In order to verify that the current selection of measures can be displayed by the
+chosen visualization you have to define a specification like this:
+
+$ // Displays 1..n number properties
+$ uv.Barchart.spec = {
+$   measures: [
+$     {
+$       types: ['number'],
+$       unique: true,
+$       cardinality: 1      
+$     },
+$     {
+$       types: ['number'],
+$       unique: true,
+$       cardinality: "*"
+$     }
+$   ]
+$ };
+
+For reference have a look at the implementations of `Scatterplot` and `Linechart`.
+
+  * [SCATTERPLOT] 
+  * [LINECHART] 
+
+
+
+Node                                                                     [$NODE]
+================================================================================
+
+Node (not to be confused with Node.js) is a JavaScript Graph implementation that
+hides graph complexity from the interface. It introduces properties, which group
+types of edges together. Therefore multi-partit graphs are possible without any
+hassle. Every Node simply contains properties which conform to outgoing edges.
+It makes heavy use of hashing through JavaScript object properties to allow
+random access whenever possible.
+
+The Node API heavily relies on "SortedHash"[SORTEDHASH], lease have a look at the
+documentation before you start.
+
+Construction
+--------------------------------------------------------------------------------
+
+$ // Initialize a plain Node
+$  var austria = new Node(),
+$      germany = new Node(),
+$      uk = new Node();
+$  
+$ // initialize with raw Value (raw values are typically stored in leave nodes)
+$ var eu = new Node({value: 'European Union'}),
+$     austrian = new Node({value: 'Austrian'}),
+$     english = new Node({value: 'English'}),
+$     german = new Node({value: 'German'}),
+$     barroso = new Node({value: 'Barroso'});
+
+
+Connect nodes through properties
+--------------------------------------------------------------------------------
+
+$ austria.set('languages', 'at', austrian);
+$ austria.set('languages', 'ger', german); 
+$ 
+$ eu.set('president', 'barroso', barroso);
+$ 
+$ // Backlinks
+$ german.set('spoken_in', {
+$   'at': austria,
+$   'de': germany
+$ });
+
+Get connected nodes
+--------------------------------------------------------------------------------
+
+$ austria.all('languages') // => [Node#austrian, Node#german]
+$ eu.first('president') // => [Node#barroso]
+$ german.all('spoken_in') // => [Node#austria, Node#germany]
+
+Iteration
+--------------------------------------------------------------------------------
+
+each:
+
+$ austria.all('languages').each(function(index, node) {
+$   node; // => Node#at | Node#ger
+$   index; // => 0 | 1
+$ });
+
+eachKey:
+
+$ austria.all('languages').eachKey(function(key, node) {
+$   node; // => Node#at | Node#ger
+$   key; // => 'at' | 'ger'
+$ });
+
+Sorted Hash                                                        [$SORTEDHASH]
+================================================================================
+
+Unveil.js features a `SortedHash` data structure that provides a simple layer of
+abstraction for managing Sorted Hashes in JavaScript. It's heavily used
+throughout the framework.
+
+Insertion
+--------------------------------------------------------------------------------
+
+$ var items = new SortedHash();
+$ items.set('at', 'Austria');
+$ items.set('de', 'Germany');
+
+Access
+--------------------------------------------------------------------------------
+
+Hash Semantics:
+
+$ items.get('at') // => 'Austria';
+$ items.get('de') // => 'Germany';
+
+Array Semantics:
+
+$ items.at(0); // => 'Austria'
+$ items.at(1); // => 'Germany'
+$ items.length; // => 2
+
+Iteration
+--------------------------------------------------------------------------------
+
+each:
+
+$ items.each(function(index, value) {
+$   value; // => 'Austria', 'Germany'
+$   index; // => 0, 1
+$ });
+
+eachKey:
+
+$ items.eachKey(function(key, value) {
+$   value; // => 'Austria', 'Germany'
+$   key; // => 'at', 'de'
+$ })
+
+Operations
+--------------------------------------------------------------------------------
+
+sort:
+
+$ var desc = function(item1, item2) {
+$       return item1.value === item2.value
+$         ? 0 : (item1.value > item2.value ? -1 : 1);
+$     },
+$     sortedItems;
+$ 
+$ sortedItems = items.sort(descendingOrder);
+
+
+map:
+
+$ var mappedItems = items.map(function (item) {
+$   return item.slice(0, 3);
+$ });
+$ 
+$ // leave original SortedHash untouched
+$ mappedItems.at(0) // => 'Aus';
+$ mappedItems.at(1) // => 'Ger';
+
+This returns a SortedHash in descending order, while the original remains
+untouched.
+
+
+select:
+
+$ var selectedItems = items.select(function (key, item) {
+$       return item === 'Austria';
+$     });
+$ 
+$ selectedItems.at(0) // => 'Austria';
+$ selectedItems.length; // => 1;
+
+
+intersect:
+
+$ var items2 = new SortedHash(),
+$     intersectedItems;
+$ 
+$ items2.set('fr', 'France');
+$ items2.set('at', 'Austria');
+$ 
+$ intersectedItems = items.intersect(items2);
+$ 
+$ intersectedItems.length; // => 1
+$ intersectedItems.get('at'); // => 'Austria'
+
+
+union:
+
+$ var items2 = new SortedHash(),
+$     unitedItems;
+$ 
+$ items2.set('fr', 'France');
+$ items2.set('at', 'Austria');
+$ 
+$ intersectedItems = items.intersect(items2);
+$ 
+$ unitedItems.length; // => 3
+$ unitedItems.get('at'); // => 'Austria'
+$ unitedItems.get('de'); // => 'Germany'
+$ unitedItems.get('fr'); // => 'France'
+
+Method chaining:
+
+$ var mappedAndSortedItems = items.map(function (item) {
+$       return item.slice(0, 3);
+$     })
+$     .sort(descendingOrder);
+$ 
+$ selectedItems.at(0) // => 'Ger';
+$ selectedItems.at(2) // => 'Aus';
+
+
+
+COLL:          "Collection API"[http://github.com/michael/unveil/tree/master/src/collection/]
+NODE:          "Node API"[http://github.com/michael/unveil/tree/master/src/node/]
+SH:            "SortedHash API"[http://github.com/michael/unveil/tree/master/src/sorted_hash/]
+SCATTERPLOT:   "Scatterplot"[http://github.com/michael/unveil/tree/master/src/visualization/visualizations/scatterplot.js]
+LINECHART:     "Linechart"[http://github.com/michael/unveil/tree/master/src/visualization/visualizations/linechart.js]
+PROTOVIS:      "Protovis"[http://protovis.org]
+PROCESSINGJS:  "Processing.js"[http://processingjs.org]
+COUNTRIES:     "Countries fetched from Freebase.com"[http://collections.quasipartikel.at/countries]
+PLAYLISTS:     "Last.fm Playlists"[http://collections.quasipartikel.at/playlists]
