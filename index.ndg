@@ -5,16 +5,24 @@ Unveil is a data exploration and visualization toolkit that utilizes data-driven
 software design. It features several modules.
 
 
+Documentation:
+
+This documentation is generated on the fly using the ndogen documentation
+generator. Since this instant doc-generation part is under heavy development,
+you'll experience some glitches. We're working on it! Have a look at the 
+markup[http://github.com/michael/unveil/blob/master/index.ndg] too, to view
+this documentation on a raw-level. ;-)
+
+
+
 Collection API
 ================================================================================
 
 Collections are the main building block of the toolkit. A Collection is a simple
 data abstraction format where a data-set under investigation conforms to a 
 collection of data items that describes all facets of the underlying data in a 
-simple and universal way.
-
-You can think of a `Collection` as a table of data, except it provides precise
-information about the data contained (meta-data). 
+simple and universal way. You can think of a `Collection` as a table of data, 
+except it provides precise information about the data contained (meta-data). 
 
 Collections are represented as a JSON string, which serves as an exchange format.
 Since JSON is heavily used in web-services, its perfectly suited for usage in a
@@ -263,7 +271,7 @@ Implement your own Transformer
 --------------------------------------------------------------------------------
 
 All you have to do is to assign a new property on the pv.Collection.transformers
-property, which holds a transformer function. This function takes an input
+object, which holds a transformer function. This function takes an input
 collection and a params hash.
 
 $ pv.Collection.transformers.group = function(c, params) {
@@ -271,7 +279,7 @@ $   // hardcore grouping action that yields a modified output collection
 $   return outputColletion;
 $ };
 
-See the implementation of the group transformation, to see how it's done.
+See the implementation of the [GROUPT], to see how it's done.
 
 
 Transformer specification:
@@ -389,7 +397,7 @@ For reference have a look at the implementations of `Scatterplot` and `Linechart
 
 
 
-Node                                                                     [$NODE]
+Node API                                                                 [$NODE]
 ================================================================================
 
 Node (not to be confused with Node.js) is a JavaScript Graph implementation that
@@ -456,7 +464,7 @@ $   node; // => Node#at | Node#ger
 $   key; // => 'at' | 'ger'
 $ });
 
-Sorted Hash                                                        [$SORTEDHASH]
+Sorted Hash API                                                    [$SORTEDHASH]
 ================================================================================
 
 Unveil.js features a `SortedHash` data structure that provides a simple layer of
@@ -589,3 +597,5 @@ PROTOVIS:      "Protovis"[http://protovis.org]
 PROCESSINGJS:  "Processing.js"[http://processingjs.org]
 COUNTRIES:     "Countries fetched from Freebase.com"[http://collections.quasipartikel.at/countries]
 PLAYLISTS:     "Last.fm Playlists"[http://collections.quasipartikel.at/playlists]
+NDOGEN:        "Ndogen"[http://github.com/oliver----/ndogen]
+GROUPT:        "Group Transformer"[http://github.com/michael/unveil/blob/master/src/collection/transformers/group.js]
