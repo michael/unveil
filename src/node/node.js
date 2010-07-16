@@ -49,7 +49,7 @@ uv.Node.nodeCount = 0;
 // Returns:
 //   => [Number] A unique nodeId
 uv.Node.generateId = function () {
-  return Node.nodeCount += 1;
+  return uv.Node.nodeCount += 1;
 };
 
 

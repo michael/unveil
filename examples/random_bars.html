@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Unveil.js</title>
+  
+  <!-- libraries -->
+  <script src="../lib/jquery-1.4.2.js"></script>
+  <script src="../lib/protovis-d3.2.js"></script>
+  <script src="../lib/underscore.js"></script>
+  <script src="../src/uv.js"></script>
+  <script src="../src/sorted_hash/aggregators.js"></script>
+  <script src="../src/sorted_hash/comparators.js"></script>
+  <script src="../src/sorted_hash/sorted_hash.js"></script>
+  <script src="../src/node/node.js"></script>
+  
+  <script src="../src/scene/actor.js"></script>
+  <script src="../src/scene/scene.js"></script>
+  <script src="../src/scene/tween.js"></script>
+  <script src="../src/scene/actors/bar.js"></script>  
+  
+  <script>
+    $(function() {
+      
+      // create scene
+      var scene = new uv.Scene({
+            width: 800,
+            height: 300
+          }),
+          data = pv.range(20).map(function(d) { return Math.random() + .1; }),
+          colors = pv.Scale.linear(data).range('lightblue', 'darkblue');
+      
+      // add some actors to the scene
+      _.each(data, function(datum, index) {
+        scene.add(new uv.Bar({
+          x: 50+30*index,
+          y: 280,
+          width: 20,
+          height: parseInt(-100*datum, 10),
+          fillStyle: function() {
+            return this.active ? 'orange' : colors(datum).color; 
+          },
+          interactive: true
+        }));
+      });
+      
+      // set off (running on 60 frames per default)
+      scene.start();
+      
+      // move it ;-)
+      setInterval(function() {
+        var data = pv.range(20).map(function(d) { return Math.random() + .1; });
+        scene.all('children').each(function(index, child) {
+          child.updateHeight(parseInt(-100*data[index], 10));
+          child.properties.fillStyle = function() {
+            return this.active ? 'orange' : colors(data[index]).color;
+          };
+        });
+      }, 1000);
+            
+    });
+  </script>
+  
+  <link href="styles.css" media="screen" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <h1>Unveil.js - data driven visualizations</h1>
+  <div id="canvas">
+    
+  </div>
+  <div id="info">
+    <h3>About</h3>
+    <!-- A framework for data-driven visualizations based on Collections. -->
+    <p><strong>Unveil.js</strong> provides a simple abstraction layer for visualizations to ease
+    the process of creating re-usable charts. To accomplish this, a data-driven methodology is used.
+    </p><p>
+    
+    <h3>Code</h3>
+    
+    <p>Source Code is available at <a href="http://github.com/michael/unveil">Github</a></p>
+    
+    <div class="notice">A <a href="http://quasipartikel.at">Quasipartikel</a> production</div>
+  </div>
+</body>
+</html>

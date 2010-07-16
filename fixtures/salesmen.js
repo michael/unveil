@@ -24,7 +24,7 @@ var salesmen_fixture = {
     "mayer": {
       name: "Mayer",
       hardware_turnover: [
-        0.2,
+        150.2,
         200.2,
         100.2,
         300.2,
