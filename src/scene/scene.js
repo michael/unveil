@@ -73,7 +73,7 @@ uv.Scene.prototype.render = function() {
     //   // apply transformations
     //   that.ctx.save();
     //   that.ctx.translate(n.properties.x, n.properties.y);
-    //   n.checkHovering(that.ctx, 110, 262);
+    //   n.checkActive(that.ctx, 110, 262);
     //   that.ctx.restore();
     // });
   }
@@ -83,9 +83,11 @@ uv.Scene.prototype.render = function() {
   // TODO: remove
   this.ctx.clearRect(0,0, 10000,10000);
   
-  this.all('children').each(function(i, child) {
-    child.render(that.ctx);
-  });  
+  if (this.all('children')) {
+    this.all('children').each(function(i, child) {
+      child.render(that.ctx);
+    });    
+  }
 };
 
 uv.Scene.prototype.start = function(options) {

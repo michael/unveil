@@ -1,5 +1,9 @@
 body {background: #efefef; font-family: Helvetica, 'Arial'; color: #777; font-size: 11px;}
 
+a {color: darkblue;}
+
+a:hover {color: lightblue;}
+
 #canvas { background: #fff; position: absolute; top: 70px; left: 20px; right: 240px; bottom: 20px; border: 1px solid #ccc; overflow: auto;}
 
 #info { padding: 10px; background: #fff; position: absolute; width: 200px; right: 10px; top: 70px; bottom: 20px; border: 1px solid #ccc; overflow: auto; }

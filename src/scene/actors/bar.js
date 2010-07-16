@@ -13,7 +13,7 @@ uv.Bar = function(properties) {
     fillStyle: '#ccc'
   }, properties);
   
-  this.t = new Tween(this.properties, "height", Tween.strongEaseInOut, this.properties.height, this.properties.height+50, 2);
+  this.t = new uv.Tween(this.properties, "height", uv.Tween.strongEaseInOut, this.properties.height, this.properties.height+50, 2);
 };
 
 uv.Bar.prototype = Object.extend(uv.Actor);
@@ -34,6 +34,7 @@ uv.Bar.prototype.drawMask = function(ctx) {
   ctx.lineTo(this.properties.width+2, this.properties.height);
   ctx.lineTo(0, this.properties.height);
   ctx.lineTo(0, 0);
+  ctx.closePath();
   
   // uncomment the following lines to make the mask visible
   // ctx.fillStyle = "#f00";

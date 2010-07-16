@@ -2,17 +2,14 @@ Unveil.js
 ================================================================================
 
 Unveil is a data exploration and visualization toolkit that utilizes data-driven
-software design. It features several modules.
+software design.
 
 
-Documentation:
+Note:
 
-This documentation is generated on the fly using the ndogen documentation
-generator. Since this instant doc-generation part is under heavy development,
-you'll experience some glitches. We're working on it! Have a look at the 
-markup[http://github.com/michael/unveil/blob/master/index.ndg] too, to view
-this documentation on a raw-level. ;-)
-
+This documentation is generated on the fly using the "Ndogen"[http://github.com/oliver----/ndogen] documentation generator.
+Since this instant doc-generation part is under heavy development, you'll
+experience some glitches. We're working on it! Please have a look at the "raw markup"[http://github.com/michael/unveil/blob/master/index.ndg] too.
 
 
 Collection API
@@ -108,7 +105,7 @@ The API features a simple object model for working with such in-memory
 collections. The collection object gives you access to the `Properties` and 
 `Items` contained. 
 
-Please make yourself familiar with the "Node API"[NODE], which is the data
+Please make yourself familiar with the Node API, which is the data
 structure used for modeling the internal structure of a collection, which is a
 graph. Be aware that `Collection`, `Property`, `Item` and `Value` objects inherit
 from Node, so the full Node API is available on such objects.
@@ -279,8 +276,7 @@ $   // hardcore grouping action that yields a modified output collection
 $   return outputColletion;
 $ };
 
-See the implementation of the [GROUPT], to see how it's done.
-
+Have a look at the implementation of the "Group Transformer"[http://github.com/michael/unveil/blob/master/src/collection/transformers/group.js], to see how it's done.
 
 Transformer specification:
 
@@ -308,9 +304,8 @@ format.
 
 Currently available:
 
-* [COUNTRIES]
-* [PLAYLISTS]
-
+* "Countries fetched from Freebase.com"[http://collections.quasipartikel.at/countries]
+* "Last.fm Playlists"[http://collections.quasipartikel.at/playlists]
 
 
 Visualization API                                                         [$VIS]
@@ -360,7 +355,7 @@ $   }
 $ });
 
 All you have to do is to imlement `render()`. It's totally up to you whether you
-want to use a visualization library (I can recommend [PROTOVIS] and [PJS]) or
+want to use a visualization library (I can recommend "Protovis"[http://protovis.org] and "Processing.js"[http://processingjs.org]) or
 work with the native API's (Canvas, SVG).
 
 
@@ -392,9 +387,208 @@ $ };
 
 For reference have a look at the implementations of `Scatterplot` and `Linechart`.
 
-  * [SCATTERPLOT] 
-  * [LINECHART] 
+  * "Scatterplot"[http://github.com/michael/unveil/tree/master/src/visualization/visualizations/scatterplot.js]
+  * "Linechart"[http://github.com/michael/unveil/tree/master/src/visualization/visualizations/linechart.js]
 
+
+Scene API                                                               [$SCENE]
+================================================================================
+
+Inspired by various great visualization libraries (Protovis, Processing.js) I
+created my own rather low level visualization framework that is basically an
+implementation of a SceneGraph on top of the HTML5 Canvas API. 
+
+I focussed on two core principles:
+
+  * Object oriented
+  * Declarative
+
+Object oriented in terms of thinking in graphical objects and modularizing 
+code, declarative in terms of using, configuring and combining existing actors
+(graphical objects) and attach them to the scene graph.
+
+
+Creating a scene is easy:
+
+$ var scene = new uv.Scene({
+$       width: 800,
+$       height: 400
+$     });
+
+
+Actors
+--------------------------------------------------------------------------------
+
+Once you have constructed your scene object you can start adding actors to the scene.
+Actors can be primitive graphical objects (like a bar, a line, or a dot) or higher 
+level objects that combine lower level ones (e.g. a Hyperbolic Tree). Actors
+typically take properties in their constructor. However for higher level objects
+you probably want them to be constructed with real domain data instead of simple
+graphical oriented properties (width, height etc.). You can decide on your own
+how you want to organize them. 
+
+
+Add an Actor (Bar) to the scene:
+
+$ var bar = new uv.Bar({
+$   x: 30,
+$   y: 50,
+$   width: 30,
+$   height: 80,
+$   fillStyle: 'darkblue'
+$ });
+
+Add an additional bar as a child of the bar just created:
+
+$ bar.add(new uv.Bar({
+$   x: 50,
+$   y: 20,
+$   width: 20,
+$   height: 80,
+$   fillStyle: 'lightblue'
+$ }));
+
+The x and y coordinates are relative to the parent object. So an object does not
+know where it is located in the coordinate-space. It just renders itself at 
+position 0,0. The positioning is done through matrix transformations, where for
+each object the current context (transformation matrix) is stored.
+That's how a SceneGraph works.
+
+Start the scene:
+
+$ // defaults to 60 frames per second
+$ scene.start();
+
+Creating visualizations using the Scene API most often means implementing your own
+Actors. Let's re-create the Bar Actor from scratch, and add some interaction and
+animation later:
+
+$ uv.Bar = function(properties) {
+$   // super call
+$   uv.Actor.call(this);
+$   
+$   // define your default properties
+$   _.extend(this.properties, {
+$     width: 40,
+$     strokeWeight: 2,
+$     strokeStyle: '#ccc'
+$   }, properties);
+$ };
+
+Every Actor inherits from uv.Actor:
+
+$ uv.Bar.prototype = Object.extend(uv.Actor);
+
+
+Implement a draw method, which takes a Canvas 2D context:
+
+$ uv.Bar.prototype.draw = function(ctx) {
+$   ctx.fillRect(0, 0, this.properties.width, this.properties.height);
+$ };
+
+
+Interaction
+--------------------------------------------------------------------------------
+
+Interaction is key in visualizations. Therefore Unveil.js aims to provide an
+abstraction for implementing interaction on your Actors. Unlike in SVG, with
+the Canvas API you can't attach event handlers on shapes directly. Instead
+you need to detect on your own, which objects are currently under the cursor.
+Usually you'd do this with some math, but there's a simpler approach that
+utilizes `isPointInPath()`:
+
+With `isPointInPath()` you can check if the current mouse-position is inside
+the current working path.
+
+To make use of this you need to equip your Actors with an additional
+`drawMask()` method. 
+
+Let's add some interaction to our Bar:
+
+$ uv.Bar.prototype.drawMask = function(ctx) {
+$   ctx.beginPath();
+$   
+$   ctx.moveTo(0, 0);
+$   ctx.lineTo(this.properties.width, 0);
+$   ctx.lineTo(this.properties.width, this.properties.height);
+$   ctx.lineTo(0, this.properties.height);
+$   ctx.lineTo(0, 0);
+$ };
+
+This simply draws an invisible rectangle. If you have a more complex object like
+a Star-Shape you can use a rectangle (also known as a bounding-box) as well, to
+mask your object for interaction. That's for the lazy folks. ;-)
+
+Actors that have a `drawMask()` implementation can then be easily checked
+against the current cursor position.
+
+That's what is going on behind the curtain:
+
+$ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
+$   if (this.drawMask && ctx.isPointInPath) {
+$     this.drawMask(ctx);
+$     if (ctx.isPointInPath(mouseX, mouseY))
+$       this.active = true;
+$     else
+$       this.active = false;
+$   }
+$ };
+
+
+
+Animation
+--------------------------------------------------------------------------------
+
+It's easy to add animation to your objects too. I've added a "Tween class"[http://quasipartikel.at/tween/]
+I created some time ago to animate properties over time.
+
+To animate the height property of a Bar you simply use a Tween for that:
+
+$ uv.Bar = function(properties) {
+$   ...
+$   this.t = new uv.Tween(this.properties, "height", 
+$     uv.Tween.strongEaseInOut, this.properties.height, 
+$     this.properties.height, 2);
+$ };
+
+The `updateHeight()` method is used to trigger the Tween:
+
+$ uv.Bar.prototype.updateHeight = function(newHeight) {
+$   this.t.continueTo(newHeight, 1.5);
+$ };
+
+
+For now you need to manually trigger a Tween tick using the Actor#update() method:
+
+$ uv.Bar.prototype.update = function() {
+$   this.t.tick();
+$ };
+
+In your sketch you can use setTimeout() or setInterval() to trigger the 
+`updateHeight()` method.
+
+$ setInterval(function() {
+$   bar.updateHeight(70);
+$ }, 1000);
+
+Here's an example of "Moving Random Bars"[http://quasipartikel.at/unveil/examples/random_bars.html],
+that feature interaction and animation.
+
+
+Hints
+--------------------------------------------------------------------------------
+
+The Scene API related code is pretty small (~ 200 LOC). I don't plan to provide
+a full-featured Visualization library with helper functions, since there are
+existing libraries, that do a perfect job. I recommend using Protovis along with
+the Scene API. Actually, this library was created because Protovis does not
+support the canvas element. I also wanted an easier way to deal with interaction.
+
+To prevent from verbose and messy code, I do not provide any backward
+compatibility for older browsers. I'm trying to stay on the edge of technology.
+Therefore I focus on supporting the most recent versions of Google Chrome,
+Firefox, Safari. Currently mouse interaction is not working in Firefox. Please
+use a webkit-based browser for the moment.
 
 
 Node API                                                                 [$NODE]
@@ -407,8 +601,8 @@ hassle. Every Node simply contains properties which conform to outgoing edges.
 It makes heavy use of hashing through JavaScript object properties to allow
 random access whenever possible.
 
-The Node API heavily relies on "SortedHash"[SORTEDHASH], lease have a look at the
-documentation before you start.
+The Node API heavily relies on SortedHash, please have a look at
+the documentation before you start.
 
 Construction
 --------------------------------------------------------------------------------
@@ -586,16 +780,3 @@ $
 $ selectedItems.at(0) // => 'Ger';
 $ selectedItems.at(2) // => 'Aus';
 
-
-
-COLL:          "Collection API"[http://github.com/michael/unveil/tree/master/src/collection/]
-NODE:          "Node API"[http://github.com/michael/unveil/tree/master/src/node/]
-SH:            "SortedHash API"[http://github.com/michael/unveil/tree/master/src/sorted_hash/]
-SCATTERPLOT:   "Scatterplot"[http://github.com/michael/unveil/tree/master/src/visualization/visualizations/scatterplot.js]
-LINECHART:     "Linechart"[http://github.com/michael/unveil/tree/master/src/visualization/visualizations/linechart.js]
-PROTOVIS:      "Protovis"[http://protovis.org]
-PROCESSINGJS:  "Processing.js"[http://processingjs.org]
-COUNTRIES:     "Countries fetched from Freebase.com"[http://collections.quasipartikel.at/countries]
-PLAYLISTS:     "Last.fm Playlists"[http://collections.quasipartikel.at/playlists]
-NDOGEN:        "Ndogen"[http://github.com/oliver----/ndogen]
-GROUPT:        "Group Transformer"[http://github.com/michael/unveil/blob/master/src/collection/transformers/group.js]

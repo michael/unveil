@@ -10,7 +10,7 @@ uv.Actor = function() {
   this.properties = {
     x: 0,
     y: 0,
-    fillStyle: '#fff',
+    fillStyle: '#000',
     strokeStyle: '#000'
   };
   
@@ -45,18 +45,18 @@ uv.Actor.prototype.setScene = function(scene) {
       child.setScene(scene);
     });
   }
-}
+};
 
 uv.Actor.prototype.add = function(child) {
   this.set('children', this.childCount+=1, child);
+  child.parent = this;
   return child;
 };
 
 uv.Actor.prototype.update = function() {};
 uv.Actor.prototype.draw = function(ctx) {};
 
-
-uv.Actor.prototype.checkHovering = function(ctx, mouseX, mouseY) {
+uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   if (this.drawMask && ctx.isPointInPath) {
     this.drawMask(ctx);
     if (ctx.isPointInPath(mouseX, mouseY))
@@ -79,7 +79,7 @@ uv.Actor.prototype.render = function(ctx) {
   ctx.translate(this.properties.x, this.properties.y);
   
   if (this.properties.interactive) {
-    this.checkHovering(ctx, this.scene.mouseX, this.scene.mouseY);
+    this.checkActive(ctx, this.scene.mouseX, this.scene.mouseY);
   }
   
   // render

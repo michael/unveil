@@ -16,6 +16,7 @@ uv.Dot = function(properties) {
 
 uv.Dot.prototype = Object.extend(uv.Actor);
 
-uv.Dot.prototype.render = function(ctx) {
+uv.Dot.prototype.draw = function(ctx) {
+  // TODO: implement
   ctx.fillRect(0, 0, 20, 20);
 };

@@ -16,7 +16,8 @@
   <script src="../src/scene/actor.js"></script>
   <script src="../src/scene/scene.js"></script>
   <script src="../src/scene/tween.js"></script>
-  <script src="../src/scene/actors/bar.js"></script>  
+  <script src="../src/scene/actors/bar.js"></script>
+  <script src="../src/scene/actors/label.js"></script>  
   
   <script>
     $(function() {
@@ -31,29 +32,38 @@
       
       // add some actors to the scene
       _.each(data, function(datum, index) {
-        scene.add(new uv.Bar({
-          x: 50+30*index,
+
+        var bar = new uv.Bar({
+          x: 50+35*index,
           y: 280,
-          width: 20,
-          height: parseInt(-100*datum, 10),
+          width: 30,
+          height: -30+parseInt(-100*datum, 10),
           fillStyle: function() {
             return this.active ? 'orange' : colors(datum).color; 
           },
           interactive: true
+        });
+        bar.add(new uv.Label({
+          x: 15,
+          y: -10,
+          width: 30,
+          height: 20,
+          text: function() { return parseInt(this.parent.properties.height*-1) },
+          textAlign: 'center',
+          fillStyle: 'white'
         }));
+
+        scene.add(bar);
       });
       
-      // set off (running on 60 frames per default)
+      // running on 60 frames per default
       scene.start();
       
-      // move it ;-)
+      // move it
       setInterval(function() {
         var data = pv.range(20).map(function(d) { return Math.random() + .1; });
         scene.all('children').each(function(index, child) {
-          child.updateHeight(parseInt(-100*data[index], 10));
-          child.properties.fillStyle = function() {
-            return this.active ? 'orange' : colors(data[index]).color;
-          };
+          child.updateHeight(-30+parseInt(-100*data[index], 10));
         });
       }, 1000);
             
@@ -63,7 +73,7 @@
   <link href="styles.css" media="screen" rel="stylesheet" type="text/css" />
 </head>
 <body>
-  <h1>Unveil.js - data driven visualizations</h1>
+  <h1>Unveil.js - Random Bars</h1>
   <div id="canvas">
     
   </div>
