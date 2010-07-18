@@ -391,6 +391,14 @@ For reference have a look at the implementations of `Scatterplot` and `Linechart
   * "Linechart"[http://github.com/michael/unveil/tree/master/src/visualization/visualizations/linechart.js]
 
 
+Examples
+--------------------------------------------------------------------------------
+
+  * Stacks[http://quasipartikel.at/unveil/examples/stacks.html]
+  * Random Bars[http://quasipartikel.at/unveil/examples/random_bars.html]
+  * Scatterplot[http://quasipartikel.at/unveil/examples/scatterplot.html]
+  * Linechart[http://quasipartikel.at/unveil/examples/linechart.html]
+
 Scene API                                                               [$SCENE]
 ================================================================================
 

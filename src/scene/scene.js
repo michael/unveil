@@ -7,11 +7,12 @@ uv.Scene = function(properties) {
   
   this.properties = {
     width: 0,
-    height: 0
+    height: 0,
+    fillStyle: '#fff'
   };
   
-  this.mouseX = 0;
-  this.mouseY = 0;
+  this.mouseX = -1;
+  this.mouseY = -1;
   
   // keep track of that capture mouse events
   this.interactiveNodes = [];
@@ -80,8 +81,10 @@ uv.Scene.prototype.render = function() {
   
   this.$canvas.bind('mousemove', mouseMove);
   
-  // TODO: remove
-  this.ctx.clearRect(0,0, 10000,10000);
+  this.ctx.fillStyle = this.prop('fillStyle');
+  this.ctx.fillRect(0, 0, this.properties.width, this.properties.height);
+  
+  // this.ctx.clearRect(0,0, 10000,10000);
   
   if (this.all('children')) {
     this.all('children').each(function(i, child) {

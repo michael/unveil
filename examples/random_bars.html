@@ -32,7 +32,7 @@
       
       // add some actors to the scene
       _.each(data, function(datum, index) {
-
+        
         var bar = new uv.Bar({
           x: 50+35*index,
           y: 280,
@@ -43,6 +43,8 @@
           },
           interactive: true
         });
+        
+        
         bar.add(new uv.Label({
           x: 15,
           y: -10,

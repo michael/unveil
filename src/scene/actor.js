@@ -21,12 +21,20 @@ uv.Actor.prototype = Object.extend(uv.Node);
 
 // evaluates a property (in case of a function
 // the result of the function is returned)
-uv.Actor.prototype.prop = function(property) {
-  if (this.properties[property] instanceof Function)
-    return this.properties[property].call(this);
-  else
-    return this.properties[property];
+uv.Actor.prototype.prop = function(property, value) {
+  if (value) {
+    this.properties[property] = value;
+    return value;
+  } else {
+    if (this.properties[property] instanceof Function)
+      return this.properties[property].call(this);
+    else
+      return this.properties[property];    
+  }
 };
+
+// alias
+uv.Actor.prototype.p = uv.Actor.prototype.prop;
 
 // recursively sets the scene reference to itself and
 // all childs
@@ -66,6 +74,7 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   }
   return false;
 };
+
 
 // wrapper for the render method, memorizes the context
 uv.Actor.prototype.render = function(ctx) {

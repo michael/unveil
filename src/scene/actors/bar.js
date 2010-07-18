@@ -12,26 +12,16 @@ uv.Bar = function(properties) {
     strokeStyle: '#000',
     fillStyle: '#ccc'
   }, properties);
-  
-  this.t = new uv.Tween(this.properties, "height", uv.Tween.strongEaseInOut, this.properties.height, this.properties.height+50, 2);
 };
 
 uv.Bar.prototype = Object.extend(uv.Actor);
-
-uv.Bar.prototype.updateHeight = function(newHeight) {
-  this.t.continueTo(newHeight, 1.5);
-};
-
-uv.Bar.prototype.update = function() {
-  this.t.tick();
-};
 
 uv.Bar.prototype.drawMask = function(ctx) {
   ctx.beginPath();
   
   ctx.moveTo(0, 0);
-  ctx.lineTo(this.properties.width+2, 0);
-  ctx.lineTo(this.properties.width+2, this.properties.height);
+  ctx.lineTo(this.properties.width, 0);
+  ctx.lineTo(this.properties.width, this.properties.height);
   ctx.lineTo(0, this.properties.height);
   ctx.lineTo(0, 0);
   ctx.closePath();
