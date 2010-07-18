@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Unveil.js</title>
+  <title>Unveil.js - Random Bars</title>
   
   <!-- libraries -->
   <script src="../lib/jquery-1.4.2.js"></script>
@@ -17,10 +17,28 @@
   <script src="../src/scene/scene.js"></script>
   <script src="../src/scene/tween.js"></script>
   <script src="../src/scene/actors/bar.js"></script>
-  <script src="../src/scene/actors/label.js"></script>  
+  <script src="../src/scene/actors/label.js"></script>
   
   <script>
     $(function() {
+      
+      // Exends uv.Bar
+      MovingBar = function(properties) {
+        // super call
+        uv.Bar.call(this, properties);
+        this.th = new uv.Tween(this.properties, "height", uv.Tween.strongEaseInOut, this.properties.height, this.properties.height, 2);
+      };
+
+      MovingBar.prototype = Object.extend(uv.Bar);
+
+      MovingBar.prototype.updateHeight = function(newHeight) {
+        this.th.continueTo(newHeight, 1.5);
+      };
+      // trigger motion tween ticks
+      MovingBar.prototype.update = function() {
+        this.th.tick();
+      };
+      
       
       // create scene
       var scene = new uv.Scene({
@@ -33,7 +51,7 @@
       // add some actors to the scene
       _.each(data, function(datum, index) {
         
-        var bar = new uv.Bar({
+        var bar = new MovingBar({
           x: 50+35*index,
           y: 280,
           width: 30,
