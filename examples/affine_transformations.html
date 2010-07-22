@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Unveil.js - Random Bars</title>
+  <title>Unveil.js - Affine transformations</title>
   
   <!-- libraries -->
   <script src="../lib/jquery-1.4.2.js"></script>
@@ -26,86 +26,90 @@
   <script>
     $(function() {
       
-      // Exends uv.Bar
-      MovingBar = function(properties) {
-        // super call
-        uv.Bar.call(this, properties);
-        
-        this.th = new uv.Tween({
-          obj: this.properties,
-          property: 'height',
-          duration: 1.5
-        });
-      };
-
-      MovingBar.prototype = Object.extend(uv.Bar);
-
-      MovingBar.prototype.updateHeight = function(newHeight) {
-        this.th.continueTo(newHeight, 1.5);
-      };
-      // trigger motion tween ticks
-      MovingBar.prototype.update = function() {
-        this.th.tick();
-      };
-      
       // create scene
       var scene = new uv.Scene({
             width: 800,
-            height: 300,
-            framerate: 30,
-          }),
-          data = pv.range(20).map(function(d) { return Math.random() + .1; }),
-          colors = pv.Scale.linear(data).range('lightblue', 'darkblue');
-      
-      // add some actors to the scene
-      _.each(data, function(datum, index) {
-        
-        var bar = new MovingBar({
-          x: 50+35*index,
-          y: 280,
-          width: 30,
-          height: -30+parseInt(-100*datum, 10),
-          fillStyle: function() {
-            return this.active ? 'orange' : colors(datum).color; 
-          },
-          interactive: true
-        });
-        
-        bar.add(new uv.Label({
-          x: 15,
-          y: -10,
-          width: 30,
-          height: 20,
-          text: function() { return parseInt(this.parent.properties.height*-1) },
-          textAlign: 'center',
-          fillStyle: 'white'
-        }));
-
-        scene.add(bar);
+            height: 500,
+            fillStyle: '#ccc'
+          });
+          
+      // an object that is affected by scaling
+      var bar = new uv.Bar({
+        x: 50,
+        y: 120,
+        width: 80,
+        height: 50,
+        fillStyle: 'darkblue'
       });
       
-      // running on 60 frames per default
+      scene.add(bar);
+      
+      // reference point
+      var rx = 160, ry = 190;
+      
+      scene.add(new uv.Bar({
+        x: function() { return rx; },
+        y: function() { return ry; },
+        width: 10,
+        height: 10,
+        fillStyle: 'red'
+      }));
+      
+      scene.add(new uv.Label({
+        x: 300,
+        y: 40,
+        text: function() { return parseInt(scene.fps, 10); },
+        fillStyle: 'black'
+      }));
+      
       scene.start();
       
-      // move it
-      setInterval(function() {
-        var data = pv.range(20).map(function(d) { return Math.random() + .1; });
-        scene.all('children').each(function(index, child) {
-          child.updateHeight(-30+parseInt(-100*data[index], 10));
-        });
-      }, 1000);
-            
+      // interaction
+      $('#rx').change(function() {
+        rx = $(this).val();
+      });
+      
+      $('#ry').change(function() {
+        ry = $(this).val();
+      });
+      
+      var scale = 1; // scaling means zooming.
+      var rot = 0;
+      
+      // scale and rotate around a reference point
+      $('#zoom').change(function() {
+        scale = 1+$(this).val()/300;
+        scene.setScaleAndRotateAroundPos(scale, scale, rot, rx, ry);
+      });
+      $('#rotation').change(function() {
+        rot = ($(this).val()/100)*(2*Math.PI);
+        scene.setScaleAndRotateAroundPos(scale, scale, rot, rx, ry);
+      });
+      
     });
   </script>
   
   <link href="styles.css" media="screen" rel="stylesheet" type="text/css" />
 </head>
 <body>
-  <h1>Unveil.js - Random Bars</h1>
+  <h1>Unveil.js - Affine transformations</h1>
   <div id="canvas">
     
   </div>
   <div id="info">
+    <h3>Reference point:</h3>
+    X: <input id="rx" type="range" min="0" max="800" value="160"/><br/>
+    Y: <input id="ry" type="range" min="0" max="800" value="190"/><br/><br/>
+    
+    Zoom: <input id="zoom" type="range" min="1" max="400" value="1"/>
+    Rotate: <input id="rotation" type="range" min="0" max="100" value="1"/>
+    
+    <h3>Challenge</h3>
+    Scale or rotate around a reference point rather than scaling or rotating around the origin.
+    This is important for mouse interaction where you want to zoom or rotate based on the current
+    mouse position. At the moment you can't combine those two transformations. Make sure either
+    Zoom or Scale have a zero-value.
+    
     <h3>About</h3>
     <!-- A framework for data-driven visualizations based on Collections. -->
     <p><strong>Unveil.js</strong> provides a simple abstraction layer for visualizations to ease
@@ -115,7 +119,6 @@
     <h3>Code</h3>
     
     <p>Source Code is available at <a href="http://github.com/michael/unveil">Github</a></p>
-    
     <div class="notice">A <a href="http://quasipartikel.at">Quasipartikel</a> production</div>
   </div>
   

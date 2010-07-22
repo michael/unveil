@@ -1,30 +1,36 @@
 // Scene
-//-----------------------------------------------------------------------------
+// =============================================================================
 
 uv.Scene = function(properties) {
   // super call
   uv.Actor.call(this);
   
-  this.properties = {
+  _.extend(this.properties, {
     width: 0,
     height: 0,
-    fillStyle: '#fff'
-  };
+    fillStyle: '#fff',
+    element: '#canvas',
+    framerate: 10
+  }, properties);
   
   this.mouseX = -1;
   this.mouseY = -1;
   
-  // keep track of that capture mouse events
+  // keeps track of nodes that capture mouse events
   this.interactiveNodes = [];
   
   // the scene property references the scene an actor belongs to
   this.scene = this;
   
-  // merge properties with default properties
-  _.extend(this.properties, properties);
+  // commands hook in here
+  this.commands = {};
   
-  this.$element = $("#canvas");
-  this.$canvas = $('<canvas id="plotarea" width="'+this.properties.width+'" height="'+this.properties.height+'"></canvas>');
+  this.fps = 0;
+  this.framerate = this.p('framerate');
+  
+  this.$element = $(this.p('element'));
+  this.$canvas = $('<canvas id="plotarea" width="'+this.properties.width+'" ' +
+                    'height="'+this.properties.height+'"></canvas>');
   
   this.$element.append(this.$canvas);
   this.ctx = this.$canvas[0].getContext("2d");
@@ -43,7 +49,7 @@ uv.Scene.prototype.add = function(child) {
   this.set('children', this.childCount+=1, child);
   
   // updates all childs that do not have a scene reference
-  child.setScene(this)
+  child.setScene(this);
   return child;
 };
 
@@ -62,39 +68,79 @@ uv.Scene.prototype.render = function() {
       mouseY = e.layerY;
     }
     
-    // console.log(mouseX);
-    
     that.mouseX = mouseX;
     that.mouseY = mouseY;
-    
-    // TODO: check for interaction here rather than
-    // doing it on every frame
-    
-    // _.each(that.interactiveNodes, function(n) {
-    //   // apply transformations
-    //   that.ctx.save();
-    //   that.ctx.translate(n.properties.x, n.properties.y);
-    //   n.checkActive(that.ctx, 110, 262);
-    //   that.ctx.restore();
-    // });
   }
   
   this.$canvas.bind('mousemove', mouseMove);
   
+  // draw the scene
+  this.ctx.clearRect(0,0, this.properties.width,this.properties.height);
   this.ctx.fillStyle = this.prop('fillStyle');
   this.ctx.fillRect(0, 0, this.properties.width, this.properties.height);
+
+  this.ctx.save();
+
+  // initialize the transform matrix with property data
+  var transform = new uv.Matrix2D();
+  transform.translate(this.p('x'), this.p('y'));
+  transform.rotate(this.p('rotation'));
+  transform.scale(this.p('scaleX'), this.p('scaleY'));
   
-  // this.ctx.clearRect(0,0, 10000,10000);
+  // apply the modification matrix to the dynamically initialized one
+  transform.apply(this.matrix);
+    
+  this.ctx.transform(transform.elements[0], transform.elements[1], transform.elements[3], 
+                transform.elements[4], transform.elements[2], transform.elements[5]);
   
   if (this.all('children')) {
     this.all('children').each(function(i, child) {
       child.render(that.ctx);
-    });    
+    });
   }
+  this.ctx.restore();
 };
 
 uv.Scene.prototype.start = function(options) {
-  var opts = _.extend({framerate: 60}, options),
-      that = this;
-  setInterval(function() { that.scene.render(); }, 1000/opts.framerate);
+  var that = this,
+      opts = { framerate: 50, idleFramerate: 10 };
+      
+  _.extend(opts, options);
+  this.running = true;
+  this.loop();
 };
+
+// the draw loop
+uv.Scene.prototype.loop = function() {
+  var that = this,
+      start, duration;
+  
+  if (this.running) {
+    start = new Date().getTime();
+    this.scene.render();
+    duration = new Date().getTime()-start;
+    
+    this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
+    setTimeout(function() { that.loop(); }, (1000/that.framerate)-duration);
+  }
+};
+
+uv.Scene.prototype.stop = function(options) {
+  this.running = false;
+};
+
+// Commands
+// -----------------------------------------------------------------------------
+
+// command construction and registration
+uv.Scene.prototype.register = function(cmd, options) {
+  this.commands[cmd.className] = new cmd(this, options);
+};
+
+uv.Scene.prototype.execute = function(cmd) {
+  this.commands[cmd.className].execute();
+}
+
+uv.Scene.prototype.unexecute = function(cmd) {
+  this.commands[cmd.className].unexecute();
+}

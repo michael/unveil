@@ -4,7 +4,7 @@ a {color: darkblue;}
 
 a:hover {color: lightblue;}
 
-#canvas { background: #fff; position: absolute; top: 70px; left: 20px; right: 240px; bottom: 20px; border: 1px solid #ccc; overflow: auto;}
+#canvas { position: absolute; top: 70px; left: 20px; right: 240px; bottom: 20px; border: 1px solid #ccc; overflow: auto; background: #fff;}
 
 #info { padding: 10px; background: #fff; position: absolute; width: 200px; right: 10px; top: 70px; bottom: 20px; border: 1px solid #ccc; overflow: auto; }
 

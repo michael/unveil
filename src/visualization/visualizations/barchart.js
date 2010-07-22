@@ -40,7 +40,7 @@ uv.BarchartVis = uv.Visualization.extend({
   updateMeasure: function(measure) {
     var that = this;
     this.scene.all('children').each(function(index, bar) {
-      bar.updateHeight(parseInt(-0.4*that.items.at(index).value(measure), 10));
+      bar.p('height', parseInt(-0.4*that.items.at(index).value(measure), 10));
     });
   }
 });

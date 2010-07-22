@@ -6,6 +6,7 @@ uv.Stacks = uv.Visualization.extend({
     uv.Visualization.call(this, collection, options);
     this.margin = {top: 30, right: 40, bottom: 30, left: 150};
     this.build();
+    
   },
   // Simple stack layout algorithm
   // Computes a suitable column count to fit the stacks
@@ -25,26 +26,6 @@ uv.Stacks = uv.Visualization.extend({
       }
     }
   },
-  // TODO: use a suitable object recycling approach
-  // getRecyclableItems: function(key) {
-  //   if (!this.scene.all('children')) {
-  //     return new uv.SortedHash();
-  //   }
-  //   
-  //   // remove the stack objects from the scene
-  //   var items = this.scene.all('children').select(function(key, c) {
-  //     if (c instanceof uv.Stacks.Item) {
-  //       // console.log(c.recyclable);
-  //       if (c.recyclable && !c.recycled && c.key === key) {
-  //         return true;
-  //       }
-  //     }
-  //     
-  //     return false;
-  //   });
-  //   
-  //   return items;
-  // },
   prepareProperty: function() {
     // register stacks based on property values (=groups)
     this.property = this.collection.get('properties', this.measures[0]);
@@ -76,12 +57,21 @@ uv.Stacks = uv.Visualization.extend({
         name: value.val
       }));
     });
+    
+    this.scene.add(new uv.Label({
+      x: that.width,
+      y: 20,
+      font: '12px Helvetica Neue, Helvetica, Arial',
+      text: function() { return "FPS: "+parseInt(that.scene.framerate); },
+      textAlign: 'right',
+      fillStyle: 'black',
+    }));
   },
   build: function() {
     var that = this;
     
-    this.width = 900,
-    this.height = 300;
+    this.width = this.$canvas.width()-10,
+    this.height = this.$canvas.height()-10;
     
     this.stackItems = new uv.SortedHash();
     
@@ -92,54 +82,28 @@ uv.Stacks = uv.Visualization.extend({
       fillStyle: '#fff'
     });
     
+    this.scene.register(uv.cmds.RequestFramerate, {framerate: 50});    
+    
     // set up stuff based on the currently selected property
     this.prepareProperty();
     this.addStacks();
-    
   },
-  removeRemainingRecyclableItems: function() {
-    // remove the stack objects from the scene
-    var items = this.scene.all('children').select(function(key, c) {
-      // flag existing stack items as ecyclable
-      // TODO: this is rather hacky, find a more elegant way.
-      if (c instanceof uv.Stacks.Item) {
-        if (c.recyclable && !c.recycled) {
-          return false;
-        } else {
-          c.recyclable = false;
-          c.recycled = undefined;
-        }
-      }
-      return true;
-    });
-    this.scene.replace('children', items);    
+  zoom: function(zoomLevel) {
+    this.scene.scale(zoomLevel, zoomLevel);
   },
   changeGroup: function(group) {
     // update stacks
-    // console.log('changing group to'+group);
     this.measures = [group];
     this.prepareProperty();
-        
-    // remove the old objects from the scene
-    var items = this.scene.all('children').select(function(key, c) {
-      // flag existing stack items as ecyclable
-      // TODO: this is rather hacky, find a more elegant way.
-      if (c instanceof uv.Stacks.Item) {
-        c.recyclable = true;
-        c.recycled = false;
-        return true;
-      }
-      return false;
-    });
-    
-    this.scene.replace('children', items);
+
+    this.scene.replace('children', new uv.SortedHash());
     this.addStacks();
     
-    // remove remaining recyclable items.
-    this.removeRemainingRecyclableItems();
+    var scene = this.scene;
   },
   render: function() {
-    this.scene.start();
+    var scene = this.scene;
+    scene.start();
   }
 });
 
@@ -170,40 +134,37 @@ uv.Stacks.Stack.prototype.build = function(ctx) {
   var index = 0;
   this.p('items').eachKey(function(key, item) {
     var row = parseInt(index / that.p('cols'), 10);
-    // console.log('doink'+row);
     
     var stackItem;
+    stackItem = new uv.Stacks.Item({
+      x: Math.random()*400,
+      y: Math.random()*600,
+      size: 1,
+      fillStyle: function() { return this.active ? '#ccc' : that.p('fillStyle') },
+      interactive: true,
+      item: item
+    });
     
-    // var recyclables = that.p('stacks').getRecyclableItems(key);
-    var recyclables = [];
-    
-    // is there an existing item I can recycle and send to its new location?
-    if(recyclables.length>0) {
-      stackItem = recyclables.at(0);
-      stackItem.p('fillStyle', function() { return this.active ? '#ccc' : that.p('fillStyle') });      
-      stackItem.updateSize(itemSize-1);
-      stackItem.updateX(itemSize*(index % that.p('cols'))+that.p('index')*that.p('width'));
-      stackItem.updateY(row*itemSize);
-      stackItem.recycled = true; // temporary, to be reset after addStacks
-    } else {
-      stackItem = new uv.Stacks.Item({
-        x: Math.random()*400,
-        y: Math.random()*600,
-        size: 1,
-        fillStyle: function() { return this.active ? '#ccc' : that.p('fillStyle') },
-        interactive: true
-      });
-      stackItem.key = key; // remember the key
-      stackItem.updateX(itemSize*(index % that.p('cols'))+that.p('index')*that.p('width'));
-      stackItem.updateY(row*itemSize);
-      stackItem.updateSize(itemSize-1);
-    }
+    stackItem.key = key; // remember the key
+    stackItem.p('scene', that.p('scene'));
+    stackItem.updateX(itemSize*(index % that.p('cols'))+that.p('index')*that.p('width'));
+    stackItem.updateY(that.p('height')-100-row*itemSize);
+    stackItem.updateSize(itemSize-1);
     
     that.p('scene').add(stackItem);
     
     index += 1;
   });
   
+  this.add(new uv.Label({
+    x: that.p('width')/2,
+    y: that.p('height')-20,
+    font: '11px Helvetica Neue, Helvetica, Arial',
+    // rotation: uv.PI/2+uv.PI,
+    text: function() { return that.p('name'); },
+    textAlign: 'center',
+    fillStyle: '#333',
+  }));
 };
 
 uv.Stacks.Stack.prototype.draw = function(ctx) {
@@ -218,21 +179,65 @@ uv.Stacks.Stack.prototype.draw = function(ctx) {
 
 uv.Stacks.Item = function(properties) {
   // super call
-
+  var that = this;
   uv.Bar.call(this);
     
   _.extend(this.properties, {
-    size: 10
+    size: 10,
+    name: 'Unknown'
   }, properties);
   
-  this.tx = new uv.Tween(this.properties, "x", uv.Tween.strongEaseInOut, this.properties.x, this.properties.x, 2);
-  this.ty = new uv.Tween(this.properties, "y", uv.Tween.strongEaseInOut, this.properties.y, this.properties.y, 2);
-  this.ts = new uv.Tween(this.properties, "size", uv.Tween.strongEaseInOut, this.properties.size, this.properties.size, 2);
+  this.ts = new uv.Tween({
+    obj: this.properties,
+    property: 'size',
+    duration: 0.5
+  });
   
+  this.tx = new uv.Tween({
+    obj: this.properties,
+    property: 'x',
+    duration: 2
+  });
+  
+  this.ty = new uv.Tween({
+    obj: this.properties,
+    property: 'y',
+    duration: 2
+  });
+  
+  // request and release high framerate on demand
+  this.ts.on('start', function() { that.p('scene').execute(uv.cmds.RequestFramerate); });
+  this.ts.on('finish', function() { that.p('scene').unexecute(uv.cmds.RequestFramerate); });
+
   this.build();
 };
 
 uv.Stacks.Item.prototype = Object.extend(uv.Bar);
+
+uv.Stacks.Item.prototype.build = function(ctx) {
+  var that = this;
+  
+  var bar = new uv.Bar({
+    x: -200,
+    y: 0,
+    width: 200,
+    height: 50,
+    fillStyle: '#eee',
+    visible: function() { return that.active ? true : false; }
+  });
+  
+  bar.add(new uv.Label({
+    x: 10,
+    y: 20,
+    font: 'bold 15px Helvetica Neue, Helvetica, Arial',
+    text: function() { return that.p('item').identify(); },
+    textAlign: 'left',
+    fillStyle: '#333',
+  }));
+  
+  this.add(bar);
+
+};
 
 uv.Stacks.Item.prototype.updateX = function(tx) {
   this.tx.continueTo(tx, 1.5);
@@ -254,32 +259,20 @@ uv.Stacks.Item.prototype.update = function() {
 };
 
 uv.Stacks.Item.prototype.draw = function(ctx) {
-  ctx.fillStyle = this.prop('fillStyle');
-  ctx.fillRect(0, 0, this.prop('size'), this.prop('size'));
+  ctx.fillStyle = this.p('fillStyle');
+  ctx.fillRect(0, 0, this.p('size'), this.p('size'));
 };
 
 uv.Stacks.Item.prototype.drawMask = function(ctx) {
   ctx.beginPath();
   
   ctx.moveTo(0, 0);
-  ctx.lineTo(this.properties.size, 0);
-  ctx.lineTo(this.properties.size, this.properties.size);
-  ctx.lineTo(0, this.properties.size);
+  ctx.lineTo(this.p('size'), 0);
+  ctx.lineTo(this.p('size'), this.p('size'));
+  ctx.lineTo(0, this.p('size'));
   ctx.lineTo(0, 0);
   ctx.closePath();
 };
-
-
-uv.Stacks.Item.prototype.build = function(ctx) {
-  
-};
-
-
-// TODO: implement a suitable mechansim for object recycling
-uv.Recycler = function() {
-  
-};
-
 
 // Specification
 //------------------------------------------------------------------------------

@@ -5,8 +5,10 @@
   
   <!-- libraries -->
   <script src="../lib/jquery-1.4.2.js"></script>
+  <script src="../lib/jquery.mousewheel.js"></script>
   <script src="../lib/protovis-d3.2.js"></script>
   <script src="../lib/underscore.js"></script>
+  
   <script src="../src/uv.js"></script>
   <script src="../src/sorted_hash/aggregators.js"></script>
   <script src="../src/sorted_hash/comparators.js"></script>
@@ -19,10 +21,16 @@
   <script src="../src/collection/criterion.js"></script>
   <script src="../src/collection/transformers/group.js"></script>
   
+  <!-- util -->
+  <script src="../src/util/vector.js"></script>
+  <script src="../src/util/matrix2d.js"></script>
+  
   <script src="../src/scene/actor.js"></script>
+  <script src="../src/scene/commands.js"></script>
   <script src="../src/scene/scene.js"></script>
   <script src="../src/scene/tween.js"></script>
   <script src="../src/scene/actors/bar.js"></script>
+  <script src="../src/scene/actors/label.js"></script>
   
   <!-- source -->
   <script src="../src/visualization/visualization.js"></script>
@@ -30,21 +38,86 @@
   
   <!-- fixtures -->
   <script src="../fixtures/freebase_countries.js"></script>
+  <script src="../fixtures/artists.js"></script>
   
   <script>
     $(function() {
       // load some data (represented as a Collection)
-      c = new uv.Collection(freebase_countries_fixture);
+      var c = new uv.Collection(artists_fixture);
       
       // construct a visualization based on that data
-      vis = new uv.Stacks(c, {
-        measures: ['form_of_government'],
+      var vis = new uv.Stacks(c, {
+        measures: ['genres'],
         params: {}
       });
       
       $('#groups').change(function() {
         vis.changeGroup($(this).val());
       });
+      
+      // var zoomLevel = 1;
+      // 
+      // /* TODO: clean up the mess */
+      // $('#canvas').bind('mousewheel', function(event, delta) {
+      //     delta /= 100;
+      //     if (zoomLevel+delta>=1) {
+      //       zoomLevel += delta;
+      //       vis.zoom(zoomLevel);
+      //     } else {
+      //       zoomLevel = 1;
+      //       distX = 0;
+      //       distY = 0;
+      //       currentX = 0;
+      //       currentY = 0;
+      //       vis.scene.translate(0,0);
+      //       vis.zoom(zoomLevel);
+      //     }
+      // });
+      // 
+      // var paning = false;
+      // var distX = 0;
+      // var distY = 0;
+      // currentX = 0;
+      // currentY = 0;
+      // 
+      // var mouseX, mouseY;
+      // $('#canvas').bind('mousedown', function(event, delta) {
+      //   paning = true;
+      //   mouseX = vis.scene.mouseX;
+      //   mouseY = vis.scene.mouseY;
+      //   currentX = distX;
+      //   currentY = distY;
+      //   distX = 0;
+      //   distY = 0;
+      // });
+      // 
+      // $('#canvas').bind('mouseup', function(event, delta) {
+      //   paning = false;
+      // });
+      // 
+      // $('#canvas').bind('mousemove', function(event, delta) {
+      //   if (paning) {
+      //     
+      //     distX = currentX+vis.scene.mouseX-mouseX;
+      //     distY = currentY+vis.scene.mouseY-mouseY;
+      //     
+      //     var maxXPan = vis.scene.p('width')*zoomLevel-vis.scene.p('width');
+      //     var maxYPan = vis.scene.p('height')*zoomLevel-vis.scene.p('height');
+      //     
+      //     if (Math.abs(distX)>maxXPan) {
+      //       distX = -1*maxXPan;
+      //     } else if (distX>0) {
+      //       distX = 0;
+      //     }
+      //     
+      //     if (Math.abs(distY)>maxYPan) {
+      //       distY = -1*maxYPan;
+      //     } else if (distY>0) {
+      //       distY = 0;
+      //     }
+      //     vis.scene.translate(distX, distY);
+      //   }
+      // });
       
       vis.render();
     });
@@ -54,16 +127,15 @@
 </head>
 <body>
   <h1>Unveil.js - Stacks</h1>
+  <!-- Pan and zoom using the mouse / mousewheel -->
   <div id="canvas">
     
   </div>
   <div id="info">
     <h3>Group by</h3>
     <select id="groups">
-      <option value="form_of_government" selected="selected">Form of government</option>
-      <option value="currency_used">Currency Used</option>
-      <option value="official_language">Language</option>
-      
+      <option value="genres" selected="selected">Genres</option>
+      <option value="origin">Origin</option>
     </select>
     
     <h3>About</h3>
@@ -74,7 +146,7 @@
     
     <h3>Data used</h3>
     
-    <a href="../fixtures/freebase_countries.js">World's countries</a> pulled from Freebase.com translated into the Unveil.js Collection format. Randomly modified.
+    <a href="../fixtures/artists.js">Artists</a> pulled from Freebase.com translated into the Unveil.js Collection format.
     
     <h3>Code</h3>
     
@@ -82,5 +154,15 @@
     
     <div class="notice">A Quasipartikel production</div>
   </div>
+  
+  <script type="text/javascript"> 
+  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+  </script> 
+  <script type="text/javascript"> 
+  try {
+  var pageTracker = _gat._getTracker("UA-10368067-1");
+  pageTracker._trackPageview();
+  } catch(err) {}</script>
 </body>
 </html>

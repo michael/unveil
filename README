@@ -7,3 +7,23 @@ software design.
 
 Documentation, usage, and examples are under construction but already available
 at http://docs.quasipartikel.at/#/unveil.
+
+Features:
+---------------------
+* Generic data abstraction via Collections
+* Visualization API (Pluggable visualizations)
+* Scene API
+  * SceneGraph implementation
+  * Custom Actors (graphical objects)
+  * Dynamic properties (you can assign functions instead of values)
+  * Motion tweening
+  * Modification matrix (applied after the initial transforms, specified via properties)
+  * Commands (e.g. save cpu cycles using event-based framerate determination)
+
+Examples
+---------------------
+
+* Stacks        [http://quasipartikel.at/unveil/examples/stacks.html]
+* Random Bars   [http://quasipartikel.at/unveil/examples/random_bars.html]
+* Scatterplot   [http://quasipartikel.at/unveil/examples/scatterplot.html]
+* Linechart     [http://quasipartikel.at/unveil/examples/linechart.html]

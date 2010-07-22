@@ -319,7 +319,7 @@ defined plotting options. Visualizations directly access data trough a well defi
 interface, the Collection API, so there's no longer a gap between domain data and
 data used by the visualization engine.
 
-Such visualization can be re-used in terms of putting in arbitrary data in. 
+Such visualization can be re-used in terms of putting arbitrary data in. 
 This works as long as the data is a valid Collection and satisfies the
 visualization specification (some visualizations exclusively use numbers as their
 input, others use dates (e.g. Timeline plots), and so on...).
@@ -398,6 +398,7 @@ Examples
   * Random Bars[http://quasipartikel.at/unveil/examples/random_bars.html]
   * Scatterplot[http://quasipartikel.at/unveil/examples/scatterplot.html]
   * Linechart[http://quasipartikel.at/unveil/examples/linechart.html]
+
 
 Scene API                                                               [$SCENE]
 ================================================================================
@@ -582,6 +583,15 @@ $ }, 1000);
 Here's an example of "Moving Random Bars"[http://quasipartikel.at/unveil/examples/random_bars.html],
 that feature interaction and animation.
 
+
+Commands
+--------------------------------------------------------------------------------
+
+Commands are used to modify properties on the scene. They can be executed
+one or many times, and they can be unexecuted to recover the original state.
+
+Commands are a powerful abstraction for modifying state. Implement your own
+commands whenever it makes sense.
 
 Hints
 --------------------------------------------------------------------------------
