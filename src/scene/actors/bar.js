@@ -1,17 +1,15 @@
-// Bar - interactive bar, that can receive a modified height etc.
-//-----------------------------------------------------------------------------
+// Bar
+// =============================================================================
 
 uv.Bar = function(properties) {
   // super call
-  uv.Actor.call(this);
-  
-  _.extend(this.properties, {
+  uv.Actor.call(this, _.extend({
     width: 30,
     height: 50,
     strokeWeight: 2,
     strokeStyle: '#000',
     fillStyle: '#ccc'
-  }, properties);
+  }, properties));
 };
 
 uv.Bar.prototype = Object.extend(uv.Actor);
@@ -25,10 +23,6 @@ uv.Bar.prototype.drawMask = function(ctx) {
   ctx.lineTo(0, this.properties.height);
   ctx.lineTo(0, 0);
   ctx.closePath();
-  
-  // uncomment the following lines to make the mask visible
-  // ctx.fillStyle = "#f00";
-  // ctx.fill();
 };
 
 uv.Bar.prototype.draw = function(ctx) {

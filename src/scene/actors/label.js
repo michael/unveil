@@ -1,23 +1,17 @@
 // Label
-//-----------------------------------------------------------------------------
-
+// =============================================================================
 uv.Label = function(properties) {
   // super call
-  uv.Actor.call(this);
-  
-  _.extend(this.properties, {
+  uv.Actor.call(this, _.extend({
     text: '',
     textAlign: 'start',
     font: '12px Helvetica, Arial'
-  });
-  
-  _.extend(this.properties, properties);
+  }, properties));
 };
 
 uv.Label.prototype = Object.extend(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx) {
-  
   ctx.font = this.prop('font');
   ctx.fillStyle = this.prop('fillStyle');
   

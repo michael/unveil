@@ -3,6 +3,9 @@
 // Taken from Processing.js
 ////////////////////////////////////////////////////////////////////////////
 
+/* TODO: look for a more functional-style matrix implementation */
+/* http://files.geomajas.org/doc/jsdoc/1.3.1/overview-summary-Matrix2D.js.html*/
+
 /*
   Helper function for printMatrix(). Finds the largest scalar
   in the matrix, then number of digits left of the decimal.
@@ -21,11 +24,11 @@ uv.printMatrixHelper = function printMatrixHelper(elements) {
     }
   }
 
-  var digits = (big + "").indexOf(".");
+  var digits = (big + " ").indexOf(".");
   if (digits === 0) {
     digits = 1;
   } else if (digits === -1) {
-    digits = (big + "").length;
+    digits = (big + " ").length;
   }
 
   return digits;
@@ -114,7 +117,7 @@ uv.Matrix2D.prototype = {
   },
   invert: function() {
     var d = this.determinant();
-    if ( Math.abs( d ) > p.FLOAT_MIN ) {
+    if ( Math.abs( d ) > uv.FLOAT_MIN ) {
       var old00 = this.elements[0];
       var old01 = this.elements[1];
       var old02 = this.elements[2];
@@ -142,6 +145,7 @@ uv.Matrix2D.prototype = {
       this.elements[4] *= sy;
     }
   },
+  // matrix mult of the current matrix with the given matrix, stored in the current matrix
   apply: function() {
     if (arguments.length === 1 && arguments[0] instanceof uv.Matrix2D) {
       this.apply(arguments[0].array());
@@ -198,15 +202,12 @@ uv.Matrix2D.prototype = {
     this.rotate(angle);
   },
   toString: function() {
-    var digits = printMatrixHelper(this.elements);
+    var digits = uv.printMatrixHelper(this.elements);
     var output = "";
     
-    output += this.elements[0] + " " + this.elements[1] + " " + this.elements[2] + "\n";
-    output += this.elements[3] + " " + this.elements[4] + " " + this.elements[5] + "\n\n";
+    output += "[" +this.elements[0] + " " + this.elements[1] + " " + this.elements[2] + " ]\n";
+    output += "[" +this.elements[3] + " " + this.elements[4] + " " + this.elements[5] + " ]\n\n";
     
     return output;
-    // output += p.nfs(this.elements[0], digits, 4) + " " + p.nfs(this.elements[1], digits, 4) + " " + p.nfs(this.elements[2], digits, 4) + "\n";
-    // output += p.nfs(this.elements[3], digits, 4) + " " + p.nfs(this.elements[4], digits, 4) + " " + p.nfs(this.elements[5], digits, 4) + "\n\n";
-    // p.println(output);
   }
 };
