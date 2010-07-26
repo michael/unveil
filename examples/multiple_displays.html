@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Unveil.js - Affine transformations</title>
+  <title>Unveil.js - Multiple displays</title>
   
   <!-- libraries -->
   <script src="../lib/jquery-1.4.2.js"></script>
+  <script src="../lib/jquery.mousewheel.js"></script>
   <script src="../lib/protovis-d3.2.js"></script>
   <script src="../lib/underscore.js"></script>
   <script src="../src/uv.js"></script>
@@ -18,6 +19,8 @@
   <script src="../src/util/matrix2d.js"></script>
   
   <script src="../src/scene/actor.js"></script>
+  <script src="../src/scene/behaviors.js"></script>
+  <script src="../src/scene/display.js"></script>
   <script src="../src/scene/scene.js"></script>
   <script src="../src/scene/tween.js"></script>
   <script src="../src/scene/actors/bar.js"></script>
@@ -25,31 +28,27 @@
   
   <script>
     $(function() {
-      
       // create scene
       var scene = new uv.Scene({
             width: 800,
             height: 500,
             fillStyle: '#ccc'
           });
-          
-      // an object that is affected by scaling
+      
       var bar = new uv.Bar({
         x: 50,
         y: 120,
-        width: 80,
-        height: 50,
-        fillStyle: 'darkblue'
+        width: 100,
+        height: 60,
+        fillStyle: function() { return this.active ? 'lightblue' : 'darkblue'; },
+        interactive: true
       });
       
       scene.add(bar);
       
-      // reference point
-      var rx = 160, ry = 190;
-      
       scene.add(new uv.Bar({
-        x: function() { return rx; },
-        y: function() { return ry; },
+        x: function() { return 50; },
+        y: function() { return 50; },
         width: 10,
         height: 10,
         fillStyle: 'red'
@@ -62,53 +61,57 @@
         fillStyle: 'black'
       }));
       
+      scene.add(new uv.Label({
+        x: 70,
+        y: 40,
+        text: function() { return parseInt(scene.mouseX, 10)+" / "+parseInt(scene.mouseY, 10); },
+        fillStyle: 'black'
+      }));
+      
+      var display1 = scene.display({
+        container: $('#bigscreen'),
+        width: 500,
+        height: 200,
+        paning: true,
+        zooming: true
+      });
+      
+      var display2 = scene.display({
+        container: $('#miniscreen'),
+        width: 150,
+        height: 150,
+        zooming: true
+      });
+            
       scene.start();
-      
-      // interaction
-      $('#rx').change(function() {
-        rx = $(this).val();
-      });
-      
-      $('#ry').change(function() {
-        ry = $(this).val();
-      });
-      
-      var scale = 1; // scaling means zooming.
-      var rot = 0;
-      
-      // scale and rotate around a reference point
-      $('#zoom').change(function() {
-        scale = 1+$(this).val()/300;
-        scene.setScaleAndRotateAroundPos(scale, scale, rot, rx, ry);
-      });
-      $('#rotation').change(function() {
-        rot = ($(this).val()/100)*(2*Math.PI);
-        scene.setScaleAndRotateAroundPos(scale, scale, rot, rx, ry);
-      });
-      
+
     });
   </script>
   
   <link href="styles.css" media="screen" rel="stylesheet" type="text/css" />
 </head>
 <body>
-  <h1>Unveil.js - Affine transformations</h1>
+  <h1>Unveil.js - Multiple displays (Zoom and Pan using the mouse / mousewheel)</h1>
   <div id="canvas">
-    
+    <div id="bigscreen">
+
+    </div>
+    <div id="miniscreen">
+
+    </div>
   </div>
+
   <div id="info">
-    <h3>Reference point:</h3>
-    X: <input id="rx" type="range" min="0" max="800" value="160"/><br/>
-    Y: <input id="ry" type="range" min="0" max="800" value="190"/><br/><br/>
-    
-    Zoom: <input id="zoom" type="range" min="1" max="400" value="1"/>
-    Rotate: <input id="rotation" type="range" min="0" max="100" value="1"/>
+    <h3>Info</h3>
+    Demonstrates the support for multiple displays to project the scene (world-coordinates) to one or more displays (canvas elements,
+    that have a local coordinate system). This conforms to the view transformation in a 3D-game terminology.
+    It allows the scene to be rendered on various displays that can be zoomed and paned independently.
     
     <h3>Challenge</h3>
-    Scale or rotate around a reference point rather than scaling or rotating around the origin.
-    This is important for mouse interaction where you want to zoom or rotate based on the current
-    mouse position. At the moment you can't combine those two transformations. Make sure either
-    Zoom or Scale have a zero-value.
+    
+    For zooming you want to scale around the current mouse position rather than scaling around the origin.
+    Zooming and Paning are implemented as separate behaviors that can be activated when you specify
+    the output display.
     
     <h3>About</h3>
     <!-- A framework for data-driven visualizations based on Collections. -->

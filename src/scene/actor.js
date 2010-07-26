@@ -26,7 +26,7 @@ uv.Actor = function(properties) {
   // Works like a regular transformation matrix, with the difference
   // that it doesn't describe the whole transformation to be applied.
   // The render() method first applies the current properties 
-  // (x, y, scaleX, scaleY) the modification matrix is applied subsequently.
+  // (x, y, scaleX, scaleY) followed by modification matrix.
   this.matrix = new uv.Matrix2D();
 };
 
@@ -183,7 +183,7 @@ uv.Actor.prototype.render = function(ctx) {
                 transform.elements[4], transform.elements[2], transform.elements[5]);
   
   if (this.p('interactive')) {
-    this.checkActive(ctx, this.scene.mouseX, this.scene.mouseY);
+    this.checkActive(ctx, this.scene.displayX, this.scene.displayY);
   }
   
   this.draw(ctx);

@@ -6,6 +6,7 @@
   <!-- libraries -->
   <script src="../lib/jquery-1.4.2.js"></script>
   <script src="../lib/protovis-d3.2.js"></script>
+  <script src="../lib/jquery.mousewheel.js"></script>
   <script src="../lib/underscore.js"></script>
   <script src="../src/uv.js"></script>
   <script src="../src/sorted_hash/aggregators.js"></script>
@@ -18,6 +19,8 @@
   <script src="../src/util/matrix2d.js"></script>
   
   <script src="../src/scene/actor.js"></script>
+  <script src="../src/scene/behaviors.js"></script>
+  <script src="../src/scene/display.js"></script>
   <script src="../src/scene/scene.js"></script>
   <script src="../src/scene/tween.js"></script>
   <script src="../src/scene/actors/bar.js"></script>
@@ -50,9 +53,7 @@
       
       // create scene
       var scene = new uv.Scene({
-            width: 800,
-            height: 300,
-            framerate: 30,
+            framerate: 30
           }),
           data = pv.range(20).map(function(d) { return Math.random() + .1; }),
           colors = pv.Scale.linear(data).range('lightblue', 'darkblue');
@@ -84,7 +85,15 @@
         scene.add(bar);
       });
       
-      // running on 60 frames per default
+      // set up the display
+      scene.display({
+        container: $('#canvas'),
+        width: 800,
+        height: 300,
+        zooming: true,
+        paning: true
+      });
+      
       scene.start();
       
       // move it

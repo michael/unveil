@@ -26,6 +26,9 @@
   <script src="../src/util/matrix2d.js"></script>
   
   <script src="../src/scene/actor.js"></script>
+  
+  <script src="../src/scene/behaviors.js"></script>
+  <script src="../src/scene/display.js"></script>
   <script src="../src/scene/commands.js"></script>
   <script src="../src/scene/scene.js"></script>
   <script src="../src/scene/tween.js"></script>
@@ -55,70 +58,6 @@
         vis.changeGroup($(this).val());
       });
       
-      // var zoomLevel = 1;
-      // 
-      // /* TODO: clean up the mess */
-      // $('#canvas').bind('mousewheel', function(event, delta) {
-      //     delta /= 100;
-      //     if (zoomLevel+delta>=1) {
-      //       zoomLevel += delta;
-      //       vis.zoom(zoomLevel);
-      //     } else {
-      //       zoomLevel = 1;
-      //       distX = 0;
-      //       distY = 0;
-      //       currentX = 0;
-      //       currentY = 0;
-      //       vis.scene.translate(0,0);
-      //       vis.zoom(zoomLevel);
-      //     }
-      // });
-      // 
-      // var paning = false;
-      // var distX = 0;
-      // var distY = 0;
-      // currentX = 0;
-      // currentY = 0;
-      // 
-      // var mouseX, mouseY;
-      // $('#canvas').bind('mousedown', function(event, delta) {
-      //   paning = true;
-      //   mouseX = vis.scene.mouseX;
-      //   mouseY = vis.scene.mouseY;
-      //   currentX = distX;
-      //   currentY = distY;
-      //   distX = 0;
-      //   distY = 0;
-      // });
-      // 
-      // $('#canvas').bind('mouseup', function(event, delta) {
-      //   paning = false;
-      // });
-      // 
-      // $('#canvas').bind('mousemove', function(event, delta) {
-      //   if (paning) {
-      //     
-      //     distX = currentX+vis.scene.mouseX-mouseX;
-      //     distY = currentY+vis.scene.mouseY-mouseY;
-      //     
-      //     var maxXPan = vis.scene.p('width')*zoomLevel-vis.scene.p('width');
-      //     var maxYPan = vis.scene.p('height')*zoomLevel-vis.scene.p('height');
-      //     
-      //     if (Math.abs(distX)>maxXPan) {
-      //       distX = -1*maxXPan;
-      //     } else if (distX>0) {
-      //       distX = 0;
-      //     }
-      //     
-      //     if (Math.abs(distY)>maxYPan) {
-      //       distY = -1*maxYPan;
-      //     } else if (distY>0) {
-      //       distY = 0;
-      //     }
-      //     vis.scene.translate(distX, distY);
-      //   }
-      // });
-      
       vis.render();
     });
   </script>
@@ -126,7 +65,7 @@
   <link href="styles.css" media="screen" rel="stylesheet" type="text/css" />
 </head>
 <body>
-  <h1>Unveil.js - Stacks</h1>
+  <h1>Unveil.js - Stacks (Zoom and Pan using the mouse / mousewheel)</h1>
   <!-- Pan and zoom using the mouse / mousewheel -->
   <div id="canvas">
     

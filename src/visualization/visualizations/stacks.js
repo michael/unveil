@@ -77,8 +77,6 @@ uv.Stacks = uv.Visualization.extend({
     
     // create scenegraph
     this.scene = new uv.Scene({
-      width: this.width,
-      height: this.height,
       fillStyle: '#fff'
     });
     
@@ -103,6 +101,16 @@ uv.Stacks = uv.Visualization.extend({
   },
   render: function() {
     var scene = this.scene;
+    
+    // set up display
+    scene.display({
+      container: $('#canvas'),
+      width: this.width,
+      height: this.height,
+      paning: true,
+      zooming: true
+    });
+    
     scene.start();
   }
 });
@@ -190,7 +198,7 @@ uv.Stacks.Item = function(properties) {
   this.ts = new uv.Tween({
     obj: this.properties,
     property: 'size',
-    duration: 0.5
+    duration: 2
   });
   
   this.tx = new uv.Tween({

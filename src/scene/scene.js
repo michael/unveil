@@ -25,15 +25,11 @@ uv.Scene = function(properties) {
   // commands hook in here
   this.commands = {};
   
+  // attached displays
+  this.displays = [];
+  
   this.fps = 0;
   this.framerate = this.p('framerate');
-  
-  this.$element = $(this.p('element'));
-  this.$canvas = $('<canvas id="plotarea" width="'+this.properties.width+'" ' +
-                    'height="'+this.properties.height+'"></canvas>');
-  
-  this.$element.append(this.$canvas);
-  this.ctx = this.$canvas[0].getContext("2d");
 };
 
 uv.Scene.prototype = Object.extend(uv.Actor);
@@ -53,53 +49,11 @@ uv.Scene.prototype.add = function(child) {
   return child;
 };
 
-// draws the root panel
-uv.Scene.prototype.render = function() {
-  var that = this;
-  
-  function mouseMove(e) {
-    var mouseX, mouseY;
-
-    if (e.offsetX) {
-      mouseX = e.offsetX;
-      mouseY = e.offsetY;
-    } else if (e.layerX) {
-      mouseX = e.layerX;
-      mouseY = e.layerY;
-    }
-    
-    that.mouseX = mouseX;
-    that.mouseY = mouseY;
-  }
-  
-  this.$canvas.bind('mousemove', mouseMove);
-  
-  // draw the scene
-  this.ctx.clearRect(0,0, this.properties.width,this.properties.height);
-  this.ctx.fillStyle = this.prop('fillStyle');
-  this.ctx.fillRect(0, 0, this.properties.width, this.properties.height);
-
-  this.ctx.save();
-
-  // initialize the transform matrix with property data
-  var transform = new uv.Matrix2D();
-  transform.translate(this.p('x'), this.p('y'));
-  transform.rotate(this.p('rotation'));
-  transform.scale(this.p('scaleX'), this.p('scaleY'));
-  
-  // apply the modification matrix to the dynamically initialized one
-  transform.apply(this.matrix);
-    
-  this.ctx.transform(transform.elements[0], transform.elements[1], transform.elements[3], 
-                transform.elements[4], transform.elements[2], transform.elements[5]);
-  
-  if (this.all('children')) {
-    this.all('children').each(function(i, child) {
-      child.render(that.ctx);
-    });
-  }
-  this.ctx.restore();
-};
+// walks the scene graph in depth-first order and compiles
+// transformation matrices per object.
+uv.Scene.prototype.preRender = function() {
+  // TODO: implement
+}
 
 uv.Scene.prototype.start = function(options) {
   var that = this,
@@ -117,7 +71,9 @@ uv.Scene.prototype.loop = function() {
   
   if (this.running) {
     start = new Date().getTime();
-    this.scene.render();
+    
+    this.refreshDisplays();
+    
     duration = new Date().getTime()-start;
     
     this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
@@ -127,6 +83,14 @@ uv.Scene.prototype.loop = function() {
 
 uv.Scene.prototype.stop = function(options) {
   this.running = false;
+};
+
+// creates a display to make the scene visible
+uv.Scene.prototype.display = function(options) {
+  var disp = new uv.Display(this, options);
+  this.displays.push(disp);
+  
+  return disp;
 };
 
 // Commands
@@ -144,3 +108,12 @@ uv.Scene.prototype.execute = function(cmd) {
 uv.Scene.prototype.unexecute = function(cmd) {
   this.commands[cmd.className].unexecute();
 }
+
+// Refresh displays
+uv.Scene.prototype.refreshDisplays = function() {
+  _.each(this.displays, function(d) {
+    d.refresh();
+  });
+};
+
+
