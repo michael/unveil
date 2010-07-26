@@ -49,13 +49,6 @@ uv.Scene.prototype.add = function(child) {
   return child;
 };
 
-// walks the scene graph in depth-first order and compiles
-// transformation matrices per object.
-// uv.Scene.prototype.preRender = function() {
-//   // TODO: implement
-//   // this.pmatrix
-// }
-
 uv.Scene.prototype.start = function(options) {
   var that = this,
       opts = { framerate: 50, idleFramerate: 10 };

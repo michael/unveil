@@ -19,6 +19,8 @@ Features:
   * Motion tweening
   * Modification matrix (applied after the initial transforms, specified via properties)
   * Commands (e.g. save cpu cycles using event-based framerate determination)
+  * Multiple Display (The scene can be projected to one or more canvas elements)
+  * Mouse interaction support on Display level (Zooming, Paning)
 
 Examples
 ---------------------
@@ -27,3 +29,18 @@ Examples
 * Random Bars   [http://quasipartikel.at/unveil/examples/random_bars.html]
 * Scatterplot   [http://quasipartikel.at/unveil/examples/scatterplot.html]
 * Linechart     [http://quasipartikel.at/unveil/examples/linechart.html]
+
+
+
+Hints
+---------------------
+
+Please use a webkit-based browser (Safari/Chrome) for the moment. Interaction is not yet
+working in Firefox as I'm still struggling with a different implementation of ctx.isPointInPath().
+In Firefox, it doesn't transform the coordinates. https://bugzilla.mozilla.org/show_bug.cgi?id=405300
+However, I'll tackle this soon, but I don't want to mess up the code too much to add
+exceptional behavior. I'd like to provide a clean approach that works throughout modern
+browsers. Adding a huge backward compatibility layer is not what I'm interested in.
+However, Firefox 3.5+ will definitely be on the supported browser list ;)
+
+BTW: Believe it or not, it seems like Internet Explorer 9 has the fasted implementation of HTML5 canvas. ;) Good news in either case.
