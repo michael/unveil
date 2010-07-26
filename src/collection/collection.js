@@ -11,6 +11,10 @@ uv.Collection = function (options) {
       var p = new uv.Property(that, key, options);
       that.set('properties', key, p);
     });
+    
+    // initialize items property, even if there are no items in the collection
+    this.replace('items', new uv.SortedHash());
+    
     $.each(options.items, function(key, i) {
       var item = new uv.Item(that, key, i, true);
     });
