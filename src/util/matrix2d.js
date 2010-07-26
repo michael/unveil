@@ -12,7 +12,6 @@
   Called from Matrix2D's print() method.
 */
 
-
 uv.printMatrixHelper = function printMatrixHelper(elements) {
   var big = 0;
   for (var i = 0; i < elements.length; i++) {
@@ -115,9 +114,15 @@ uv.Matrix2D.prototype = {
   determinant: function() {
     return this.elements[0] * this.elements[4] - this.elements[1] * this.elements[3];
   },
+  // non-destrucive version
+  inverse: function() {
+    var res = new uv.Matrix2D(this);
+    return res.invert() ? res : null;
+  },
   invert: function() {
     var d = this.determinant();
-    if ( Math.abs( d ) > uv.FLOAT_MIN ) {
+    
+    if ( Math.abs( d ) > uv.MIN_FLOAT ) {
       var old00 = this.elements[0];
       var old01 = this.elements[1];
       var old02 = this.elements[2];
@@ -127,7 +132,7 @@ uv.Matrix2D.prototype = {
       this.elements[0] =  old11 / d;
       this.elements[3] = -old10 / d;
       this.elements[1] = -old01 / d;
-      this.elements[1] =  old00 / d;
+      this.elements[4] =  old00 / d;
       this.elements[2] = (old01 * old12 - old11 * old02) / d;
       this.elements[5] = (old10 * old02 - old00 * old12) / d;
       return true;
