@@ -62,25 +62,13 @@ uv.Display.prototype.refresh = function() {
   this.ctx.clearRect(0,0, this.width,this.height);
   this.ctx.fillStyle = this.scene.prop('fillStyle');
   this.ctx.fillRect(0, 0, this.width, this.height);
-  
   this.ctx.save();
-  
-  // initialize the transform matrix with property data
-  var transform = new uv.Matrix2D();
-  
-  // apply scene transformation matrix
-  // transform.apply(this.scene.tmatrix);
-  
-  // apply the viewing transformation
-  transform.apply(this.matrix);
-
-  this.ctx.transform(transform.elements[0], transform.elements[1], transform.elements[3], 
-                transform.elements[4], transform.elements[2], transform.elements[5]);
   
   if (this.scene.all('children')) {
     this.scene.all('children').each(function(i, child) {
-      child.render(that.ctx);
+      child.render(that.ctx, that.matrix);
     });
   }
+  
   this.ctx.restore();
 };

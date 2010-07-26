@@ -161,25 +161,45 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   return false;
 };
 
-// wrapper for the render method, memorizes the context
-uv.Actor.prototype.render = function(ctx) {
+// compile transformation matrix
+uv.Actor.prototype.preRender = function() {
+  // start with the parent matrix
+  
+  if (this.parent) {
+    this.tmatrix = new uv.Matrix2D(this.parent.tmatrix);
+  } else {
+    this.tmatrix = new uv.Matrix2D();
+  }
+  
+  this.update();
+  
+  this.tmatrix.translate(this.p('x'), this.p('y'));
+  this.tmatrix.rotate(this.p('rotation'));
+  this.tmatrix.scale(this.p('scaleX'), this.p('scaleY'));
+  
+  // apply the modification matrix to the dynamically initialized one
+  this.tmatrix.apply(this.matrix);
+  
+  if (this.all('children')) {
+    this.all('children').each(function(i, child) {
+      child.preRender();
+    });
+  }
+};
+
+
+uv.Actor.prototype.render = function(ctx, view) {
   var that = this;
   
   if (!this.p('visible')) return;
   
-  ctx.save();
-  this.update();
+  // apply the view transformation
+  var transform = new uv.Matrix2D(view);
   
-  // initialize the transform matrix with property values
-  var transform = new uv.Matrix2D();
-  transform.translate(this.p('x'), this.p('y'));
-  transform.rotate(this.p('rotation'));
-  transform.scale(this.p('scaleX'), this.p('scaleY'));
+  // apply the object's transformation matrix
+  transform.apply(this.tmatrix);
   
-  // apply the modification matrix to the dynamically initialized one
-  transform.apply(this.matrix);
-    
-  ctx.transform(transform.elements[0], transform.elements[1], transform.elements[3], 
+  ctx.setTransform(transform.elements[0], transform.elements[1], transform.elements[3], 
                 transform.elements[4], transform.elements[2], transform.elements[5]);
   
   if (this.p('interactive')) {
@@ -188,11 +208,11 @@ uv.Actor.prototype.render = function(ctx) {
   
   this.draw(ctx);
   
+  // TODO: don't use a call stack, instead allow arbitrary tree traversals
+  // as the drawing order.
   if (this.all('children')) {
     this.all('children').each(function(i, child) {
-      child.render(ctx);
+      child.render(ctx, view);
     });    
   }
-  
-  ctx.restore();
 };

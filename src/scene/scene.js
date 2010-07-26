@@ -13,8 +13,8 @@ uv.Scene = function(properties) {
     framerate: 10
   }, properties);
   
-  this.mouseX = -1;
-  this.mouseY = -1;
+  this.mouseX = this.displayX = -1;
+  this.mouseY = this.displayY = -1;
   
   // keeps track of nodes that capture mouse events
   this.interactiveNodes = [];
@@ -51,9 +51,10 @@ uv.Scene.prototype.add = function(child) {
 
 // walks the scene graph in depth-first order and compiles
 // transformation matrices per object.
-uv.Scene.prototype.preRender = function() {
-  // TODO: implement
-}
+// uv.Scene.prototype.preRender = function() {
+//   // TODO: implement
+//   // this.pmatrix
+// }
 
 uv.Scene.prototype.start = function(options) {
   var that = this,
@@ -72,6 +73,7 @@ uv.Scene.prototype.loop = function() {
   if (this.running) {
     start = new Date().getTime();
     
+    this.preRender();
     this.refreshDisplays();
     
     duration = new Date().getTime()-start;
