@@ -1,11 +1,19 @@
 Unveil.js
 ================================================================================
 
-Unveil is a data exploration and visualization toolkit that utilizes data-driven
+**Unveil** is a data exploration and visualization toolkit that utilizes data-driven
 software design.
 
+It features generic data abstraction through Collections, a unified interface
+for developing pluggable visualizations, and a Scenegraph implementation that
+simplifies the usage of the the "HTML 5 Canvas API"[http://dev.w3.org/html5/canvas-api/canvas-2d-api.html].
 
-Note:
+Although shipping with it's own little graphic library, the *Scene API*, Unveil.js
+is designed to be used with any other visualization library. So in the first
+place, it suggests a different approach on how you deal with domain data in a
+visualization scenario.
+
+**Note:**
 
 This documentation is generated on the fly using the "Ndogen"[http://github.com/oliver----/ndogen] documentation generator.
 Since this instant doc-generation part is under heavy development, you'll
@@ -15,21 +23,21 @@ experience some glitches. We're working on it! Please have a look at the "raw ma
 Collection API
 ================================================================================
 
-Collections are the main building block of the toolkit. A Collection is a simple
+Collections are the main building block of the toolkit. A *Collection* is a simple
 data abstraction format where a data-set under investigation conforms to a 
 collection of data items that describes all facets of the underlying data in a 
-simple and universal way. You can think of a `Collection` as a table of data, 
+simple and universal way. You can think of a *Collection* as a table of data, 
 except it provides precise information about the data contained (meta-data). 
 
-Collections are represented as a JSON string, which serves as an exchange format.
+*Collections* are represented as a JSON string, which serves as an exchange format.
 Since JSON is heavily used in web-services, its perfectly suited for usage in a
 cloud-like scenario. Your collections can be constructed on the fly using live
 data from web services that either provides data directly in the Collection format
 or through a translator service that serves as an adapter for an existing service.
 
-After passing the raw format to the `Collection` constructor, they are
+After passing the raw format to the *Collection* constructor, they are
 internally represented as a network of nodes (a graph so to say), that allows
-efficient operations on the Collection by traversing the graph instead of 
+efficient operations on the *Collection* by traversing the graph instead of 
 iterating over all items, values etc. Also operations like filtering, grouping
 etc. are already supported.
 
@@ -97,37 +105,37 @@ $     ...
 $   },
 $ });
 
-The Collection constructor takes a collection represented as a JavaScript object,
-which conforms to a parsed JSON collection string. Once created you can query
+The *Collection* constructor takes a collection represented as a JavaScript object,
+which conforms to a parsed *JSON Collection String*. Once created you can query
 the information contained.
 
 The API features a simple object model for working with such in-memory
-collections. The collection object gives you access to the `Properties` and 
-`Items` contained. 
+collections. The *Collection* object gives you access to the properties and 
+items contained. 
 
-Please make yourself familiar with the Node API, which is the data
+Please make yourself familiar with the *Node API*, which is the data
 structure used for modeling the internal structure of a collection, which is a
-graph. Be aware that `Collection`, `Property`, `Item` and `Value` objects inherit
-from Node, so the full Node API is available on such objects.
+graph. Be aware that *Collection*, *Property*, *Item* and *Value* objects inherit
+from *Node*, so the full *Node API* is available on such objects.
 
 
 Properties
 --------------------------------------------------------------------------------
 
 Meta-data (data about data) is represented as a set of properties that belongs
-to a collection. A property (cmp. a column in a table) holds a key, a name 
+to a collection. A *Property* (cmp. a column in a table) holds a key, a name 
 (cmp. a header of a column) and a type (telling whether the data is numeric or
 textual, etc.).
 
-Access the Collection's properties:
+**Access the Collection's properties:**
 
 $ var properties = countries.all('properties'); // => SortedHash
 
-You can also access them directly:
+**You can also access them directly:**
 
 $ var population = countries.get('properties', 'population');
 
-And you can use property inspection:
+**And you can use property inspection:**
 
 $ population.type; // => 'string'
 $ population.name; // => 'Population'
@@ -139,29 +147,30 @@ Items
 An item of the collection conforms to a row in a data table, except one ‘cell’
 can have arbitrary many values (non-unique attributes).
 
-List all items:
+**List all items:**
 
 $ var items = countries.all('items'); // => SortedHash containing Item objects
 
-Or access them directly:
+**Or access them directly:**
 
 $ var argentina = countries.get('items', 'arg'); -> Item#arg
 
-Inspect item values:
+**Inspect item values:**
 
 $ argentina.value('name'); // => 'Argentina'
 $ argentina.value('currency_used'); // => 'Argentinian Peso'
 
-Non-unique properties have more that one value:
+**Non-unique properties have more that one value:**
 
 $ argentina.values('form_of_government');
 $ // => [String#Federal_Republic, String#Presidential_system]
 
-You can easily iterate over values using `SortedHash#each`:
+**With *SortedHash#each* you can easily iterate over values:**
 
 $ argentina.values('form_of_government').each(function(index, gf) {
 $   gf; // => e.g. 'Presidential System'
 $ });
+
 
 Values
 --------------------------------------------------------------------------------
@@ -169,16 +178,16 @@ Values
 You can not only view values on a raw level but also as Nodes, which provide
 useful meta-information about connections etc.
 
-List all items:
+**List all items:**
 
 $ var items = countries.all('items'); // => SortedHash containing Item objects
 
-inspect the value 'Federal republic':
+**Inspect the value 'Federal republic':**
 
 $ federal_republic = argentina.all('form_of_government').first();
 $ // => Node#Federal_Republic
 
-Which other countries also have this government form?
+**Which other countries also have this government form?**
 
 $ federal_republic.all('items'); // => [Node#austria, Node#usa]
 
@@ -186,14 +195,14 @@ $ federal_republic.all('items'); // => [Node#austria, Node#usa]
 Set operations
 --------------------------------------------------------------------------------
 
-Since OrderedHashes conform to a set in mathematical respect, some interesting
+Since a *SortedHash* conforms to a set in mathematical respect, some interesting
 operations can be performed.
 
-$ var english = countries.all('item').select(function(key, i) {
+$ var english = countries.all('items').select(function(key, i) {
 $   return i.value('official_language') === 'English'; 
 $ });
 $   
-$ var french = countries.all('item').select(function(key, i) {
+$ var french = countries.all('items').select(function(key, i) {
 $   return i.value('official_language') === 'French'; 
 $ });
 $ 
@@ -208,10 +217,10 @@ $ // => [Node#uk, Node#france, Node#Switzerland, ...]
 Transformers                                                     [$TRANSFORMERS]
 --------------------------------------------------------------------------------
 
-Transformers are used to do operations on the desired collection. A commonly
+Transformers are used to do operations on the desired *Collection*. A commonly
 used one is the group transformation.
 
-The following code does a grouping by the `official_language` property and sums
+The following code does a grouping by the *official_language* property and sums
 up all numeric properties (like population, area). What you get is a modified
 collection that shows aggregated values for all occurring languages.
 
@@ -220,7 +229,7 @@ $   property: 'official_language',
 $   aggregator: 'SUM'
 $ });
 
-The resulting collection looks like this
+**The resulting collection looks like this:**
 
 $ {
 $   "properties": "properties": {
@@ -261,13 +270,14 @@ $   }
 $ };
 
 
-Transformers are non-destructive. The original collection is not modified unless
+Transformers are non-destructive. The original *Collection* is not modified unless
 you re-assign the result.
+
 
 Implement your own Transformer
 --------------------------------------------------------------------------------
 
-All you have to do is to assign a new property on the pv.Collection.transformers
+All you have to do is to assign a new *Property* on the pv.Collection.transformers
 object, which holds a transformer function. This function takes an input
 collection and a params hash.
 
@@ -278,9 +288,9 @@ $ };
 
 Have a look at the implementation of the "Group Transformer"[http://github.com/michael/unveil/blob/master/src/collection/transformers/group.js], to see how it's done.
 
-Transformer specification:
+**Transformer specification:**
 
-You need to define a specification for your transformation, which gives it a
+You need to define a specification for your *Transformer*, which gives it a
 human readable name and describes the parameters your transformation takes.
 
 $ pv.Collection.transformers.group.label = "Group By";
@@ -298,11 +308,10 @@ $ }
 Available Collections
 --------------------------------------------------------------------------------
 
-Some sample collections are available through Collectionize, a dedicated
-aggregator service, that translates interesting web services to the collection
-format.
+Some sample collections are available through "Collectionize"[http://github.com/michael/collectionize], a dedicated
+aggregator service, that translates interesting web services to the *Collection* format.
 
-Currently available:
+**Currently available:**
 
 * "Countries fetched from Freebase.com"[http://collections.quasipartikel.at/countries]
 * "Last.fm Playlists"[http://collections.quasipartikel.at/playlists]
@@ -311,16 +320,16 @@ Currently available:
 Visualization API                                                         [$VIS]
 ================================================================================
 
-The visualization API provides a simple abstraction layer for visualizations to ease
+The *Visualization API* provides a simple abstraction layer for visualizations to ease
 the process of creating re-usable data-driven visualizations. 
 
-The appearance of the result is determined by the underlying data rather than by user
-defined plotting options. Visualizations directly access data trough a well defined
-interface, the Collection API, so there's no longer a gap between domain data and
+The appearance of a visualization is determined by the underlying data rather than by
+user defined plotting options. Visualizations directly access data trough a well defined
+interface, the *Collection API*, so there's no longer a gap between domain data and
 data used by the visualization engine.
 
 Such visualization can be re-used in terms of putting arbitrary data in. 
-This works as long as the data is a valid Collection and satisfies the
+This works as long as the data is a valid *Collection* and satisfies the
 visualization specification (some visualizations exclusively use numbers as their
 input, others use dates (e.g. Timeline plots), and so on...).
 
@@ -343,7 +352,7 @@ Creating visualizations
 --------------------------------------------------------------------------------
 
 In order to create your own visualizations you need to setup a new class that
-inherits from uv.Visualization.
+inherits from *uv.Visualization*.
 
 $ var MyChart = uv.Visualization.extend({
 $   constructor: function(collection, options) {
@@ -354,12 +363,13 @@ $     // hardcore rendering action
 $   }
 $ });
 
-All you have to do is to imlement `render()`. It's totally up to you whether you
-want to use a visualization library (I can recommend "Protovis"[http://protovis.org] and "Processing.js"[http://processingjs.org]) or
-work with the native API's (Canvas, SVG).
+All you have to do is to implement *render()*. It's totally up to you whether you
+want to use the included Scene API or any other visualization library (I can recommend "Protovis"[http://protovis.org], "Processing.js"[http://processingjs.org] and "Scene.js"[http://scenejs.org]) or
+work with the native API's (Canvas, SVG, WebGL).
 
 
-Visualization Specification:
+Visualization Specification
+................................................................................
 
 There are various types of visualizations. Some exclusively use numbers as their
 input, some use dates (e.g. Timeline plots) others visualize relationships between
@@ -385,59 +395,53 @@ $     }
 $   ]
 $ };
 
-For reference have a look at the implementations of `Scatterplot` and `Linechart`.
+**Have a look at the implementations of *Scatterplot* and *Linechart* for reference:**
 
   * "Scatterplot"[http://github.com/michael/unveil/tree/master/src/visualization/visualizations/scatterplot.js]
   * "Linechart"[http://github.com/michael/unveil/tree/master/src/visualization/visualizations/linechart.js]
 
 
-Examples
---------------------------------------------------------------------------------
-
-  * Stacks[http://quasipartikel.at/unveil/examples/stacks.html]
-  * Random Bars[http://quasipartikel.at/unveil/examples/random_bars.html]
-  * Scatterplot[http://quasipartikel.at/unveil/examples/scatterplot.html]
-  * Linechart[http://quasipartikel.at/unveil/examples/linechart.html]
-
-
 Scene API                                                               [$SCENE]
 ================================================================================
 
-Inspired by various great visualization libraries (Protovis, Processing.js) I
-created my own rather low level visualization framework that is basically an
-implementation of a SceneGraph on top of the HTML5 Canvas API. 
+Inspired by various great visualization libraries (Protovis, Processing.js), I
+created my own rather low level graphical library that is basically an
+implementation of a Scenegraph on top of the *HTML5 Canvas API*.
 
-I focussed on two core principles:
+It's more a framework that helps you managing complexity rather than a full-featured
+graphical visualization library. 
+
+
+**I focussed on two core principles:**
 
   * Object oriented
   * Declarative
 
 Object oriented in terms of thinking in graphical objects and modularizing 
-code, declarative in terms of using, configuring and combining existing actors
-(graphical objects) and attach them to the scene graph.
+code, declarative in terms of using, configuring and combining existing *Actors*
+(graphical objects) and attach them to the Scenegraph.
 
 
-Creating a scene is easy:
+**Creating a scene is easy:**
 
 $ var scene = new uv.Scene({
-$       width: 800,
-$       height: 400
+$       fillStyle: '#ccc'
 $     });
 
 
 Actors
 --------------------------------------------------------------------------------
 
-Once you have constructed your scene object you can start adding actors to the scene.
-Actors can be primitive graphical objects (like a bar, a line, or a dot) or higher 
+Once you have constructed your *Scene* object, you can start adding actors.
+*Actors* can be primitive graphical objects (like a Bar, a Line, or a Dot) or higher 
 level objects that combine lower level ones (e.g. a Hyperbolic Tree). Actors
 typically take properties in their constructor. However for higher level objects
 you probably want them to be constructed with real domain data instead of simple
 graphical oriented properties (width, height etc.). You can decide on your own
-how you want to organize them. 
+how you want to shape the interface.
 
 
-Add an Actor (Bar) to the scene:
+**Add an Actor (Bar) to the scene:**
 
 $ var bar = new uv.Bar({
 $   x: 30,
@@ -447,7 +451,7 @@ $   height: 80,
 $   fillStyle: 'darkblue'
 $ });
 
-Add an additional bar as a child of the bar just created:
+**Add an additional bar as a child of the bar just created:**
 
 $ bar.add(new uv.Bar({
 $   x: 50,
@@ -460,36 +464,60 @@ $ }));
 The x and y coordinates are relative to the parent object. So an object does not
 know where it is located in the coordinate-space. It just renders itself at 
 position 0,0. The positioning is done through matrix transformations, where for
-each object the current context (transformation matrix) is stored.
-That's how a SceneGraph works.
+each object the current context (transformation matrix) is being calculated on
+every frame. That's how a SceneGraph works.
 
-Start the scene:
+**Specify an output display:**
 
-$ // defaults to 60 frames per second
+$ scene.display({
+$   container: $('#plotarea'),
+$   width: 800,
+$   height: 300,
+$   zooming: true,
+$   paning: true
+$ });
+
+The scene (world-coordinates) can be projected to one or many displays (canvas elements), that
+have a local coordinate system. Each display can be modified (zoomed, paned, etc.) independently.
+This conforms to a view transformation in computer-game-engine-like API's (camera analogy).
+
+You can see multiple displays in action "here"[http://quasipartikel.at/unveil/examples/multiple_displays.html].
+
+**Start the scene:**
+
+$ // defaults to 10 frames per second
 $ scene.start();
 
-Creating visualizations using the Scene API most often means implementing your own
-Actors. Let's re-create the Bar Actor from scratch, and add some interaction and
-animation later:
+The scene automatically refreshes each attached display appropriately (on every frame).
+
+**Create your own actors:**
+
+Creating visualizations using the *Scene API* most often means implementing your own *Actors*.
+I'd see the creation of custom Actors as a fundamental part of the visualization
+creation process. So instead of combining only existing pre-implemented objects, you're 
+encouraged to create your own ones, suitable for your needs.
+
+
+**Let's re-create the Bar Actor from scratch, and add some interaction and animation later:**
 
 $ uv.Bar = function(properties) {
 $   // super call
-$   uv.Actor.call(this);
-$   
-$   // define your default properties
-$   _.extend(this.properties, {
-$     width: 40,
+$   uv.Actor.call(this, _.extend({
+$     width: 30,
+$     height: 50,
 $     strokeWeight: 2,
-$     strokeStyle: '#ccc'
-$   }, properties);
+$     strokeStyle: '#000',
+$     fillStyle: '#ccc'
+$   }, properties));
 $ };
 
-Every Actor inherits from uv.Actor:
+
+**Every Actor inherits from uv.Actor:**
 
 $ uv.Bar.prototype = Object.extend(uv.Actor);
 
 
-Implement a draw method, which takes a Canvas 2D context:
+**Implement a draw method, which takes a Canvas 2D context:**
 
 $ uv.Bar.prototype.draw = function(ctx) {
 $   ctx.fillRect(0, 0, this.properties.width, this.properties.height);
@@ -500,19 +528,19 @@ Interaction
 --------------------------------------------------------------------------------
 
 Interaction is key in visualizations. Therefore Unveil.js aims to provide an
-abstraction for implementing interaction on your Actors. Unlike in SVG, with
-the Canvas API you can't attach event handlers on shapes directly. Instead
+abstraction for implementing interaction on your *Actors*. Unlike in SVG, with
+the Canvas API you can't attach event handlers to shapes directly. Instead
 you need to detect on your own, which objects are currently under the cursor.
 Usually you'd do this with some math, but there's a simpler approach that
-utilizes `isPointInPath()`:
+utilizes *isPointInPath()*.
 
-With `isPointInPath()` you can check if the current mouse-position is inside
+With *isPointInPath()* you can check if the current mouse-position is inside
 the current working path.
 
 To make use of this you need to equip your Actors with an additional
-`drawMask()` method. 
+*drawMask()* method. 
 
-Let's add some interaction to our Bar:
+**Let's add some interaction to our Bar:**
 
 $ uv.Bar.prototype.drawMask = function(ctx) {
 $   ctx.beginPath();
@@ -525,13 +553,13 @@ $   ctx.lineTo(0, 0);
 $ };
 
 This simply draws an invisible rectangle. If you have a more complex object like
-a Star-Shape you can use a rectangle (also known as a bounding-box) as well, to
-mask your object for interaction. That's for the lazy folks. ;-)
+a star-shape you can use a rectangle (also known as a bounding-box) as well, to
+mask your object for interaction. However, that's for the lazy folks. ;-)
 
-Actors that have a `drawMask()` implementation can then be easily checked
+Actors that have a *drawMask()* implementation can then be easily checked
 against the current cursor position.
 
-That's what is going on behind the curtain:
+**That's what is going on behind the curtain:**
 
 $ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
 $   if (this.drawMask && ctx.isPointInPath) {
@@ -551,30 +579,30 @@ Animation
 It's easy to add animation to your objects too. I've added a "Tween class"[http://quasipartikel.at/tween/]
 I created some time ago to animate properties over time.
 
-To animate the height property of a Bar you simply use a Tween for that:
+**To animate the height property of a Bar you simply use a Tween for that:**
 
 $ uv.Bar = function(properties) {
 $   ...
-$   this.t = new uv.Tween(this.properties, "height", 
-$     uv.Tween.strongEaseInOut, this.properties.height, 
-$     this.properties.height, 2);
+$   this.t = new uv.Tween({
+$     object: this.properties,
+$     property: 'height'
+$   });
 $ };
 
-The `updateHeight()` method is used to trigger the Tween:
+**The *updateHeight()* method is used to trigger the Tween:**
 
 $ uv.Bar.prototype.updateHeight = function(newHeight) {
 $   this.t.continueTo(newHeight, 1.5);
 $ };
 
 
-For now you need to manually trigger a Tween tick using the Actor#update() method:
+**For now you need to manually trigger a Tween tick using the *Actor#update()* method:**
 
 $ uv.Bar.prototype.update = function() {
 $   this.t.tick();
 $ };
 
-In your sketch you can use setTimeout() or setInterval() to trigger the 
-`updateHeight()` method.
+**In your sketch you can use *setTimeout()* or *setInterval()* to trigger the *updateHeight()* method:**
 
 $ setInterval(function() {
 $   bar.updateHeight(70);
@@ -587,17 +615,110 @@ that feature interaction and animation.
 Commands
 --------------------------------------------------------------------------------
 
-Commands are used to modify properties on the scene. They can be executed
+*Commands* are used to modify properties on the scene. They can be executed
 one or many times, and they can be unexecuted to recover the original state.
 
-Commands are a powerful abstraction for modifying state. Implement your own
+Suche commands are a powerful abstraction for modifying state. Implement your own
 commands whenever it makes sense.
+
+What always annoyed me is the problem of high CPU-consumption that canvas-based visualizations
+typically have. The reason for that is, that if your scene runs on 60 fps, then even when there's 
+no animation or interaction taking place, the *render()* method is called 60 times a second.
+
+**I could solve this by implementing a *RequestFramerate* command:**
+
+$ uv.cmds.RequestFramerate = function(scene, opts) {
+$   this.scene = scene;
+$   this.requests = 0;
+$   this.framerate = opts.framerate;
+$   this.originalFramerate = this.scene.framerate;
+$ };
+$ 
+$ uv.cmds.RequestFramerate.className = 'RequestFramerate';
+$ 
+$ uv.cmds.RequestFramerate.prototype.execute = function() {
+$   this.requests += 1;
+$   this.scene.framerate = this.framerate;
+$ };
+$ 
+$ uv.cmds.RequestFramerate.prototype.unexecute = function() {
+$   this.requests -= 1;
+$   if (this.requests <= 0) {
+$     this.scene.framerate = this.originalFramerate;
+$   }
+$ };
+
+**Having that command in place, we need to register it on the scene: **
+
+$ scene.register(uv.cmds.RequestFramrate, { framerate: 60 }); 
+
+**Then this command can be excuted and unexecued on demand.:**
+
+$ t  = new uv.Tween({...});
+$ t.on('start', function() { that.scene.execute(uv.cmds.RequestFramerate); }); 
+$ t.on('finish', function() { that.scene.unexecute(uv.cmds.RequestFramerate); }); 
+
+
+**It works like this:**
+
+The scene by default runs in idle mode (say 10fps),
+which is enough to deal with mouse interaction. If an operation (in this case 
+a Motion Tween) needs high speed (60fps) it requests it, like if it would
+request a resource. 
+
+The *Tween* class (like any other operation that needs full power) needs callbacks
+for start and finish events, that can be used to request high speed (on start) and
+release this demand when 'finish' is fired.
+
+It basically works like a semaphore, where each request increments a *requests*
+counter, and each release decrements it. When all motion tweens have finished
+*requests* is zero. The current framerate then depends on the value of
+*requests* (0 = idle mode, > 0 = highspeed / full throttle mode).
+
+I've updated the "stacks example"[http://quasipartikel.at/unveil/examples/stacks.html],
+that now uses 60fps on demand (10fps per default). Thankfully lots of CPU cycles could
+be saved. ;-)
+
+
+Modification Matrix
+--------------------------------------------------------------------------------
+
+While most often specifying properties (x, y, scaleX, scaleY, rotation) on the an
+Actor suffices, there may be cases where you need more control. Therefore
+Actors expose a so called *Modification Matrix*, which can be directly modified
+by the user. 
+
+**To scale and rotate an object around a point, you can specify a series of matrix transforms:**
+
+$ var b = new uv.Bar({...});
+$ // move the coordinate system to the desired point
+$ b.translate(40,40);
+$ // scale around this point (= new origin)
+$ b.scale(1.5, 1.5);
+$ // rotate 45°
+$ b.rotate(uv.PI/4);
+$ // move the coordinate system back
+$ b.translate(-40, -40);
+
+
+To calculate the resulting transformation matrix for drawing, it is
+initialized with the specified properties and then multiplied with the modification
+matrix.
+
+
+Examples
+--------------------------------------------------------------------------------
+
+  * "Stacks"[http://quasipartikel.at/unveil/examples/stacks.html]
+  * "Random Bars"[http://quasipartikel.at/unveil/examples/random_bars.html]
+  * "Multiple displays"[http://quasipartikel.at/unveil/examples/multiple_displays.html]
+
 
 Hints
 --------------------------------------------------------------------------------
 
-The Scene API related code is pretty small (~ 200 LOC). I don't plan to provide
-a full-featured Visualization library with helper functions, since there are
+The Scene API related code is pretty small (~ 400 LOC). I don't plan to provide
+a full-featured graphic library with helper functions, since there are
 existing libraries, that do a perfect job. I recommend using Protovis along with
 the Scene API. Actually, this library was created because Protovis does not
 support the canvas element. I also wanted an easier way to deal with interaction.
@@ -605,8 +726,9 @@ support the canvas element. I also wanted an easier way to deal with interaction
 To prevent from verbose and messy code, I do not provide any backward
 compatibility for older browsers. I'm trying to stay on the edge of technology.
 Therefore I focus on supporting the most recent versions of Google Chrome,
-Firefox, Safari. Currently mouse interaction is not working in Firefox. Please
-use a webkit-based browser for the moment.
+Firefox, Safari. I'll probably support Internet Explorer 9 as well, since their
+Canvas implementation looks promising. Currently mouse interaction is not working
+in Firefox. Please use a webkit-based browser for the moment.
 
 
 Node API                                                                 [$NODE]
@@ -619,7 +741,7 @@ hassle. Every Node simply contains properties which conform to outgoing edges.
 It makes heavy use of hashing through JavaScript object properties to allow
 random access whenever possible.
 
-The Node API heavily relies on SortedHash, please have a look at
+The Node API heavily relies on *SortedHash*, please have a look at
 the documentation before you start.
 
 Construction
@@ -679,7 +801,7 @@ $ });
 Sorted Hash API                                                    [$SORTEDHASH]
 ================================================================================
 
-Unveil.js features a `SortedHash` data structure that provides a simple layer of
+Unveil.js features a *SortedHash* data structure that provides a simple layer of
 abstraction for managing Sorted Hashes in JavaScript. It's heavily used
 throughout the framework.
 
@@ -693,12 +815,12 @@ $ items.set('de', 'Germany');
 Access
 --------------------------------------------------------------------------------
 
-Hash Semantics:
+**Hash Semantics:**
 
 $ items.get('at') // => 'Austria';
 $ items.get('de') // => 'Germany';
 
-Array Semantics:
+**Array Semantics:**
 
 $ items.at(0); // => 'Austria'
 $ items.at(1); // => 'Germany'
@@ -707,14 +829,14 @@ $ items.length; // => 2
 Iteration
 --------------------------------------------------------------------------------
 
-each:
+**each:**
 
 $ items.each(function(index, value) {
 $   value; // => 'Austria', 'Germany'
 $   index; // => 0, 1
 $ });
 
-eachKey:
+**eachKey:**
 
 $ items.eachKey(function(key, value) {
 $   value; // => 'Austria', 'Germany'
@@ -724,7 +846,7 @@ $ })
 Operations
 --------------------------------------------------------------------------------
 
-sort:
+**sort:**
 
 $ var desc = function(item1, item2) {
 $       return item1.value === item2.value
@@ -735,7 +857,7 @@ $
 $ sortedItems = items.sort(descendingOrder);
 
 
-map:
+**map:**
 
 $ var mappedItems = items.map(function (item) {
 $   return item.slice(0, 3);
@@ -749,7 +871,7 @@ This returns a SortedHash in descending order, while the original remains
 untouched.
 
 
-select:
+**select:**
 
 $ var selectedItems = items.select(function (key, item) {
 $       return item === 'Austria';
@@ -759,7 +881,7 @@ $ selectedItems.at(0) // => 'Austria';
 $ selectedItems.length; // => 1;
 
 
-intersect:
+**intersect:**
 
 $ var items2 = new SortedHash(),
 $     intersectedItems;
@@ -773,7 +895,7 @@ $ intersectedItems.length; // => 1
 $ intersectedItems.get('at'); // => 'Austria'
 
 
-union:
+**union:**
 
 $ var items2 = new SortedHash(),
 $     unitedItems;
@@ -788,7 +910,7 @@ $ unitedItems.get('at'); // => 'Austria'
 $ unitedItems.get('de'); // => 'Germany'
 $ unitedItems.get('fr'); // => 'France'
 
-Method chaining:
+**Method chaining:**
 
 $ var mappedAndSortedItems = items.map(function (item) {
 $       return item.slice(0, 3);
