@@ -1,18 +1,4 @@
 uv.Collection.transformers.coOccurrences = function(c, params) {
-  // check for valid params
-  
-  // GET RID OF THIS CODE - SOON!
-  var artist_genres = {};
-  
-  if (c.get('properties', 'genres') && c.get('properties', 'artists')) {
-    c.all("items").each(function(i, item) {
-      item.values('artists').each(function(index, artist) {
-        artist_genres[artist] = item.values('genres').at(index);
-      });
-    });
-  }
-  // GET RID OF THIS CODE - SOON! END
-  
   if (!params.property || !params.knn) return c;
   
   var targetItems = {},
@@ -41,12 +27,11 @@ uv.Collection.transformers.coOccurrences = function(c, params) {
     
     values.each(function (index, otherValue) {
       var sim = similarity(value, otherValue);
-      if (sim>0) {
+      if (sim>0 && value.val !== otherValue.val) {
         similarItems.push({
           "name": otherValue.val,
           "number_of_cooccurrences": coOccurrences(value, otherValue),
-          "score": sim,
-          "checker": artist_genres[otherValue.val]
+          "score": sim
         });
       }
     });
@@ -66,7 +51,6 @@ uv.Collection.transformers.coOccurrences = function(c, params) {
     });
 
     targetItems[value.val].source = value.val;
-    targetItems[value.val].checker = artist_genres[value.val];
     targetItems[value.val].similar_items = similarItemsHash;
   });
 
@@ -75,11 +59,6 @@ uv.Collection.transformers.coOccurrences = function(c, params) {
     properties: {
       source: {
         name: "Source",
-        type: "string",
-        unique: true
-      },
-      checker: {
-        name: "Checker (Optional)",
         type: "string",
         unique: true
       },
@@ -101,11 +80,6 @@ uv.Collection.transformers.coOccurrences = function(c, params) {
           "score": {
             name: 'Similarity Score',
             type: 'number',
-            unique: true
-          },
-          "checker": {
-            name: 'Checker (Optional)',
-            type: 'string',
             unique: true
           }
         }

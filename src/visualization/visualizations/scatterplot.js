@@ -2,7 +2,7 @@ uv.Scatterplot = uv.Visualization.extend({
   constructor: function(collection, options) {
     uv.Visualization.call(this, collection, options);
     
-    this.margin = {top: 30, right: 170, bottom: 50, left: 150};
+    this.margin = {top: 30, right: 0, bottom: 50, left: 150};
     this.itemValueIndex = 0;
     
     var that = this;
