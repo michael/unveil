@@ -10,6 +10,7 @@ at http://docs.quasipartikel.at/#/unveil.
 
 Features:
 ---------------------
+
 * Generic data abstraction via Collections
 * Visualization API (Pluggable visualizations)
 * Scene API
@@ -25,11 +26,11 @@ Features:
 Examples
 ---------------------
 
-* Stacks        [http://quasipartikel.at/unveil/examples/stacks.html]
-* Random Bars   [http://quasipartikel.at/unveil/examples/random_bars.html]
-* Scatterplot   [http://quasipartikel.at/unveil/examples/scatterplot.html]
-* Linechart     [http://quasipartikel.at/unveil/examples/linechart.html]
-
+* Stacks                  [http://quasipartikel.at/unveil/examples/stacks.html]
+* Random Bars             [http://quasipartikel.at/unveil/examples/random_bars.html]
+* Scatterplot             [http://quasipartikel.at/unveil/examples/scatterplot.html]
+* Linechart               [http://quasipartikel.at/unveil/examples/linechart.html]
+* Artist Similarities     [http://quasipartikel.at/unveil/examples/artist_similarities.html]
 
 
 Hints
