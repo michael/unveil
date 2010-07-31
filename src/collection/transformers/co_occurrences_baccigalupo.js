@@ -100,7 +100,7 @@ uv.Collection.transformers.coOccurrencesBaccigalupo = function(c, params) {
             name: 'Similarity Score',
             type: 'number',
             unique: true
-          },
+          }
         }
       }
     },

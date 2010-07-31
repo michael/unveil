@@ -1,7 +1,6 @@
 // Top level namespace
 var uv = {};
 
-
 // CONSTANTS
 uv.EPSILON = 0.0001;
 uv.MAX_FLOAT   = 3.4028235e+38;
@@ -17,25 +16,8 @@ uv.DEG_TO_RAD  = uv.PI / 180;
 uv.RAD_TO_DEG  = 180 / uv.PI;
 
 
-/**
-* @private Returns a prototype object suitable for extending the given class
-* <tt>f</tt>. Rather than constructing a new instance of <tt>f</tt> to serve as
-* the prototype (which unnecessarily runs the constructor on the created
-* prototype object, potentially polluting it), an anonymous function is
-* generated internally that shares the same prototype:
-*
-* <pre>function g() {}
-* g.prototype = f.prototype;
-* return new g();</pre>
-*
-* For more details, see Douglas Crockford's essay on prototypal inheritance.
-*
-* @param {function} f a constructor.
-* @returns a suitable prototype object.
-* @see Douglas Crockford's essay on <a
-* href="http://javascript.crockford.com/prototypal.html">prototypal
-* inheritance</a>.
-*/
+
+
 
 Object.extend = function (f) {
   function G() {}
@@ -82,41 +64,6 @@ Object.keys = function (obj) {
 
 
 
-
-// Class - Core - Copyright TJ Holowaychuk <tj@vision-media.ca> (MIT Licensed)
-
-/**
- * Create a "class" with the given _proto_.
- *
- * Example:
- *
- *   var User = new Class({
- *     constructor: function(name){
- *       this.name = name
- *     },
- *     toString: function(){
- *       return '[User ' + this.name + ']'
- *     }
- *   })
- *
- *   var Admin = User.extend({
- *     extend: { isSuperPowerful: true },
- *     constructor: function(name) {
- *       User.call(this, name.toUpperCase())
- *     }
- *   })
- *
- *   puts(new Admin('tj'))
- *   // => "[User TJ]"
- *
- *   puts(Admin.isSuperPowerful)
- *   // => true
- *
- * @param  {object} proto
- * @return {function}
- * @api public
- */
-
 function Class(proto) {
   var self = this,
       isSubclass = typeof this === 'function',
@@ -139,13 +86,6 @@ function Class(proto) {
 
 Class.prototype = Function.prototype
 
-/**
- * Include the given _proto_ object.
- *
- * @param  {object} proto
- * @return {Class}
- * @api public
- */
 
 Class.prototype.include = function(proto){
   extend(this.prototype, proto)
@@ -153,13 +93,6 @@ Class.prototype.include = function(proto){
   return this
 }
 
-/**
- * Extend object _a_ with _b_.
- *
- * @param  {object} a
- * @param  {object} b
- * @api public
- */
 
 function extend(a, b) {
   for (var key in b)

@@ -198,7 +198,7 @@ uv.Linechart.spec = {
     {
       types: ['number'],
       unique: false,
-      cardinality: 1,
+      cardinality: 1
     }
   ]
 };

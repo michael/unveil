@@ -64,7 +64,7 @@ uv.Stacks = uv.Visualization.extend({
       font: '12px Helvetica Neue, Helvetica, Arial',
       text: function() { return "FPS: "+parseInt(that.scene.framerate); },
       textAlign: 'right',
-      fillStyle: 'black',
+      fillStyle: 'black'
     }));
   },
   build: function() {
@@ -171,7 +171,7 @@ uv.Stacks.Stack.prototype.build = function(ctx) {
     // rotation: uv.PI/2+uv.PI,
     text: function() { return that.p('name'); },
     textAlign: 'center',
-    fillStyle: '#333',
+    fillStyle: '#333'
   }));
 };
 
@@ -240,7 +240,7 @@ uv.Stacks.Item.prototype.build = function(ctx) {
     font: 'bold 15px Helvetica Neue, Helvetica, Arial',
     text: function() { return that.p('item').identify(); },
     textAlign: 'left',
-    fillStyle: '#333',
+    fillStyle: '#333'
   }));
   
   this.add(bar);
@@ -290,7 +290,7 @@ uv.Stacks.spec = {
     {
       types: ['number'],
       unique: false,
-      cardinality: 1,
+      cardinality: 1
     }
   ]
 };
