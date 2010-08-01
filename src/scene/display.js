@@ -1,4 +1,3 @@
-
 uv.Display = function(scene, opts) {
   this.scene = scene;
 

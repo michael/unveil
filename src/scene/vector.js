@@ -8,21 +8,6 @@ uv.Vector = function(x, y, z) {
   this.z = z || 0;
 };
 
-// createPVectorMethod = function(method) {
-//   return function(v1, v2) {
-//     var v = v1.get();
-//     v[method](v2);
-//     return v;
-//   };
-// },
-// createSimplePVectorMethod = function(method) {
-//   return function(v1, v2) {
-//     return v1[method](v2);
-//   };
-// },
-// simplePVMethods = "dist dot cross".split(" "),
-// method = simplePVMethods.length;
-
 uv.Vector.angleBetween = function(v1, v2) {
   return Math.acos(v1.dot(v2) / (v1.mag() * v2.mag()));
 };
@@ -133,15 +118,3 @@ uv.Vector.prototype = {
     return [this.x, this.y, this.z];
   }
 };
-
-// while (method--) {
-//   PVector[simplePVMethods[method]] = createSimplePVectorMethod(simplePVMethods[method]);
-// }
-// 
-// for (method in PVector.prototype) {
-//   if (PVector.prototype.hasOwnProperty(method) && !PVector.hasOwnProperty(method)) {
-//     PVector[method] = createPVectorMethod(method);
-//   }
-// }
-// 
-// p.PVector = PVector;

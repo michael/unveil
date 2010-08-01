@@ -1,8 +1,8 @@
 //-----------------------------------------------------------------------------
-// BarchartVis
+// Barchart
 //-----------------------------------------------------------------------------
 
-uv.BarchartVis = uv.Visualization.extend({
+uv.Barchart = uv.Visualization.extend({
   // extend: { isConcreteVisualization: true },
   constructor: function(collection, options) {
     uv.Visualization.call(this, collection, options);
@@ -15,15 +15,12 @@ uv.BarchartVis = uv.Visualization.extend({
     this.items = this.collection.all("items");
 
     // create scenegraph
-    this.scene = new uv.Scene({
-      width: 800,
-      height: 500
-    });
+    this.scene = new uv.Scene();
 
     this.items.each(function(index, item) {
       that.scene.add(new uv.Bar({
         x: 40+30*index,
-        y: 400,
+        y: 300,
         width: 20,
         height: parseInt(-0.4*item.value('hardware_turnover'), 10),
         fillStyle: '#7888ff',
@@ -34,7 +31,14 @@ uv.BarchartVis = uv.Visualization.extend({
   render: function() {
     var that = this;
     
-    // 60 frames per second by default
+    this.scene.display({
+      container: $('#canvas'),
+      width: 800,
+      height: 300,
+      paning: true,
+      zooming: true
+    });
+    
     that.scene.start();
   },
   updateMeasure: function(measure) {
@@ -49,7 +53,7 @@ uv.BarchartVis = uv.Visualization.extend({
 //-----------------------------------------------------------------------------
 
 // Displays 1..n numbers
-uv.BarchartVis.spec = {
+uv.Barchart.spec = {
   measures: [
     {
       types: ['number'],

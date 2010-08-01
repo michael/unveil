@@ -14,9 +14,9 @@ compressionCmd = 'java -jar ./lib/compiler.jar --js unveil.js --js_output_file u
 files = [
   'src/intro.js'
   'src/uv.js'
+  'src/sorted_hash/sorted_hash.js'
   'src/sorted_hash/aggregators.js'
   'src/sorted_hash/comparators.js'
-  'src/sorted_hash/sorted_hash.js'
   'src/node/node.js'
   'src/collection/value.js'
   'src/collection/item.js'
@@ -26,8 +26,8 @@ files = [
   'src/collection/transformers/group.js'
   'src/collection/transformers/co_occurrences.js'
   'src/collection/transformers/co_occurrences_baccigalupo.js'
-  'src/util/vector.js'
-  'src/util/matrix2d.js'
+  'src/scene/vector.js'
+  'src/scene/matrix2d.js'
   'src/scene/actor.js'
   'src/scene/behaviors.js'
   'src/scene/display.js'
@@ -38,11 +38,6 @@ files = [
   'src/scene/actors/label.js'
   'src/scene/actors/dot.js'
   'src/visualization/visualization.js'
-  'src/visualization/visualizations/barchart.js'
-  'src/visualization/visualizations/linechart.js'
-  'src/visualization/visualizations/scatterplot.js'
-  'src/visualization/visualizations/stacks.js'
-  'src/visualization/visualizations/table.js'
   'src/outro.js'
 ]
 

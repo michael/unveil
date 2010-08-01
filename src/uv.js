@@ -16,9 +16,6 @@ uv.DEG_TO_RAD  = uv.PI / 180;
 uv.RAD_TO_DEG  = 180 / uv.PI;
 
 
-
-
-
 Object.extend = function (f) {
   function G() {}
   G.prototype = f.prototype || f;
@@ -33,24 +30,6 @@ Object.create = function (o) {
 };
 
 
-// Usage:
-// 
-// ["a","b", "c"].eachItem(function(item, index) {
-//   item
-// });
-
-if (!Array.prototype.eachItem) {
-  Array.prototype.eachItem = function (f, o) {
-    var n = this.length || 0,
-        i;
-    for (i = 0; i < n; i += 1) {
-      if (i in this) {
-        f.call(o, this[i], i, this);
-      }
-    }
-  };
-}
-
 Object.keys = function (obj) {
   var array = [],
       prop;
@@ -61,7 +40,6 @@ Object.keys = function (obj) {
   }
   return array;
 };
-
 
 
 function Class(proto) {
@@ -86,13 +64,11 @@ function Class(proto) {
 
 Class.prototype = Function.prototype
 
-
 Class.prototype.include = function(proto){
   extend(this.prototype, proto)
   if ('included' in proto) proto.included(this)
   return this
 }
-
 
 function extend(a, b) {
   for (var key in b)

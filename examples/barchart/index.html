@@ -4,61 +4,60 @@
   <title>Unveil.js</title>
   
   <!-- libraries -->
-  <script src="../lib/jquery-1.4.2.js"></script>
-  <script src="../lib/jquery.mousewheel.js"></script>
-  <script src="../lib/protovis-d3.2.js"></script>
-  <script src="../lib/underscore.js"></script>
+  <script src="../../lib/jquery-1.4.2.js"></script>
+  <script src="../../lib/jquery.mousewheel.js"></script>
+  <script src="../../lib/protovis-d3.2.js"></script>
+  <script src="../../lib/underscore.js"></script>
   
-  <script src="../unveil.js"></script>
+  <script src="../../unveil.js"></script>
+  
+  <!-- visualizations -->
+  <script src="./barchart.js"></script>
   
   <!-- fixtures -->
-  <script src="../fixtures/freebase_countries.js"></script>
-  <script src="../fixtures/artists.js"></script>
+  <script src="../../fixtures/countries.js"></script>
+  <script src="../../fixtures/salesmen.js"></script>
   
   <script>
-    
     $(function() {
+      console.log('doink');
       // load some data (represented as a Collection)
-      var c = new uv.Collection(artists_fixture);
+      c = new uv.Collection(salesmen_fixture);
       
       // construct a visualization based on that data
-      var vis = new uv.Stacks(c, {
-        measures: ['genres'],
+      vis = new uv.Barchart(c, {
+        measures: ['hardware_turnover'],
         params: {}
       });
       
-      $('#groups').change(function() {
-        vis.changeGroup($(this).val());
+      vis.render();
+      
+      $('#measures').change(function() {
+        // dynamically updates the measure
+        vis.updateMeasure($(this).val());
       });
       
-      vis.render();
     });
   </script>
   
-  <link href="styles.css" media="screen" rel="stylesheet" type="text/css" />
+  <link href="../styles.css" media="screen" rel="stylesheet" type="text/css" />
 </head>
 <body>
-  <h1>Unveil.js - Stacks (Zoom and Pan using the mouse / mousewheel)</h1>
-  <!-- Pan and zoom using the mouse / mousewheel -->
+  <h1>Unveil.js examples - interactive bars</h1>
   <div id="canvas">
     
   </div>
   <div id="info">
-    <h3>Group by</h3>
-    <select id="groups">
-      <option value="genres" selected="selected">Genres</option>
-      <option value="origin">Origin</option>
+    <h3>Measures</h3>
+    <select id="measures">
+      <option value="hardware_turnover" selected="selected">Hardware Turnover</option>
+      <option value="solution_turnover">Solution Turnover</option>
     </select>
-    
     <h3>About</h3>
     <!-- A framework for data-driven visualizations based on Collections. -->
     <p><strong>Unveil.js</strong> provides a simple abstraction layer for visualizations to ease
     the process of creating re-usable charts. To accomplish this, a data-driven methodology is used.
-    </p>    
-    
-    <h3>Data used</h3>
-    
-    <a href="../fixtures/artists.js">Artists</a> pulled from Freebase.com translated into the Unveil.js Collection format.
+    </p><p>
     
     <h3>Code</h3>
     

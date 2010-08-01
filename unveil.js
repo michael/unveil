@@ -17,9 +17,6 @@ uv.DEG_TO_RAD  = uv.PI / 180;
 uv.RAD_TO_DEG  = 180 / uv.PI;
 
 
-
-
-
 Object.extend = function (f) {
   function G() {}
   G.prototype = f.prototype || f;
@@ -34,24 +31,6 @@ Object.create = function (o) {
 };
 
 
-// Usage:
-// 
-// ["a","b", "c"].eachItem(function(item, index) {
-//   item
-// });
-
-if (!Array.prototype.eachItem) {
-  Array.prototype.eachItem = function (f, o) {
-    var n = this.length || 0,
-        i;
-    for (i = 0; i < n; i += 1) {
-      if (i in this) {
-        f.call(o, this[i], i, this);
-      }
-    }
-  };
-}
-
 Object.keys = function (obj) {
   var array = [],
       prop;
@@ -62,7 +41,6 @@ Object.keys = function (obj) {
   }
   return array;
 };
-
 
 
 function Class(proto) {
@@ -87,13 +65,11 @@ function Class(proto) {
 
 Class.prototype = Function.prototype
 
-
 Class.prototype.include = function(proto){
   extend(this.prototype, proto)
   if ('included' in proto) proto.included(this)
   return this
 }
-
 
 function extend(a, b) {
   for (var key in b)
@@ -101,73 +77,8 @@ function extend(a, b) {
       a[key] = b[key]
 }
 
-//-----------------------------------------------------------------------------
-// Aggregators
-// Default aggregators that can operate on a SortedHash
-//-----------------------------------------------------------------------------
-
-uv.Aggregators = {};
-
-uv.Aggregators.SUM = function (values) {
-  var result = 0;
-  
-  values.each(function(index, value) {
-    result += value;
-  });
-
-  return result;
-};
-
-uv.Aggregators.MIN = function (values) {
-  var result = Infinity;
-  values.each(function(index, value) {
-    if (value < result) {
-      result = value;
-    }
-  });
-  return result;
-};
-
-uv.Aggregators.MAX = function (values) {
-  var result = -Infinity;
-  values.each(function(index, value) {
-    if (value > result) {
-      result = value;
-    }
-  });
-  return result;
-};
-
-uv.Aggregators.AVG = function (values) {
-  return uv.Aggregators.SUM(values) / values.length;
-};
-
-uv.Aggregators.COUNT = function (values) {
-  return values.length;
-};
-
-
-//-----------------------------------------------------------------------------
-// Comparators
-// Default comparators that can operate on a SortedHash
-//-----------------------------------------------------------------------------
-
-uv.Comparators = {};
-
-uv.Comparators.ASC = function(item1, item2) {
-  return item1.value === item2.value ? 0 : (item1.value < item2.value ? -1 : 1);
-};
-
-uv.Comparators.DESC = function(item1, item2) {
-  return item1.value === item2.value ? 0 : (item1.value > item2.value ? -1 : 1);
-};
-
-
-//-----------------------------------------------------------------------------
 // SortedHash
-// An awesome data structure you've always been missing in JavaScript
-//-----------------------------------------------------------------------------
-
+// =============================================================================
 
 // Constructor
 // Initializes a Sorted Hash
@@ -391,6 +302,64 @@ uv.SortedHash.prototype.union = function(sortedHash) {
   });
   return result;
 };
+// Aggregators
+//-----------------------------------------------------------------------------
+
+uv.Aggregators = {};
+
+uv.Aggregators.SUM = function (values) {
+  var result = 0;
+  
+  values.each(function(index, value) {
+    result += value;
+  });
+
+  return result;
+};
+
+uv.Aggregators.MIN = function (values) {
+  var result = Infinity;
+  values.each(function(index, value) {
+    if (value < result) {
+      result = value;
+    }
+  });
+  return result;
+};
+
+uv.Aggregators.MAX = function (values) {
+  var result = -Infinity;
+  values.each(function(index, value) {
+    if (value > result) {
+      result = value;
+    }
+  });
+  return result;
+};
+
+uv.Aggregators.AVG = function (values) {
+  return uv.Aggregators.SUM(values) / values.length;
+};
+
+uv.Aggregators.COUNT = function (values) {
+  return values.length;
+};
+
+
+// Comparators
+//-----------------------------------------------------------------------------
+
+uv.Comparators = {};
+
+uv.Comparators.ASC = function(item1, item2) {
+  return item1.value === item2.value ? 0 : (item1.value < item2.value ? -1 : 1);
+};
+
+uv.Comparators.DESC = function(item1, item2) {
+  return item1.value === item2.value ? 0 : (item1.value > item2.value ? -1 : 1);
+};
+
+
 // Node API for JavaScript
 // ========================================================================
 // 
@@ -1096,21 +1065,6 @@ uv.Vector = function(x, y, z) {
   this.z = z || 0;
 };
 
-// createPVectorMethod = function(method) {
-//   return function(v1, v2) {
-//     var v = v1.get();
-//     v[method](v2);
-//     return v;
-//   };
-// },
-// createSimplePVectorMethod = function(method) {
-//   return function(v1, v2) {
-//     return v1[method](v2);
-//   };
-// },
-// simplePVMethods = "dist dot cross".split(" "),
-// method = simplePVMethods.length;
-
 uv.Vector.angleBetween = function(v1, v2) {
   return Math.acos(v1.dot(v2) / (v1.mag() * v2.mag()));
 };
@@ -1222,30 +1176,11 @@ uv.Vector.prototype = {
   }
 };
 
-// while (method--) {
-//   PVector[simplePVMethods[method]] = createSimplePVectorMethod(simplePVMethods[method]);
-// }
+// Matrix2D (taken from Processing.js)
+// =============================================================================
 // 
-// for (method in PVector.prototype) {
-//   if (PVector.prototype.hasOwnProperty(method) && !PVector.hasOwnProperty(method)) {
-//     PVector[method] = createPVectorMethod(method);
-//   }
-// }
-// 
-// p.PVector = PVector;
-////////////////////////////////////////////////////////////////////////////
-// 2D Matrix
-// Taken from Processing.js
-////////////////////////////////////////////////////////////////////////////
-
-/* TODO: look for a more functional-style matrix implementation */
-/* http://files.geomajas.org/doc/jsdoc/1.3.1/overview-summary-Matrix2D.js.html*/
-
-/*
-  Helper function for printMatrix(). Finds the largest scalar
-  in the matrix, then number of digits left of the decimal.
-  Called from Matrix2D's print() method.
-*/
+// TODO: look for a more functional-style matrix implementation
+// http://files.geomajas.org/doc/jsdoc/1.3.1/overview-summary-Matrix2D.js.html
 
 uv.printMatrixHelper = function printMatrixHelper(elements) {
   var big = 0;
@@ -1257,14 +1192,12 @@ uv.printMatrixHelper = function printMatrixHelper(elements) {
       big = Math.abs(elements[i]);
     }
   }
-
   var digits = (big + " ").indexOf(".");
   if (digits === 0) {
     digits = 1;
   } else if (digits === -1) {
     digits = (big + " ").length;
   }
-
   return digits;
 };
 
@@ -1719,7 +1652,6 @@ uv.PanBehavior = function(display) {
     }
   });
 };
-
 
 
 uv.Display = function(scene, opts) {
@@ -2358,829 +2290,6 @@ uv.Visualization = new Class({
   }
 });
 
-//-----------------------------------------------------------------------------
-// BarchartVis
-//-----------------------------------------------------------------------------
-
-uv.BarchartVis = uv.Visualization.extend({
-  // extend: { isConcreteVisualization: true },
-  constructor: function(collection, options) {
-    uv.Visualization.call(this, collection, options);
-    this.build();
-  },
-  build: function() {
-    var that = this;
-        data = pv.range(10).map(function(d) { return Math.random() + .1; });
-        
-    this.items = this.collection.all("items");
-
-    // create scenegraph
-    this.scene = new uv.Scene({
-      width: 800,
-      height: 500
-    });
-
-    this.items.each(function(index, item) {
-      that.scene.add(new uv.Bar({
-        x: 40+30*index,
-        y: 400,
-        width: 20,
-        height: parseInt(-0.4*item.value('hardware_turnover'), 10),
-        fillStyle: '#7888ff',
-        interactive: true
-      }));
-    });
-  },
-  render: function() {
-    var that = this;
-    
-    // 60 frames per second by default
-    that.scene.start();
-  },
-  updateMeasure: function(measure) {
-    var that = this;
-    this.scene.all('children').each(function(index, bar) {
-      bar.p('height', parseInt(-0.4*that.items.at(index).value(measure), 10));
-    });
-  }
-});
-
-// Specification
-//-----------------------------------------------------------------------------
-
-// Displays 1..n numbers
-uv.BarchartVis.spec = {
-  measures: [
-    {
-      types: ['number'],
-      unique: true,
-      cardinality: 1      
-    },
-    {
-      types: ['number'],
-      unique: true,
-      cardinality: "*"
-    }
-  ]
-};
-// Linechart
-// =============================================================================
-
-uv.Linechart = uv.Visualization.extend({
-  constructor: function(collection, options) {
-    uv.Visualization.call(this, collection, options);
-    
-    this.margin = {top: 30, right: 170, bottom: 30, left: 150};
-  },
-  render: function() {
-    var that = this;
-    
-    if (!this.isValid()) {
-      this.$canvas.html('Cannot render. Change your settings.');
-      return;
-    }
-    
-    // for some reason if I don't do this there's strange
-    // rendering behavior in google chrome    
-    setTimeout(function() {
-      that.renderChart();
-    }, 1);
-  },
-  renderChart: function() {
-    var that = this,
-        width = this.$canvas.width()-this.margin.left-this.margin.right-20;
-        height = this.$canvas.height()-this.margin.top-this.margin.bottom-20;
-        yProp = this.collection.get("properties", this.measures[0]),
-        items = this.collection.all("items").values(),
-        yMax = yProp.aggregate(uv.Aggregators.MAX),
-        yMin = 0, //yProp.aggregate(uv.Aggregators.MIN),
-        x = pv.Scale.ordinal(yProp.categories).split(0, width),
-        y = pv.Scale.linear(yMin, yMax).range(0, height);
-        i = -1,
-        formatter = pv.Format.number();
-        
-        var colors = pv.Scale.ordinal(_.map(items, function(i) { return i.key }))
-                     .range('#8DB5C8', '#808E89', '#B16649', '#90963C', '#A2C355', '#93BAA1', '#86A2A9')
-      
-    
-    // addAxes
-    // -------------------------------------------------------------------------
-    
-    function addAxes() {
-      
-      // x-Axis
-      vis.add(pv.Rule)
-          .data(yProp.categories)
-          .strokeStyle("#eee")
-          .left(function(d) {return x(d); })
-        .add(pv.Label)
-          .bottom(-25)
-          .textAlign('center')
-          .text(function (d) {return d; })
-          .textStyle(function() { return this.index === i ? "#000" : "#666"; })
-          .font('11px Helvetica');
-        
-          
-      // y-Axis (values)
-      vis.add(pv.Rule)
-          .data(y.ticks())
-          .visible(function() { return !(this.index % 2) })
-          .bottom(function(d) { return Math.round(y(d)) - .5 })
-          .strokeStyle("#eee")
-        .anchor("left").add(pv.Label)
-          .left(-10)
-          .text(function(d) { return formatter.format(d.toFixed(1)) })
-          .textStyle("#666")
-          .font('11px Helvetica');
-      
-      vis.add(pv.Rule)
-        .bottom(0)
-        .strokeStyle('#777');
-      vis.add(pv.Rule)
-        .left(0)
-        .strokeStyle('#777');
-          
-      // yAxis Name
-      vis.anchor('left').add(pv.Label)
-        .text(yProp.name)
-        .left(-70)
-        // .top(height/2)
-        .textAngle(-Math.PI / 2)
-        .textStyle('#777')
-        .textAlign('center')
-        .font('bold 13px Helvetica')
-        .add(pv.Label)
-          .left(-50)
-          .text(yProp.descr)
-          .textStyle('#aaa')
-          .font('10px Helvetica')
-    }
-    
-    // addLine
-    // -------------------------------------------------------------------------
-
-    function addLines(items) {
-      
-      // One panel per line
-      var panel = vis.add(pv.Panel)
-        .data(items)
-      /* The line. */
-      var line = panel.add(pv.Line)
-        .data(function(d) { return d.values(that.measures[0]).values(); } )
-        .left(function(d) { return x(yProp.categories[this.index]); })
-        .bottom(function(d) { return y(d); })
-        .strokeStyle(function(d) { return colors(this.parent.data().key); })
-        .lineWidth(3);
-      
-      // The dots
-      var dot = line.add(pv.Dot)
-          .fillStyle(function() { return this.index === i ? '#fff' : line.strokeStyle() })
-          .strokeStyle(function() { return this.index === i ? line.strokeStyle() : null } )
-          .size(function(d) { return this.index === i ? 30 : 20})
-          .lineWidth(3);
-    }
-    
-    // addLegend
-    // -------------------------------------------------------------------------
-    
-    function addLegend(items) {
-      var legend = vis.add(pv.Panel)
-        .right(-that.margin.right)
-        .width(150)
-        // .fillStyle('#ccc')
-        .top(0)
-      .add(pv.Dot) 
-         .data(items) 
-         .top(function() { return this.index * 30 })
-         .size(70)
-         .strokeStyle(null)
-         .fillStyle(function(d) { return colors(d.key); })
-      .anchor("right").add(pv.Label)
-        .left(10)
-        .text(function(d) { return d.identify(); })
-        .textStyle("#666")
-        .font('11px Helvetica')
-      .add(pv.Label)
-        .left(80)
-        .text(function(d) {
-          return d.values(that.measures[0]).values()[i];
-        });
-    }
-    
-    // registerEvents
-    // -------------------------------------------------------------------------
-    
-    function registerEvents() {
-      vis.add(pv.Bar)
-        .fillStyle("rgba(0,0,0,.001)")
-        .event("mouseout", function() {
-            i = -1;
-            // return vis;
-            vis.render();
-        })
-        .event("mousemove", function() {
-            i = pv.search(x.range(), vis.mouse().x);
-            i = i < 0 ? (-i - 2) : i;
-            // return vis;
-            vis.render();
-        });
-    }
-    
-    
-    // Root panel
-    // -------------------------------------------------------------------------
-    
-    var vis = new pv.Panel()
-      .width(width).height(height)
-      .bottom(this.margin.bottom).top(this.margin.top)
-      .left(this.margin.left).right(this.margin.right)
-      .canvas(this.$canvas[0]);
-    
-    // Add x- and y-Axis
-    addAxes();
-    
-    // One trend-line per item
-    addLines(items);
-    
-    // One trend-line per item
-    addLegend(items);
-    
-    // Data point interaction
-    registerEvents();
-
-    // Render it
-    vis.render();
-  }
-});
-
-
-// Specification
-//------------------------------------------------------------------------------
-
-// Displays 1 numbers_series measure for each item
-uv.Linechart.spec = {
-  measures: [
-    {
-      types: ['number'],
-      unique: false,
-      cardinality: 1
-    }
-  ]
-};
-
-uv.Scatterplot = uv.Visualization.extend({
-  constructor: function(collection, options) {
-    uv.Visualization.call(this, collection, options);
-    
-    this.margin = {top: 30, right: 0, bottom: 50, left: 150};
-    this.itemValueIndex = 0;
-    
-    var that = this;
-    
-    var xProp = this.collection.get("properties", this.measures[0]);
-        
-    if (xProp.unique === false) {
-      // TODO check
-      var $settings = $('<div class="settings"><h4>Time</h4><input id="item_value_index" type="range" min="0" max="'+(xProp.categories.length-1)+'" value="'+this.itemValueIndex+'"><br/><h2 id="current-category">'+xProp.categories[this.itemValueIndex]+'</span></h2>');
-      
-      $('#info').append($settings);
-      // this.$canvas.append($settings);
-      
-      $('#item_value_index').change(function() {
-        if (that.itemValueIndex !== $(this).val()) {
-          that.itemValueIndex = $(this).val();
-          $('#current-category').html(xProp.categories[that.itemValueIndex]);
-          that.render();
-        }
-      });
-    }
-  },
-  render: function() {
-    var that = this;
-    
-    if (!this.isValid()) {
-      this.$canvas.html('Cannot render. Change your settings.');
-      return;
-    }
-    
-    // for some reason if I don't do this there's strange
-    // rendering behavior in google chrome    
-    setTimeout(function() {
-      that.renderChart();
-    }, 1);
-  },
-  renderChart: function() {
-    var that = this,
-        width = this.$canvas.width()-this.margin.left-this.margin.right-200,
-        height = this.$canvas.height()-this.margin.top-this.margin.bottom-20,
-        xProp = this.collection.get("properties", this.measures[0]),
-        yProp = this.collection.get("properties", this.measures[1]),
-        zProp = this.collection.get("properties", this.measures[2]),
-        xMin = xProp.aggregate(uv.Aggregators.MIN),
-        xMax = xProp.aggregate(uv.Aggregators.MAX),
-        yMin = yProp.aggregate(uv.Aggregators.MIN),
-        yMax = yProp.aggregate(uv.Aggregators.MAX),
-        zMin,
-        zMax,
-        x, y, z, items,
-        formatter = pv.Format.number();
-    
-    /* Sizing parameters and scales. */
-    x = pv.Scale.linear(xMin, xMax).range(0, width).nice();
-    y = pv.Scale.linear(yMin, yMax).range(0, height).nice();
-    
-    if (zProp) { // encode 3rd measure as dot size
-      zMin = zProp.aggregate(uv.Aggregators.MIN),
-      zMax = zProp.aggregate(uv.Aggregators.MAX),
-      z = pv.Scale.linear(zMin, zMax).range(5, 15);
-    }
-
-    var items = this.collection.all("items").values();
-    
-    var colors = pv.Scale.ordinal(_.map(items, function(i) { return i.key }))
-                        .range('#8DB5C8', '#808E89', '#B16649', '#90963C', '#A2C355', '#93BAA1', '#86A2A9')
-    
-    
-    /* The root panel. */
-    var vis = new pv.Panel()
-      .width(width).height(height)
-      .bottom(this.margin.bottom).top(this.margin.top)
-      .left(this.margin.left).right(this.margin.right)
-      .strokeStyle('#ccc')
-      .canvas(this.$canvas[0]);    
-
-    /* X-axis and ticks. */
-    vis.add(pv.Rule)
-        .data(function() { return x.ticks(); })
-        .strokeStyle(function(d) {return d ? "#eee" : "#999"; })
-        .left(function(d) { return parseInt(x(d), 10)+0.5; })
-      .anchor("bottom").add(pv.Label)
-        .text(x.tickFormat)
-        .textStyle("#777")
-        .font('11px Helvetica');
-
-    /* Y-axis and ticks. */
-    vis.add(pv.Rule)
-        .data(function() { return y.ticks(); })
-        .strokeStyle(function(d) { return d ? "#eee" : "#999"; })
-        .bottom(function(d) { return parseInt(y(d), 10)+0.5; })
-      .anchor("left").add(pv.Label)
-        .text(y.tickFormat)
-        .textStyle("#777")
-        .font('11px Helvetica');
-
-    // xAxis Name
-    vis.add(pv.Label)
-      .text(xProp.name)
-      .left(width/2)
-      .bottom(-35)
-      .textStyle('#555')
-      .font('bold 14px Helvetica');
-
-    // yAxis Name
-    vis.add(pv.Label)
-      .text(yProp.name)
-      .left(-110)
-      .top(height/2)
-      .textAngle(-Math.PI / 2)
-      .textStyle('#555')
-      .font('bold 14px Helvetica');
-     
-
-    /* The dot plot. */
-    vis.add(pv.Panel)
-        .overflow("hidden")
-        .data(items)
-        .add(pv.Panel) // group dot and label for redraw
-          .def('active', false)
-        // .events("all") // - eats all the events that should reach dots.
-        .event("mousedown", pv.Behavior.pan())
-        .event("mousewheel", pv.Behavior.zoom())
-        .event("pan", transform)
-        .event("zoom", transform)
-
-        .add(pv.Dot)
-          .left(function(d) { return x(d.values(xProp.key).at(that.itemValueIndex)); })
-          .bottom(function(d) { return y(d.values(yProp.key).at(that.itemValueIndex)); })
-          .radius(function(d) { return zProp ? z(d.values(zProp.key).at(that.itemValueIndex)): 10; })          
-          .fillStyle(function(d) { return this.parent.active() ? '#fff' : colors(d.key); })
-          .strokeStyle(function(d) { return this.parent.active() ? colors(d.key) : null })
-          .lineWidth(4)
-            .event("mouseover", function() { return this.parent.active(true); })
-            .event("mouseout", function() { return this.parent.active(false); })
-        .anchor("top").add(pv.Label)
-          .text(function(d) { 
-            var str = d.identify();
-            
-            if (zProp) {
-              str += " / "+zProp.name+": "+formatter.format(d.values(zProp.key).at(that.itemValueIndex));
-            }
-            
-            return str;
-          })
-          .font('12px Helvetica')
-          .textStyle('#666')
-          .visible(function() { return this.parent.active(); });
-
-    /** Update the x- and y-scale domains per the new transform. */
-    function transform() {
-      var t = this.transform().invert(),
-          t2 = t.translate(0,0), // a copy of the transform object
-          tMin, 
-          tMax;
-
-      t2.y = -t2.y; // invert the y-offset, because center is on left bottom edge
-      tMin = t2.translate(x(xMin), y(yMin));
-      tMax = t2.translate(x(xMax), y(yMax));
-      x.domain(x.invert(tMin.x), x.invert(tMax.x));
-      y.domain(y.invert(tMin.y), y.invert(tMax.y));
-      vis.render();
-    }
-
-    vis.render();
-  }
-});
-
-// Displays 1 numbers_series measure for each item
-// TODO: make third measure optional
-uv.Scatterplot.spec = {
-  measures: [
-    {
-      types: ['number'],
-      cardinality: 2
-    },
-    {
-      types: ['number'],
-      cardinality: 1,
-      optional: true
-    }
-  ]
-};
-
-
-// Stacks
-// =============================================================================
-
-uv.Stacks = uv.Visualization.extend({
-  constructor: function(collection, options) {
-    uv.Visualization.call(this, collection, options);
-    this.margin = {top: 30, right: 40, bottom: 30, left: 150};
-    this.build();
-    
-  },
-  // Simple stack layout algorithm
-  // Computes a suitable column count to fit the stacks
-  // dimensions (width x height)
-  computeCols: function(n, width, height) {
-    var cols = 1, // number of cols
-        a, // edge length
-        rows; // number of rows
-    
-    while(true) {
-      a = width / cols;
-      rows = Math.ceil(n/cols);
-      if (rows*a <= height && n*a*a <= width*height)
-        return cols;
-      else {
-        cols += 1;
-      }
-    }
-  },
-  prepareProperty: function() {
-    // register stacks based on property values (=groups)
-    this.property = this.collection.get('properties', this.measures[0]);
-    this.propertyValues = this.property.all('values');
-    this.stackWidth = parseInt(this.width / this.property.all('values').length, 10);
-    this.stackColors = pv.Scale.ordinal(this.propertyValues.values())
-                 .range('#8DB5C8', '#808E89', '#B16649', '#90963C', '#A2C355', '#93BAA1', '#86A2A9');
-    
-    var max = 0; // maximum of items to be displayed in one stack
-    this.propertyValues.each(function(index, value) {
-      max = Math.max(max, value.all('items').length);
-    });
-    
-    this.cols = this.computeCols(max, this.stackWidth, this.height);
-  },
-  addStacks: function() {
-    var that = this;
-    this.propertyValues.each(function(index, value) {
-      that.scene.add(new uv.Stacks.Stack({
-        items: value.all('items'),
-        scene: that.scene, // direct scene access for the Stack
-        stacks: that, // direct access to the Stacks object for the Stack
-        x: index*that.stackWidth,
-        cols: that.cols,
-        index: index,
-        width: that.stackWidth,
-        height: that.height,
-        fillStyle: that.stackColors(value.val).color,
-        name: value.val
-      }));
-    });
-    
-    this.scene.add(new uv.Label({
-      x: that.width,
-      y: 20,
-      font: '12px Helvetica Neue, Helvetica, Arial',
-      text: function() { return "FPS: "+parseInt(that.scene.framerate); },
-      textAlign: 'right',
-      fillStyle: 'black'
-    }));
-  },
-  build: function() {
-    var that = this;
-    
-    this.width = this.$canvas.width()-10,
-    this.height = this.$canvas.height()-10;
-    
-    this.stackItems = new uv.SortedHash();
-    
-    // create scenegraph
-    this.scene = new uv.Scene({
-      fillStyle: '#fff'
-    });
-    
-    this.scene.register(uv.cmds.RequestFramerate, {framerate: 50});    
-    
-    // set up stuff based on the currently selected property
-    this.prepareProperty();
-    this.addStacks();
-  },
-  zoom: function(zoomLevel) {
-    this.scene.scale(zoomLevel, zoomLevel);
-  },
-  changeGroup: function(group) {
-    // update stacks
-    this.measures = [group];
-    this.prepareProperty();
-
-    this.scene.replace('children', new uv.SortedHash());
-    this.addStacks();
-    
-    var scene = this.scene;
-  },
-  render: function() {
-    var scene = this.scene;
-    
-    // set up display
-    scene.display({
-      container: $('#canvas'),
-      width: this.width,
-      height: this.height,
-      paning: true,
-      zooming: true
-    });
-    
-    scene.start();
-  }
-});
-
-
-// Stacks.Stack
-// =============================================================================
-
-uv.Stacks.Stack = function(properties) {
-  // super call
-  uv.Actor.call(this);
-    
-  _.extend(this.properties, {
-    width: 30,
-    height: 50,
-    strokeStyle: '#000',
-    fillStyle: '#aaa'
-  }, properties);
-  
-  this.build();
-};
-
-uv.Stacks.Stack.prototype = Object.extend(uv.Actor);
-
-uv.Stacks.Stack.prototype.build = function(ctx) {
-  var that = this;
-  
-  var itemSize = parseInt(this.p('width') / this.p('cols'), 10);
-  var index = 0;
-  this.p('items').eachKey(function(key, item) {
-    var row = parseInt(index / that.p('cols'), 10);
-    
-    var stackItem;
-    stackItem = new uv.Stacks.Item({
-      x: Math.random()*400,
-      y: Math.random()*600,
-      size: 1,
-      fillStyle: function() { return this.active ? '#ccc' : that.p('fillStyle') },
-      interactive: true,
-      item: item
-    });
-    
-    stackItem.key = key; // remember the key
-    stackItem.p('scene', that.p('scene'));
-    stackItem.updateX(itemSize*(index % that.p('cols'))+that.p('index')*that.p('width'));
-    stackItem.updateY(that.p('height')-100-row*itemSize);
-    stackItem.updateSize(itemSize-1);
-    
-    that.p('scene').add(stackItem);
-    
-    index += 1;
-  });
-  
-  this.add(new uv.Label({
-    x: that.p('width')/2,
-    y: that.p('height')-20,
-    font: '11px Helvetica Neue, Helvetica, Arial',
-    // rotation: uv.PI/2+uv.PI,
-    text: function() { return that.p('name'); },
-    textAlign: 'center',
-    fillStyle: '#333'
-  }));
-};
-
-uv.Stacks.Stack.prototype.draw = function(ctx) {
-  // TODO: implement
-  // ctx.fillRect(0, 0, this.properties.width, this.properties.height);
-  // ctx.fillStyle = this.prop('fillStyle');
-  // ctx.fillRect(0, 0, this.properties.width, this.properties.height);
-};
-
-// uv.Stacks.Item - extends uv.Bar
-// =============================================================================
-
-uv.Stacks.Item = function(properties) {
-  // super call
-  var that = this;
-  uv.Bar.call(this);
-    
-  _.extend(this.properties, {
-    size: 10,
-    name: 'Unknown'
-  }, properties);
-  
-  this.ts = new uv.Tween({
-    obj: this.properties,
-    property: 'size',
-    duration: 2
-  });
-  
-  this.tx = new uv.Tween({
-    obj: this.properties,
-    property: 'x',
-    duration: 2
-  });
-  
-  this.ty = new uv.Tween({
-    obj: this.properties,
-    property: 'y',
-    duration: 2
-  });
-  
-  // request and release high framerate on demand
-  this.ts.on('start', function() { that.p('scene').execute(uv.cmds.RequestFramerate); });
-  this.ts.on('finish', function() { that.p('scene').unexecute(uv.cmds.RequestFramerate); });
-
-  this.build();
-};
-
-uv.Stacks.Item.prototype = Object.extend(uv.Bar);
-
-uv.Stacks.Item.prototype.build = function(ctx) {
-  var that = this;
-  
-  var bar = new uv.Bar({
-    x: -200,
-    y: 0,
-    width: 200,
-    height: 50,
-    fillStyle: '#eee',
-    visible: function() { return that.active ? true : false; }
-  });
-  
-  bar.add(new uv.Label({
-    x: 10,
-    y: 20,
-    font: 'bold 15px Helvetica Neue, Helvetica, Arial',
-    text: function() { return that.p('item').identify(); },
-    textAlign: 'left',
-    fillStyle: '#333'
-  }));
-  
-  this.add(bar);
-
-};
-
-uv.Stacks.Item.prototype.updateX = function(tx) {
-  this.tx.continueTo(tx, 1.5);
-};
-
-uv.Stacks.Item.prototype.updateY = function(ty) {
-  this.ty.continueTo(ty, 1.5);
-};
-
-uv.Stacks.Item.prototype.updateSize = function(size) {
-  this.ts.continueTo(size, 1.5);
-};
-
-// trigger motion tween ticks
-uv.Stacks.Item.prototype.update = function() {
-  this.tx.tick();
-  this.ty.tick();
-  this.ts.tick();
-};
-
-uv.Stacks.Item.prototype.draw = function(ctx) {
-  ctx.fillStyle = this.p('fillStyle');
-  ctx.fillRect(0, 0, this.p('size'), this.p('size'));
-};
-
-uv.Stacks.Item.prototype.drawMask = function(ctx) {
-  ctx.beginPath();
-  
-  ctx.moveTo(0, 0);
-  ctx.lineTo(this.p('size'), 0);
-  ctx.lineTo(this.p('size'), this.p('size'));
-  ctx.lineTo(0, this.p('size'));
-  ctx.lineTo(0, 0);
-  ctx.closePath();
-};
-
-// Specification
-//------------------------------------------------------------------------------
-
-uv.Stacks.spec = {
-  measures: [
-    {
-      types: ['number'],
-      unique: false,
-      cardinality: 1
-    }
-  ]
-};
-
-// Table
-// =============================================================================
-
-uv.Table = uv.Visualization.extend({
-  constructor: function(collection, options) {
-    uv.Visualization.call(this, collection, options);
-    this.build();
-  },
-  build: function() {
-    
-  },
-  render: function() {
-    this.$canvas.html(this.renderCollection(this.collection));
-  },
-  renderItem: function(c, i) {
-    var that = this;
-    str = '<tr>';
-    
-    c.all("properties").eachKey(function(key, attr) {
-      if (i.type(key) === 'collection') {
-        str += '<td>'+that.renderCollection(i.first(key))+'</td>';
-      } else {
-        str += '<td>'        
-        i.values(key).each(function(index, v) {
-          str += v+'<br/>';
-        });
-        str += '</td>'
-      }
-    });
-    
-    str += '</tr>';
-    return str;
-  },
-  renderCollection: function(c) {
-    var that = this;
-    
-    str = '<table><thead><tr>';
-    c.all("properties").each(function(index, p) {
-      str += '<th>'+p.name+'</th>';
-    });
-    
-    str += '</tr></thead><tbody>';
-
-    c.all("items").each(function(index, item) {
-      str += that.renderItem(c, item);
-    });
-    
-    str += '</tbody></table>';
-    return str;
-  }
-});
-
-// Specification
-//-----------------------------------------------------------------------------
-
-// Displays 1..n numbers
-uv.Table.spec = {
-  measures: [
-    {
-      types: ['number', 'string', 'date'],
-      unique: true,
-      cardinality: 1,
-      optional: true
-    }
-  ]
-};
 // export namespace
 window.uv = uv;
 

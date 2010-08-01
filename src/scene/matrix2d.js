@@ -1,16 +1,8 @@
-////////////////////////////////////////////////////////////////////////////
-// 2D Matrix
-// Taken from Processing.js
-////////////////////////////////////////////////////////////////////////////
-
-/* TODO: look for a more functional-style matrix implementation */
-/* http://files.geomajas.org/doc/jsdoc/1.3.1/overview-summary-Matrix2D.js.html*/
-
-/*
-  Helper function for printMatrix(). Finds the largest scalar
-  in the matrix, then number of digits left of the decimal.
-  Called from Matrix2D's print() method.
-*/
+// Matrix2D (taken from Processing.js)
+// =============================================================================
+// 
+// TODO: look for a more functional-style matrix implementation
+// http://files.geomajas.org/doc/jsdoc/1.3.1/overview-summary-Matrix2D.js.html
 
 uv.printMatrixHelper = function printMatrixHelper(elements) {
   var big = 0;
@@ -22,14 +14,12 @@ uv.printMatrixHelper = function printMatrixHelper(elements) {
       big = Math.abs(elements[i]);
     }
   }
-
   var digits = (big + " ").indexOf(".");
   if (digits === 0) {
     digits = 1;
   } else if (digits === -1) {
     digits = (big + " ").length;
   }
-
   return digits;
 };
 

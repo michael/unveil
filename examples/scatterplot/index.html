@@ -4,29 +4,15 @@
   <title>Unveil.js</title>
   
   <!-- libraries -->
-  <script src="../lib/jquery-1.4.2.js"></script>
-  <script src="../lib/protovis-d3.2.js"></script>
-  <script src="../lib/underscore.js"></script>
-  <script src="../src/uv.js"></script>
-  <script src="../src/sorted_hash/aggregators.js"></script>
-  <script src="../src/sorted_hash/comparators.js"></script>
-  <script src="../src/sorted_hash/sorted_hash.js"></script>
-  <script src="../src/node/node.js"></script>
-  <script src="../src/collection/value.js"></script>
-  <script src="../src/collection/item.js"></script>
-  <script src="../src/collection/property.js"></script>
-  <script src="../src/collection/collection.js"></script>
-  <script src="../src/collection/criterion.js"></script>
-  <script src="../src/collection/transformers/group.js"></script>
-  
-  <!-- source -->
-  <script src="../src/visualization/visualization.js"></script>
-  <script src="../src/visualization/visualizations/barchart.js"></script>
-  <script src="../src/visualization/visualizations/linechart.js"></script>
+  <script src="../../lib/jquery-1.4.2.js"></script>
+  <script src="../../lib/jquery.mousewheel.js"></script>
+  <script src="../../lib/protovis-d3.2.js"></script>
+  <script src="../../lib/underscore.js"></script>
+  <script src="../../unveil.js"></script>
+  <script src="./scatterplot.js"></script>
   
   <!-- fixtures -->
-  <script src="../fixtures/countries.js"></script>
-  <script src="../fixtures/salesmen.js"></script>
+  <script src="../../fixtures/countries.js"></script>
   
   <script>
     $(function() {
@@ -34,20 +20,16 @@
       c = new uv.Collection(countries_fixture);
       
       // construct a visualization based on that data
-      vis = new uv.Linechart(c, {
-        measures: ['cellular_subscriptions'],
+      vis = new uv.Scatterplot(c, {
+        measures: ['life_expectancy_male', 'life_expectancy_female', 'population'],
         params: {}
       });
-      vis.render();
       
-      $('#linechart_measures').change(function() {
-        vis.measures = [$(this).val()];
-        vis.render();
-      });
+      vis.render();
     });
   </script>
   
-  <link href="styles.css" media="screen" rel="stylesheet" type="text/css" />
+  <link href="../styles.css" media="screen" rel="stylesheet" type="text/css" />
 </head>
 <body>
   <h1>Unveil.js - data driven visualizations</h1>
