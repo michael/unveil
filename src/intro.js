@@ -1,1 +1,2 @@
-(function( window, undefined ) {
+(function() {
+var root = this;

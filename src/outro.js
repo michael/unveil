@@ -1,4 +1,6 @@
 // export namespace
-window.uv = uv;
+if (root !== 'undefined') root.uv = uv;
 
-})(window);
+// Export the uv object for CommonJS.
+if (typeof exports !== 'undefined') exports.uv = uv;
+})();

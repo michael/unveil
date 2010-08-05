@@ -20,8 +20,8 @@ Features:
   * Motion tweening
   * Modification matrix (applied after the initial transforms, specified via properties)
   * Commands (e.g. save cpu cycles using event-based framerate determination)
-  * Multiple Display (The scene can be projected to one or more canvas elements)
-  * Mouse interaction support on Display level (Zooming, Paning)
+  * Multiple Displays (the scene can be projected to one or more canvas elements)
+  * Mouse interaction support on Display level (zooming, paning)
 
 Examples
 ---------------------
