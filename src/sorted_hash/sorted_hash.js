@@ -10,11 +10,11 @@ uv.SortedHash = function (data) {
   this.length = 0;
   
   if (data instanceof Array) {
-    $.each(data, function(index, datum) {
+    _.each(data, function(datum, index) {
       that.set(index, datum);
     });
   } else if (data instanceof Object) {
-    $.each(data, function(key, datum) {
+    _.each(data, function(datum, key) {
       that.set(key, datum);
     });
   }
@@ -26,7 +26,7 @@ uv.SortedHash = function (data) {
 uv.SortedHash.prototype.clone = function () {
   var copy = new uv.SortedHash();
   copy.length = this.length;
-  $.each(this.data, function(key, value) {
+  _.each(this.data, function(value, key) {
     copy.data[key] = value;
   });
   copy.keyOrder = this.keyOrder.slice(0, this.keyOrder.length);
@@ -97,9 +97,9 @@ uv.SortedHash.prototype.key = function (index) {
 //   * [Function] 
 uv.SortedHash.prototype.each = function (f) {
   var that = this;
-  $.each(this.keyOrder, function (index, key) {
+  _.each(this.keyOrder, function(key, index) {
     f.call(that, index, that.data[key]);
-  });
+  })
   return this;
 };
 
@@ -108,7 +108,7 @@ uv.SortedHash.prototype.each = function (f) {
 //   * [Function] 
 uv.SortedHash.prototype.eachKey = function (f) {
   var that = this;
-  $.each(this.keyOrder, function (index, key) {
+  _.each(this.keyOrder, function (key, index) {
     f.call(that, key, that.data[key]);
   });
   return this;

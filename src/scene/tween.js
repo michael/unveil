@@ -35,7 +35,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *****************************************/
 
-// uv.Tween = function(obj, prop, func, begin, finish, duration) {
 uv.Tween = function(opts) {
   this.prop = opts.property;
   this.obj = opts.obj;

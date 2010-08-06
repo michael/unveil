@@ -1,4 +1,5 @@
-(function( window, undefined ) {
+(function() {
+var root = this;
 // Top level namespace
 var uv = {};
 
@@ -89,11 +90,11 @@ uv.SortedHash = function (data) {
   this.length = 0;
   
   if (data instanceof Array) {
-    $.each(data, function(index, datum) {
+    _.each(data, function(datum, index) {
       that.set(index, datum);
     });
   } else if (data instanceof Object) {
-    $.each(data, function(key, datum) {
+    _.each(data, function(datum, key) {
       that.set(key, datum);
     });
   }
@@ -105,7 +106,7 @@ uv.SortedHash = function (data) {
 uv.SortedHash.prototype.clone = function () {
   var copy = new uv.SortedHash();
   copy.length = this.length;
-  $.each(this.data, function(key, value) {
+  _.each(this.data, function(value, key) {
     copy.data[key] = value;
   });
   copy.keyOrder = this.keyOrder.slice(0, this.keyOrder.length);
@@ -176,9 +177,9 @@ uv.SortedHash.prototype.key = function (index) {
 //   * [Function] 
 uv.SortedHash.prototype.each = function (f) {
   var that = this;
-  $.each(this.keyOrder, function (index, key) {
+  _.each(this.keyOrder, function(key, index) {
     f.call(that, index, that.data[key]);
-  });
+  })
   return this;
 };
 
@@ -187,7 +188,7 @@ uv.SortedHash.prototype.each = function (f) {
 //   * [Function] 
 uv.SortedHash.prototype.eachKey = function (f) {
   var that = this;
-  $.each(this.keyOrder, function (index, key) {
+  _.each(this.keyOrder, function (key, index) {
     f.call(that, key, that.data[key]);
   });
   return this;
@@ -493,7 +494,7 @@ uv.Node.prototype.toString = function() {
   var str = "Node#"+this.id+" {\n",
       that = this;
       
-  $.each(this._properties, function(key, node) {
+  _.each(this._properties, function(node, key) {
     str += "  "+key+": "+that.values(key).values()+"\n";
   });
   
@@ -1055,6 +1056,137 @@ uv.Collection.transformers.coOccurrencesBaccigalupo.params = {
     type: "number"
   }
 };
+uv.DataGraph = function(g) {
+  uv.Node.call(this);
+  var that = this;
+  
+  // schema nodes
+  var types = _.select(g, function(node, key) {
+    if (node.type === 'type') {
+      that.set('types', key, new uv.Type(this, key, node));
+      return true;
+    }
+    return false;
+  });
+  
+  // data nodes
+  var resources = _.select(g, function(node, key) {
+    if (node.type !== 'type') {
+      var res = that.get('resources', key) || new uv.Resource(that, key, node);
+      that.set('resources', key, res);
+      that.get('types', node.type).set('resources', key, res);
+      return true;
+    }
+    return false;
+  });
+  
+  // Now that all resources are registered we can build them
+  this.all('resources').each(function(index, r) {
+    r.build();
+  });
+  
+};
+
+
+uv.DataGraph.prototype = Object.extend(uv.Node);
+
+uv.VALUE_TYPES = [
+  'string',
+  'number',
+  'date',
+  'datetime',
+  'location'
+];
+
+uv.isValueType = function (type) {
+  return _.include(uv.VALUE_TYPES, type);
+};
+
+uv.Type = function(g, key, type) {
+  var that = this;
+  uv.Node.call(this);
+  
+  this.g = g; // belongs to the DataGraph
+  this.key = key;
+  this.name = type.name;
+  
+  // extract properties
+  _.each(type.properties, function(property, key) {
+    var p = new uv.Node();
+    p.key = key;
+    p.unique = property.unique;
+    p.name = property.name;
+    p.expected_type = property.expected_type;
+    p.replace('values', new uv.SortedHash());
+    p.isValueType = function() {
+      return uv.isValueType(p.expected_type);
+    };
+    p.isObjectType = function() {
+      return !p.isValueType();
+    };
+    
+    that.set('properties', key, p);
+  });
+};
+
+uv.Type.prototype = Object.extend(uv.Node);
+uv.Resource = function(g, key, data) {
+  uv.Node.call(this);
+  
+  this.g = g;
+  this.key = key;
+  this.type = g.get('types', data.type);
+  // memoize raw data for the build process
+  this.data = data;
+};
+
+uv.Resource.prototype = Object.extend(uv.Node);
+
+uv.Resource.prototype.build = function() {
+  var that = this;
+  _.each(this.data.properties, function(property, key) {
+    
+    // Ask the schema wheter this property holds a
+    // value type or an object type
+    var values = _.isArray(property) ? property : [property];
+    var p = that.type.get('properties', key);
+    
+    if (p.isObjectType()) {
+      _.each(values, function(v, index) {
+        var res = that.g.get('resources', v);
+        that.set(p.key, res.key, res);
+      });
+    } else {
+      _.each(values, function(v, index) {
+        var val = p.get('values', v);
+        // look if this value is already registerd
+        // on this property
+        if (!val) {
+          val = new uv.Node({value: v});
+        }
+        that.set(p.key, v, val);
+        p.set('values', v, val);
+      });
+    }
+  });
+};
+
+// Delegates to Node#get if 3 arguments are provided
+uv.Resource.prototype.get = function(property, key) {
+  var p = this.type.get('properties', property);
+  if (!p) return null;
+  
+  if (arguments.length === 1) {
+    if (p.isObjectType()) {
+      return p.unique ? this.first(property) : this.all(property);
+    } else {
+      return p.unique ? this.value(property) : this.values(property);
+    }
+  } else {
+    return uv.Node.prototype.get.call(this, property, key);
+  }
+};
+
 ////////////////////////////////////////////////////////////////////////////
 // Vector
 // Taken from Processing.js
@@ -1907,7 +2039,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 *****************************************/
 
-// uv.Tween = function(obj, prop, func, begin, finish, duration) {
 uv.Tween = function(opts) {
   this.prop = opts.property;
   this.obj = opts.obj;
@@ -2291,6 +2422,8 @@ uv.Visualization = new Class({
 });
 
 // export namespace
-window.uv = uv;
+if (root !== 'undefined') root.uv = uv;
 
-})(window);
+// Export the uv object for CommonJS.
+if (typeof exports !== 'undefined') exports.uv = uv;
+})();

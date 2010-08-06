@@ -131,7 +131,7 @@ uv.Node.prototype.toString = function() {
   var str = "Node#"+this.id+" {\n",
       that = this;
       
-  $.each(this._properties, function(key, node) {
+  _.each(this._properties, function(node, key) {
     str += "  "+key+": "+that.values(key).values()+"\n";
   });
   

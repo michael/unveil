@@ -1,5 +1,10 @@
+# Build script adpated from http://github.com/jashkenas/coffee-script/Cakefile
+# ==============================================================================
+
 fs            = require 'fs'
 sys           = require 'sys'
+CoffeeScript  = require 'coffee-script'
+{helpers}     = require './lib/helpers'
 {spawn, exec} = require 'child_process'
 
 # ANSI terminal colors.
@@ -26,6 +31,9 @@ files = [
   'src/collection/transformers/group.js'
   'src/collection/transformers/co_occurrences.js'
   'src/collection/transformers/co_occurrences_baccigalupo.js'
+  'src/data_graph/data_graph.js'
+  'src/data_graph/type.js'
+  'src/data_graph/resource.js'
   'src/scene/vector.js'
   'src/scene/matrix2d.js'
   'src/scene/actor.js'
@@ -60,7 +68,7 @@ build = ->
 
 # Watch a source file for changes
 watch = (file) ->
-  fs.watchFile file, (curr, prev) ->
+  fs.watchFile file, {persistent: true, interval: 300}, (curr, prev) ->
     if "#{curr.mtime}" != "#{prev.mtime}"
       build()
       log "Sucessfully rebuilt ./unveil.js at #{curr.mtime}", green  
@@ -81,5 +89,31 @@ task 'build:full', 'Rebuild and create a compressed version', ->
     throw err if err
     log 'Sucessfully built ./unveil.js and ./unveil.min.js', green
 
-task 'test', 'Run the testsuite', ->
-  log 'TODO: implement', red
+
+task 'test', 'run the test suite', ->
+  helpers.extend global, require 'assert'
+  passedTests = failedTests = 0
+  startTime   = new Date
+  originalOk  = ok
+  helpers.extend global, {
+    ok: (args...) -> passedTests += 1; originalOk(args...)
+    CoffeeScript: CoffeeScript
+  }
+  
+  process.on 'exit', ->
+    time = ((new Date - startTime) / 1000).toFixed(2)
+    message = "passed #passedTests tests in #time seconds#reset"
+    if failedTests
+      log "failed #failedTests and #message", red
+    else
+      log message, green
+  fs.readdir 'test', (err, files) ->
+    files.forEach (file) ->
+      return unless file.match(/\.coffee$/i)
+      fileName = path.join 'test', file
+      fs.readFile fileName, (err, code) ->
+        try
+          CoffeeScript.run code.toString(), {fileName}
+        catch err
+          failedTests += 1
+          log "failed #fileName", red, '\n' + err.stack.toString()

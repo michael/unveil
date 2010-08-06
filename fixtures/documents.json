@@ -1,0 +1,170 @@
+{
+  "/dc/document": {
+    "type": "type",
+    "name": "Document",
+    "properties": {
+      "title": {
+        "name": "Document Title",
+        "unique": true,
+        "expected_type": "string"
+      },
+      "entities": {
+        "name": "Associated Entities",
+        "unique": false,
+        "expected_type": "/dc/entity"
+      },
+      "page_count": {
+        "name": "Page Count",
+        "unique": true,
+        "expected_type": "number"
+      },
+      "authors": {
+        "name": "Authors",
+        "unique": false,
+        "expected_type": "string"
+      }
+    }
+  },
+  "/dc/entity": {
+    "type": "type",
+    "name": "Entity",
+    "properties": {
+      "name": {
+        "name": "Entity Name",
+        "unique": true,
+        "expected_type": "string"
+      },
+      "mentions": {
+        "name": "Mentions",
+        "unique": false,
+        "expected_type": "/dc/mention"
+      }
+    }
+  },
+  "/dc/mention": {
+    "name": "Mention",
+    "type": "type",
+    "properties": {
+      "document": {
+        "name": "Document",
+        "unique": true,
+        "expected_type": "/dc/document"
+      },
+      "entity": {
+        "name": "Entity",
+        "unique": true,
+        "expected_type": "/dc/entity"
+      },
+      "page": {
+        "name": "Occured on page",
+        "unique": true,
+        "expected_type": "number"
+      }
+    }
+  },
+  
+  
+  "/doc/protovis_introduction": {
+    "type": "/dc/document",
+    "properties": {
+      "title": "Protovis",
+      "authors": ["Michael Bostock", "Jeffrey Heer"],
+      "page_count": 8,
+      "entities": ["/location/stanford", "/location/new_york"]
+    }
+  },
+  "/doc/unveil_introduction": {
+    "type": "/dc/document",
+    "properties": {
+      "title": "Unveil.js",
+      "authors": ["Michael Aufreiter", "Lindsay Kay"],
+      "page_count": 5,
+      "entities": []
+    }
+  },
+  "/doc/processing_js_introduction": {
+    "type": "/dc/document",
+    "properties": {
+      "title": "Processing.js",
+      "authors": ["Alistair MacDonald", "David Humphrey", "Michael Aufreiter"],
+      "page_count": 20
+    }
+  },
+  
+  
+  
+  
+  "/location/stanford": {
+    "type": "/dc/entity",
+    "properties": {
+      "name": "Stanford",
+      "mentions": ["M0000001"]    
+    }
+  },
+  "/location/new_york": {
+    "type": "/dc/entity",
+    "properties": {
+      "name": "New York",
+      "mentions": ["M0000002", "M0000003"]
+    }
+  },
+  "/location/toronto": {
+    "type": "/dc/entity",
+    "properties": {
+      "name": "Toronto",
+      "mentions": ["M0000004"]
+    }
+  },
+  "/person/michael_bostock": {
+    "type": "/dc/entity",
+    "properties": {
+      "name": "Michael Bostock",
+      "mentions": ["M0000005"]
+    }
+  },
+
+
+
+
+  "M0000001": {
+    "type": "/dc/mention",
+    "properties": {
+      "document": "/doc/protovis_introduction",
+      "entity": "/location/stanford",
+      "page": 2
+    }
+  },
+  "M0000002": {
+    "type": "/dc/mention",
+    "properties": {
+      "document": "/doc/protovis_introduction",
+      "entity": "/location/new_york",
+      "page": 8
+    }
+  },
+  "M0000003": {
+    "type": "/dc/mention",
+    "properties": {
+      "document": "/doc/processing_js_introduction",
+      "entity": "/location/new_york",
+      "page": 5
+    }
+  },
+  "M0000004": {
+    "type": "/dc/mention",
+    "properties": {
+      "document": "/doc/processing_js_introduction",
+      "entity": "/location/toronto",
+      "page": 2
+    }
+  },
+  "M0000005": {
+    "type": "/dc/mention",
+    "properties": {
+      "document": "/doc/protovis_introduction",
+      "entity": "/person/michael_bostock",
+      "page": 1
+    }
+  }
+
+}
