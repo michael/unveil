@@ -29,5 +29,4 @@ uv.DataGraph = function(g) {
   
 };
 
-
 uv.DataGraph.prototype = Object.extend(uv.Node);

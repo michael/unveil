@@ -1087,7 +1087,6 @@ uv.DataGraph = function(g) {
   
 };
 
-
 uv.DataGraph.prototype = Object.extend(uv.Node);
 
 uv.VALUE_TYPES = [
@@ -1414,7 +1413,7 @@ uv.Matrix2D.prototype = {
   determinant: function() {
     return this.elements[0] * this.elements[4] - this.elements[1] * this.elements[3];
   },
-  // non-destrucive version
+  // non-destructive version
   inverse: function() {
     var res = new uv.Matrix2D(this);
     return res.invert() ? res : null;
@@ -1523,8 +1522,7 @@ uv.Actor = function(properties) {
   uv.Node.call(this);
   this.childCount = 0;
   
-  // Default actor properties
-  this.properties = {
+  this.properties = _.extend({
     x: 0,
     y: 0,
     scaleX: 1,
@@ -1533,9 +1531,9 @@ uv.Actor = function(properties) {
     fillStyle: '#000',
     strokeStyle: '#000',
     visible: true
-  };
+  }, properties);
   
-  _.extend(this.properties, properties);
+  this.replace('children', new uv.SortedHash());
   
   // Under mouse cursor
   this.active = false;
@@ -1550,7 +1548,8 @@ uv.Actor = function(properties) {
 
 uv.Actor.prototype = Object.extend(uv.Node);
 
-// evaluates a property (in case of a function
+
+// Evaluates a property (in case of a function
 // the result of the function is returned)
 
 uv.Actor.prototype.property = function(property, value) {
@@ -1566,6 +1565,7 @@ uv.Actor.prototype.property = function(property, value) {
 };
 
 // Property get-setter aliases
+
 uv.Actor.prototype.prop = uv.Actor.prototype.property;
 uv.Actor.prototype.p = uv.Actor.prototype.property;
 
@@ -1577,7 +1577,7 @@ uv.Actor.prototype.p = uv.Actor.prototype.property;
 uv.Actor.prototype.setScene = function(scene) {
   this.scene = scene;
   if (this.properties.interactive) {
-    scene.interactiveNodes.push(this);
+    scene.interactiveActors.push(this);
   }
   
   if (this.all('children')) {
@@ -1588,8 +1588,7 @@ uv.Actor.prototype.setScene = function(scene) {
 };
 
 
-// Adds a new actor to the scene.
-// The object is attached as a child object
+// Adds a new Actor as a child
 
 uv.Actor.prototype.add = function(child) {
   this.set('children', this.childCount+=1, child);
@@ -1604,26 +1603,15 @@ uv.Actor.prototype.add = function(child) {
 // You have full control about the current transformation matrix. Be aware that
 // Actor properties like x, y, scaleX, scaleY, rotation are applied in the first
 // place. After that this modification matrix is applied. It's good practice to
-// not specify any properties when working with the modification matrix. If you
-// do that you can treat the modification matrix as the actual transformation
-// matrix.
+// not specify any properties when working with the modification matrix. By doing
+// so you can treat the modification matrix as the actual transformation matrix.
 // 
 // Destructive operations
 // .............................................................................
 //
-// Those methods all reset the modification matrix for now. So you cant combine
+// Those methods all reset the modification matrix for now. So you can't combine
 // setScale() and setRotation()
 
-// Scales and rotates around a given point
-// Rotation does not work yet
-// TODO: implement rotation according to [R] = [T]-1 * [R0] * [T]
-
-uv.Actor.prototype.setScaleAndRotateAroundPos = function(scaleX, scaleY, rot, rx, ry) {
-  this.matrix.reset();
-  this.matrix.translate(rx, ry);
-  this.matrix.scale(scaleX, scaleY);
-  this.matrix.translate(-rx, -ry);
-};
 
 uv.Actor.prototype.setTranslation = function(x, y) {
   this.matrix.reset();
@@ -1643,7 +1631,7 @@ uv.Actor.prototype.setRotation = function(rotation) {
 // Non destructive operations
 // .............................................................................
 // 
-// Those methods can be chained together. The modification matrix is updated
+// Those methods can be chained together. The Modification Matrix is updated
 // according to the specified operation.
 
 uv.Actor.prototype.translate = function(x, y) {
@@ -1669,6 +1657,13 @@ uv.Actor.prototype.update = function() {};
 uv.Actor.prototype.draw = function(ctx) {};
 
 uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
+  var p = new uv.Vector(mouseX,mouseY),
+      transform = new uv.Matrix2D(this.tmatrix);
+  
+  pnew = transform.inverse().mult(p);
+  mouseX = pnew.x;
+  mouseY = pnew.y;
+  
   if (this.drawMask && ctx.isPointInPath) {
     this.drawMask(ctx);
     if (ctx.isPointInPath(mouseX, mouseY))
@@ -1679,10 +1674,10 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   return false;
 };
 
-// compile transformation matrix
+// Precompile the Transformation Matrix
+
 uv.Actor.prototype.preRender = function() {
-  // start with the parent matrix
-  
+  // Start with the parent matrix
   if (this.parent) {
     this.tmatrix = new uv.Matrix2D(this.parent.tmatrix);
   } else {
@@ -1690,12 +1685,11 @@ uv.Actor.prototype.preRender = function() {
   }
   
   this.update();
-  
   this.tmatrix.translate(this.p('x'), this.p('y'));
   this.tmatrix.rotate(this.p('rotation'));
   this.tmatrix.scale(this.p('scaleX'), this.p('scaleY'));
   
-  // apply the modification matrix to the dynamically initialized one
+  // Apply the Modification Matrix to the dynamically initialized one
   this.tmatrix.apply(this.matrix);
   
   if (this.all('children')) {
@@ -1705,35 +1699,63 @@ uv.Actor.prototype.preRender = function() {
   }
 };
 
+// Draws the Actor to a Display
 
 uv.Actor.prototype.render = function(ctx, view) {
   var that = this;
   
   if (!this.p('visible')) return;
   
-  // apply the view transformation
+  // Apply the view transformation
   var transform = new uv.Matrix2D(view);
   
-  // apply the object's transformation matrix
+  // Apply the Actors Transformation Matrix
   transform.apply(this.tmatrix);
-  
   ctx.setTransform(transform.elements[0], transform.elements[1], transform.elements[3], 
-                transform.elements[4], transform.elements[2], transform.elements[5]);
-  
-  if (this.p('interactive')) {
-    this.checkActive(ctx, this.scene.displayX, this.scene.displayY);
-  }
-  
+                   transform.elements[4], transform.elements[2], transform.elements[5]);
   this.draw(ctx);
-  
-  // TODO: don't use a call stack, instead allow arbitrary tree traversals
-  // as the drawing order.
-  if (this.all('children')) {
-    this.all('children').each(function(i, child) {
-      child.render(ctx, view);
-    });    
-  }
 };
+uv.traverser = {};
+
+uv.traverser.BreadthFirst = function(scene) {
+  var queue = [],
+      nodes = [],
+      node;
+  
+  queue.push(scene); // enqueue
+  while (queue.length > 0) {
+    node = queue.shift(); // dequeue
+    if (node.p('visible')) {
+      nodes.push(node);
+      // Enqueue children
+      node.all('children').each(function(index, node) {
+        queue.push(node);
+      });
+    }
+  }
+  return nodes;
+};
+
+
+uv.traverser.DepthFirst = function(scene) {
+  var stack = [],
+      nodes = [],
+      node;
+  
+  stack.push(scene);
+  while (stack.length > 0) {
+    node = stack.pop();
+    if (node.p('visible')) {
+      nodes.push(node);
+      // Push children
+      node.all('children').each(function(index, node) {
+        stack.push(node);
+      });
+    }
+  }
+  return nodes;
+};
+
 uv.ZoomBehavior = function(display) {
   function zoom(zoom, rx, ry) {
     display.matrix.translate(rx, ry);
@@ -1787,11 +1809,13 @@ uv.PanBehavior = function(display) {
 
 
 uv.Display = function(scene, opts) {
+  var that = this;
+  
   this.scene = scene;
 
   this.$element = opts.container;
   this.$canvas = $('<canvas width="'+opts.width+'" ' +
-                    'height="'+opts.height+'"></canvas>');
+                    'height="'+opts.height+'" style="position: relative;"></canvas>');
   
   this.width = opts.width;
   this.height = opts.height;
@@ -1809,41 +1833,39 @@ uv.Display = function(scene, opts) {
   if (opts.paning) {
     this.panbehavior = new uv.PanBehavior(this);
   }
-};
-
-// udates the display (on every frame)
-uv.Display.prototype.refresh = function() {
-  var that = this;
   
+  // register mouse events
   function mouseMove(e) {
-    var mouseX, mouseY;
+    var mat = new uv.Matrix2D(that.matrix),
+        pos;
   
-    if (e.offsetX) {
-      mouseX = e.offsetX;
-      mouseY = e.offsetY;
-    } else if (e.layerX) {
-      mouseX = e.layerX;
-      mouseY = e.layerY;
-    }
-        
-    var mat = new uv.Matrix2D(that.matrix);
     mat.invert();
+    if (e.offsetX) {
+      pos = new uv.Vector(e.offsetX, e.offsetY);
+    } else if (e.layerX) {
+      pos = new uv.Vector(e.layerX, e.layerY);
+    }
     
-    var worldPos = mat.mult(new uv.Vector(mouseX, mouseY));
-    var worldX = parseInt(worldPos.x);
-    var worldY = parseInt(worldPos.y);
-
-    that.mouseX = mouseX;
-    that.mouseY = mouseY;
+    that.mouseX = pos.x;
+    that.mouseY = pos.y;    
     
-    that.scene.mouseX = worldX;
-    that.scene.mouseY = worldY;
-    
-    that.scene.displayX = mouseX;
-    that.scene.displayY = mouseY;
+    worldPos = mat.mult(pos);
+    that.scene.mouseX = parseInt(worldPos.x);
+    that.scene.mouseY = parseInt(worldPos.y);
   }
   
   this.$canvas.bind('mousemove', mouseMove);
+  this.$canvas.bind('mouseout', function() {
+    that.scene.mouseX = NaN;
+    that.scene.mouseY = NaN;
+  });
+};
+
+
+// Updates the display (on every frame)
+
+uv.Display.prototype.refresh = function() {
+  var that = this;
   
   // draw the scene
   this.ctx.clearRect(0,0, this.width,this.height);
@@ -1851,11 +1873,11 @@ uv.Display.prototype.refresh = function() {
   this.ctx.fillRect(0, 0, this.width, this.height);
   this.ctx.save();
   
-  if (this.scene.all('children')) {
-    this.scene.all('children').each(function(i, child) {
-      child.render(that.ctx, that.matrix);
-    });
-  }
+  that.actors = this.scene.traverse();
+  that.actors.shift();
+  _.each(that.actors, function(actor, index) {
+    actor.render(that.ctx, that.matrix);
+  });
   
   this.ctx.restore();
 };
@@ -1899,22 +1921,23 @@ uv.Scene = function(properties) {
     height: 0,
     fillStyle: '#fff',
     element: '#canvas',
-    framerate: 10
+    framerate: 10,
+    traverser: uv.traverser.DepthFirst
   }, properties);
   
-  this.mouseX = this.displayX = -1;
-  this.mouseY = this.displayY = -1;
+  this.mouseX = NaN;
+  this.mouseY = NaN;
   
-  // keeps track of nodes that capture mouse events
-  this.interactiveNodes = [];
+  // Keeps track of actors that capture mouse events
+  this.interactiveActors = [];
   
-  // the scene property references the scene an actor belongs to
+  // The scene property references the Scene an Actor belongs to
   this.scene = this;
   
-  // commands hook in here
+  // Commands hook in here
   this.commands = {};
   
-  // attached displays
+  // Keeps track of attached Displays
   this.displays = [];
   
   this.fps = 0;
@@ -1945,6 +1968,7 @@ uv.Scene.prototype.start = function(options) {
   _.extend(opts, options);
   this.running = true;
   this.loop();
+  this.checkActiveActors();
 };
 
 // the draw loop
@@ -1969,18 +1993,40 @@ uv.Scene.prototype.stop = function(options) {
   this.running = false;
 };
 
-// creates a display to make the scene visible
+uv.Scene.prototype.traverse = function() {
+  return this.properties.traverser(this);
+};
+
+uv.Scene.prototype.checkActiveActors = function() {
+  var ctx = this.displays[0].ctx,
+      that = this;
+  
+  if (this.running && this.scene.mouseX !== NaN) {
+    _.each(this.interactiveActors, function(actor) {
+      actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
+    });
+    setTimeout(function() { that.checkActiveActors(); }, (1000/10));
+  }
+};
+
+
+// Creates a display to make the scene visible
+
 uv.Scene.prototype.display = function(options) {
   var disp = new uv.Display(this, options);
   this.displays.push(disp);
-  
   return disp;
+};
+
+uv.Scene.prototype.refreshDisplays = function() {
+  _.each(this.displays, function(d) {
+    d.refresh();
+  });
 };
 
 // Commands
 // -----------------------------------------------------------------------------
 
-// command construction and registration
 uv.Scene.prototype.register = function(cmd, options) {
   this.commands[cmd.className] = new cmd(this, options);
 };
@@ -1992,16 +2038,6 @@ uv.Scene.prototype.execute = function(cmd) {
 uv.Scene.prototype.unexecute = function(cmd) {
   this.commands[cmd.className].unexecute();
 }
-
-// Refresh displays
-uv.Scene.prototype.refreshDisplays = function() {
-  _.each(this.displays, function(d) {
-    d.refresh();
-  });
-};
-
-
-
 /**********************************************************************
 TERMS OF USE - EASING EQUATIONS
 Open source under the BSD License.
@@ -2308,14 +2344,16 @@ uv.Bar = function(properties) {
 
 uv.Bar.prototype = Object.extend(uv.Actor);
 
-uv.Bar.prototype.drawMask = function(ctx) {
-  ctx.beginPath();
+uv.Bar.prototype.drawMask = function(ctx, x, y) {
+  x = 0;
+  y = 0;
   
-  ctx.moveTo(0, 0);
-  ctx.lineTo(this.properties.width, 0);
-  ctx.lineTo(this.properties.width, this.properties.height);
-  ctx.lineTo(0, this.properties.height);
-  ctx.lineTo(0, 0);
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x+this.properties.width, y);
+  ctx.lineTo(x+this.properties.width, y+this.properties.height);
+  ctx.lineTo(x, y+this.properties.height);
+  ctx.lineTo(x, y);
   ctx.closePath();
 };
 

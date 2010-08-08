@@ -5,8 +5,7 @@ uv.Actor = function(properties) {
   uv.Node.call(this);
   this.childCount = 0;
   
-  // Default actor properties
-  this.properties = {
+  this.properties = _.extend({
     x: 0,
     y: 0,
     scaleX: 1,
@@ -15,9 +14,9 @@ uv.Actor = function(properties) {
     fillStyle: '#000',
     strokeStyle: '#000',
     visible: true
-  };
+  }, properties);
   
-  _.extend(this.properties, properties);
+  this.replace('children', new uv.SortedHash());
   
   // Under mouse cursor
   this.active = false;
@@ -32,7 +31,8 @@ uv.Actor = function(properties) {
 
 uv.Actor.prototype = Object.extend(uv.Node);
 
-// evaluates a property (in case of a function
+
+// Evaluates a property (in case of a function
 // the result of the function is returned)
 
 uv.Actor.prototype.property = function(property, value) {
@@ -48,6 +48,7 @@ uv.Actor.prototype.property = function(property, value) {
 };
 
 // Property get-setter aliases
+
 uv.Actor.prototype.prop = uv.Actor.prototype.property;
 uv.Actor.prototype.p = uv.Actor.prototype.property;
 
@@ -59,7 +60,7 @@ uv.Actor.prototype.p = uv.Actor.prototype.property;
 uv.Actor.prototype.setScene = function(scene) {
   this.scene = scene;
   if (this.properties.interactive) {
-    scene.interactiveNodes.push(this);
+    scene.interactiveActors.push(this);
   }
   
   if (this.all('children')) {
@@ -70,8 +71,7 @@ uv.Actor.prototype.setScene = function(scene) {
 };
 
 
-// Adds a new actor to the scene.
-// The object is attached as a child object
+// Adds a new Actor as a child
 
 uv.Actor.prototype.add = function(child) {
   this.set('children', this.childCount+=1, child);
@@ -86,26 +86,15 @@ uv.Actor.prototype.add = function(child) {
 // You have full control about the current transformation matrix. Be aware that
 // Actor properties like x, y, scaleX, scaleY, rotation are applied in the first
 // place. After that this modification matrix is applied. It's good practice to
-// not specify any properties when working with the modification matrix. If you
-// do that you can treat the modification matrix as the actual transformation
-// matrix.
+// not specify any properties when working with the modification matrix. By doing
+// so you can treat the modification matrix as the actual transformation matrix.
 // 
 // Destructive operations
 // .............................................................................
 //
-// Those methods all reset the modification matrix for now. So you cant combine
+// Those methods all reset the modification matrix for now. So you can't combine
 // setScale() and setRotation()
 
-// Scales and rotates around a given point
-// Rotation does not work yet
-// TODO: implement rotation according to [R] = [T]-1 * [R0] * [T]
-
-uv.Actor.prototype.setScaleAndRotateAroundPos = function(scaleX, scaleY, rot, rx, ry) {
-  this.matrix.reset();
-  this.matrix.translate(rx, ry);
-  this.matrix.scale(scaleX, scaleY);
-  this.matrix.translate(-rx, -ry);
-};
 
 uv.Actor.prototype.setTranslation = function(x, y) {
   this.matrix.reset();
@@ -125,7 +114,7 @@ uv.Actor.prototype.setRotation = function(rotation) {
 // Non destructive operations
 // .............................................................................
 // 
-// Those methods can be chained together. The modification matrix is updated
+// Those methods can be chained together. The Modification Matrix is updated
 // according to the specified operation.
 
 uv.Actor.prototype.translate = function(x, y) {
@@ -151,6 +140,13 @@ uv.Actor.prototype.update = function() {};
 uv.Actor.prototype.draw = function(ctx) {};
 
 uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
+  var p = new uv.Vector(mouseX,mouseY),
+      transform = new uv.Matrix2D(this.tmatrix);
+  
+  pnew = transform.inverse().mult(p);
+  mouseX = pnew.x;
+  mouseY = pnew.y;
+  
   if (this.drawMask && ctx.isPointInPath) {
     this.drawMask(ctx);
     if (ctx.isPointInPath(mouseX, mouseY))
@@ -161,10 +157,10 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   return false;
 };
 
-// compile transformation matrix
+// Precompile the Transformation Matrix
+
 uv.Actor.prototype.preRender = function() {
-  // start with the parent matrix
-  
+  // Start with the parent matrix
   if (this.parent) {
     this.tmatrix = new uv.Matrix2D(this.parent.tmatrix);
   } else {
@@ -172,12 +168,11 @@ uv.Actor.prototype.preRender = function() {
   }
   
   this.update();
-  
   this.tmatrix.translate(this.p('x'), this.p('y'));
   this.tmatrix.rotate(this.p('rotation'));
   this.tmatrix.scale(this.p('scaleX'), this.p('scaleY'));
   
-  // apply the modification matrix to the dynamically initialized one
+  // Apply the Modification Matrix to the dynamically initialized one
   this.tmatrix.apply(this.matrix);
   
   if (this.all('children')) {
@@ -187,32 +182,19 @@ uv.Actor.prototype.preRender = function() {
   }
 };
 
+// Draws the Actor to a Display
 
 uv.Actor.prototype.render = function(ctx, view) {
   var that = this;
   
   if (!this.p('visible')) return;
   
-  // apply the view transformation
+  // Apply the view transformation
   var transform = new uv.Matrix2D(view);
   
-  // apply the object's transformation matrix
+  // Apply the Actors Transformation Matrix
   transform.apply(this.tmatrix);
-  
   ctx.setTransform(transform.elements[0], transform.elements[1], transform.elements[3], 
-                transform.elements[4], transform.elements[2], transform.elements[5]);
-  
-  if (this.p('interactive')) {
-    this.checkActive(ctx, this.scene.displayX, this.scene.displayY);
-  }
-  
+                   transform.elements[4], transform.elements[2], transform.elements[5]);
   this.draw(ctx);
-  
-  // TODO: don't use a call stack, instead allow arbitrary tree traversals
-  // as the drawing order.
-  if (this.all('children')) {
-    this.all('children').each(function(i, child) {
-      child.render(ctx, view);
-    });    
-  }
 };

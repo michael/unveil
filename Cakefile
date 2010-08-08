@@ -37,6 +37,7 @@ files = [
   'src/scene/vector.js'
   'src/scene/matrix2d.js'
   'src/scene/actor.js'
+  'src/scene/traverser.js'
   'src/scene/behaviors.js'
   'src/scene/display.js'
   'src/scene/commands.js'

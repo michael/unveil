@@ -77,10 +77,12 @@ uv.Stacks = uv.Visualization.extend({
     
     // create scenegraph
     this.scene = new uv.Scene({
-      fillStyle: '#fff'
+      traverser: uv.traverser.BreadthFirst,
+      fillStyle: '#fff',
+      framerate: 10
     });
     
-    this.scene.register(uv.cmds.RequestFramerate, {framerate: 50});    
+    this.scene.register(uv.cmds.RequestFramerate, {framerate: 60});    
     
     // set up stuff based on the currently selected property
     this.prepareProperty();
@@ -94,6 +96,7 @@ uv.Stacks = uv.Visualization.extend({
     this.measures = [group];
     this.prepareProperty();
 
+    this.scene.interactiveActors = [];
     this.scene.replace('children', new uv.SortedHash());
     this.addStacks();
     
@@ -225,12 +228,13 @@ uv.Stacks.Item.prototype = Object.extend(uv.Bar);
 uv.Stacks.Item.prototype.build = function(ctx) {
   var that = this;
   
+  
   var bar = new uv.Bar({
-    x: -200,
+    x: 0,
     y: 0,
     width: 200,
     height: 50,
-    fillStyle: '#eee',
+    fillStyle: 'rgba(200,200,200,0.8)',
     visible: function() { return that.active ? true : false; }
   });
   

@@ -16,12 +16,14 @@ Features:
 * Scene API
   * SceneGraph implementation
   * Custom Actors (graphical objects)
-  * Dynamic properties (you can assign functions instead of values)
-  * Motion tweening
-  * Modification matrix (applied after the initial transforms, specified via properties)
+  * Dynamic Actor Properties (you can assign functions instead of values)
+  * Motion Tweening
+  * Modification Matrix (applied after the initial transforms, which are specified via properties)
   * Commands (e.g. save cpu cycles using event-based framerate determination)
   * Multiple Displays (the scene can be projected to one or more canvas elements)
-  * Mouse interaction support on Display level (zooming, paning)
+  * Adjustable drawing order through Graph Traversers
+    Choose from DepthFirst or BreadthFirst or implement your own Traverser
+  * Mouse interaction support on Display level (picking, zooming, paning)
 
 Examples
 ---------------------
@@ -33,15 +35,11 @@ Examples
 * Artist Similarities     [http://quasipartikel.at/unveil/examples/artist_similarities.html]
 
 
-Hints
+Supported Browsers
 ---------------------
 
-Please use a webkit-based browser (Safari/Chrome) for the moment. Interaction is not yet
-working in Firefox as I'm still struggling with a different implementation of ctx.isPointInPath().
-In Firefox, it doesn't transform the coordinates. https://bugzilla.mozilla.org/show_bug.cgi?id=405300
-However, I'll tackle this soon, but I don't want to mess up the code too much to add
-exceptional behavior. I'd like to provide a clean approach that works throughout modern
-browsers. Adding a huge backward compatibility layer is not what I'm interested in.
-However, Firefox 3.5+ will definitely be on the supported browser list ;)
-
-BTW: Believe it or not, it seems like Internet Explorer 9 has the fasted implementation of HTML5 canvas. ;) Good news in either case.
+* Google Chrome 5+
+* Safari 4+
+* Firefox 3.5+
+* Internet Explorer 9+
+* Opera 10+

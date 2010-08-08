@@ -10,22 +10,23 @@ uv.Scene = function(properties) {
     height: 0,
     fillStyle: '#fff',
     element: '#canvas',
-    framerate: 10
+    framerate: 10,
+    traverser: uv.traverser.DepthFirst
   }, properties);
   
-  this.mouseX = this.displayX = -1;
-  this.mouseY = this.displayY = -1;
+  this.mouseX = NaN;
+  this.mouseY = NaN;
   
-  // keeps track of nodes that capture mouse events
-  this.interactiveNodes = [];
+  // Keeps track of actors that capture mouse events
+  this.interactiveActors = [];
   
-  // the scene property references the scene an actor belongs to
+  // The scene property references the Scene an Actor belongs to
   this.scene = this;
   
-  // commands hook in here
+  // Commands hook in here
   this.commands = {};
   
-  // attached displays
+  // Keeps track of attached Displays
   this.displays = [];
   
   this.fps = 0;
@@ -56,6 +57,7 @@ uv.Scene.prototype.start = function(options) {
   _.extend(opts, options);
   this.running = true;
   this.loop();
+  this.checkActiveActors();
 };
 
 // the draw loop
@@ -80,18 +82,40 @@ uv.Scene.prototype.stop = function(options) {
   this.running = false;
 };
 
-// creates a display to make the scene visible
+uv.Scene.prototype.traverse = function() {
+  return this.properties.traverser(this);
+};
+
+uv.Scene.prototype.checkActiveActors = function() {
+  var ctx = this.displays[0].ctx,
+      that = this;
+  
+  if (this.running && this.scene.mouseX !== NaN) {
+    _.each(this.interactiveActors, function(actor) {
+      actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
+    });
+    setTimeout(function() { that.checkActiveActors(); }, (1000/10));
+  }
+};
+
+
+// Creates a display to make the scene visible
+
 uv.Scene.prototype.display = function(options) {
   var disp = new uv.Display(this, options);
   this.displays.push(disp);
-  
   return disp;
+};
+
+uv.Scene.prototype.refreshDisplays = function() {
+  _.each(this.displays, function(d) {
+    d.refresh();
+  });
 };
 
 // Commands
 // -----------------------------------------------------------------------------
 
-// command construction and registration
 uv.Scene.prototype.register = function(cmd, options) {
   this.commands[cmd.className] = new cmd(this, options);
 };
@@ -103,12 +127,3 @@ uv.Scene.prototype.execute = function(cmd) {
 uv.Scene.prototype.unexecute = function(cmd) {
   this.commands[cmd.className].unexecute();
 }
-
-// Refresh displays
-uv.Scene.prototype.refreshDisplays = function() {
-  _.each(this.displays, function(d) {
-    d.refresh();
-  });
-};
-
-

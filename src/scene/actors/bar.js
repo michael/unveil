@@ -14,14 +14,16 @@ uv.Bar = function(properties) {
 
 uv.Bar.prototype = Object.extend(uv.Actor);
 
-uv.Bar.prototype.drawMask = function(ctx) {
-  ctx.beginPath();
+uv.Bar.prototype.drawMask = function(ctx, x, y) {
+  x = 0;
+  y = 0;
   
-  ctx.moveTo(0, 0);
-  ctx.lineTo(this.properties.width, 0);
-  ctx.lineTo(this.properties.width, this.properties.height);
-  ctx.lineTo(0, this.properties.height);
-  ctx.lineTo(0, 0);
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x+this.properties.width, y);
+  ctx.lineTo(x+this.properties.width, y+this.properties.height);
+  ctx.lineTo(x, y+this.properties.height);
+  ctx.lineTo(x, y);
   ctx.closePath();
 };
 

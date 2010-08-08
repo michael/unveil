@@ -1,9 +1,11 @@
 uv.Display = function(scene, opts) {
+  var that = this;
+  
   this.scene = scene;
 
   this.$element = opts.container;
   this.$canvas = $('<canvas width="'+opts.width+'" ' +
-                    'height="'+opts.height+'"></canvas>');
+                    'height="'+opts.height+'" style="position: relative;"></canvas>');
   
   this.width = opts.width;
   this.height = opts.height;
@@ -21,41 +23,39 @@ uv.Display = function(scene, opts) {
   if (opts.paning) {
     this.panbehavior = new uv.PanBehavior(this);
   }
-};
-
-// udates the display (on every frame)
-uv.Display.prototype.refresh = function() {
-  var that = this;
   
+  // register mouse events
   function mouseMove(e) {
-    var mouseX, mouseY;
+    var mat = new uv.Matrix2D(that.matrix),
+        pos;
   
-    if (e.offsetX) {
-      mouseX = e.offsetX;
-      mouseY = e.offsetY;
-    } else if (e.layerX) {
-      mouseX = e.layerX;
-      mouseY = e.layerY;
-    }
-        
-    var mat = new uv.Matrix2D(that.matrix);
     mat.invert();
+    if (e.offsetX) {
+      pos = new uv.Vector(e.offsetX, e.offsetY);
+    } else if (e.layerX) {
+      pos = new uv.Vector(e.layerX, e.layerY);
+    }
     
-    var worldPos = mat.mult(new uv.Vector(mouseX, mouseY));
-    var worldX = parseInt(worldPos.x);
-    var worldY = parseInt(worldPos.y);
-
-    that.mouseX = mouseX;
-    that.mouseY = mouseY;
+    that.mouseX = pos.x;
+    that.mouseY = pos.y;    
     
-    that.scene.mouseX = worldX;
-    that.scene.mouseY = worldY;
-    
-    that.scene.displayX = mouseX;
-    that.scene.displayY = mouseY;
+    worldPos = mat.mult(pos);
+    that.scene.mouseX = parseInt(worldPos.x);
+    that.scene.mouseY = parseInt(worldPos.y);
   }
   
   this.$canvas.bind('mousemove', mouseMove);
+  this.$canvas.bind('mouseout', function() {
+    that.scene.mouseX = NaN;
+    that.scene.mouseY = NaN;
+  });
+};
+
+
+// Updates the display (on every frame)
+
+uv.Display.prototype.refresh = function() {
+  var that = this;
   
   // draw the scene
   this.ctx.clearRect(0,0, this.width,this.height);
@@ -63,11 +63,11 @@ uv.Display.prototype.refresh = function() {
   this.ctx.fillRect(0, 0, this.width, this.height);
   this.ctx.save();
   
-  if (this.scene.all('children')) {
-    this.scene.all('children').each(function(i, child) {
-      child.render(that.ctx, that.matrix);
-    });
-  }
+  that.actors = this.scene.traverse();
+  that.actors.shift();
+  _.each(that.actors, function(actor, index) {
+    actor.render(that.ctx, that.matrix);
+  });
   
   this.ctx.restore();
 };

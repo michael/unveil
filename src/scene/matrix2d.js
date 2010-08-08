@@ -104,7 +104,7 @@ uv.Matrix2D.prototype = {
   determinant: function() {
     return this.elements[0] * this.elements[4] - this.elements[1] * this.elements[3];
   },
-  // non-destrucive version
+  // non-destructive version
   inverse: function() {
     var res = new uv.Matrix2D(this);
     return res.invert() ? res : null;
