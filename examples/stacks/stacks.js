@@ -79,7 +79,14 @@ uv.Stacks = uv.Visualization.extend({
     this.scene = new uv.Scene({
       traverser: uv.traverser.BreadthFirst,
       fillStyle: '#fff',
-      framerate: 10
+      framerate: 10,
+      displays: [{
+        container: $('#canvas'),
+        width: this.width,
+        height: this.height,
+        paning: true,
+        zooming: true
+      }]
     });
     
     this.scene.register(uv.cmds.RequestFramerate, {framerate: 60});    
@@ -96,25 +103,12 @@ uv.Stacks = uv.Visualization.extend({
     this.measures = [group];
     this.prepareProperty();
 
-    this.scene.interactiveActors = [];
     this.scene.replace('children', new uv.SortedHash());
+    this.scene.interactiveActors = [];
     this.addStacks();
-    
-    var scene = this.scene;
   },
   render: function() {
-    var scene = this.scene;
-    
-    // set up display
-    scene.display({
-      container: $('#canvas'),
-      width: this.width,
-      height: this.height,
-      paning: true,
-      zooming: true
-    });
-    
-    scene.start();
+    this.scene.start();
   }
 });
 

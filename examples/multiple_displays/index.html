@@ -16,7 +16,19 @@
       var scene = new uv.Scene({
             width: 800,
             height: 500,
-            fillStyle: '#ccc'
+            fillStyle: '#ccc',
+            displays: [{
+              container: $('#bigscreen'),
+              width: 500,
+              height: 200,
+              paning: true,
+              zooming: true
+            },{
+              container: $('#miniscreen'),
+              width: 150,
+              height: 150,
+              zooming: true
+            }]
           });
       
       var bar = new uv.Bar({
@@ -51,21 +63,6 @@
         text: function() { return parseInt(scene.mouseX, 10)+" / "+parseInt(scene.mouseY, 10); },
         fillStyle: 'black'
       }));
-      
-      var display1 = scene.display({
-        container: $('#bigscreen'),
-        width: 500,
-        height: 200,
-        paning: true,
-        zooming: true
-      });
-      
-      var display2 = scene.display({
-        container: $('#miniscreen'),
-        width: 150,
-        height: 150,
-        zooming: true
-      });
             
       scene.start();
 

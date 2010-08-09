@@ -2,6 +2,8 @@
 // =============================================================================
 
 uv.Scene = function(properties) {
+  var that = this;
+  
   // super call
   uv.Actor.call(this);
   
@@ -26,8 +28,11 @@ uv.Scene = function(properties) {
   // Commands hook in here
   this.commands = {};
   
-  // Keeps track of attached Displays
+  // Attached Displays
   this.displays = [];
+  _.each(properties.displays, function(display) {
+    that.displays.push(new uv.Display(that, display));
+  });
   
   this.fps = 0;
   this.framerate = this.p('framerate');
@@ -90,22 +95,16 @@ uv.Scene.prototype.checkActiveActors = function() {
   var ctx = this.displays[0].ctx,
       that = this;
   
-  if (this.running && this.scene.mouseX !== NaN) {
-    _.each(this.interactiveActors, function(actor) {
-      actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
-    });
+  if (this.running) {
+    if (this.scene.mouseX !== NaN) {
+      _.each(this.interactiveActors, function(actor) {
+        actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
+      });
+    }
     setTimeout(function() { that.checkActiveActors(); }, (1000/10));
   }
 };
 
-
-// Creates a display to make the scene visible
-
-uv.Scene.prototype.display = function(options) {
-  var disp = new uv.Display(this, options);
-  this.displays.push(disp);
-  return disp;
-};
 
 uv.Scene.prototype.refreshDisplays = function() {
   _.each(this.displays, function(d) {

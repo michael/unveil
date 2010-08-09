@@ -1762,7 +1762,6 @@ uv.ZoomBehavior = function(display) {
     display.matrix.scale(zoom, zoom);
     display.matrix.translate(-rx, -ry);
   }
-  
   display.$canvas.bind('mousewheel', function(event, delta) {
     zoom(1+0.02 * delta, display.scene.mouseX, display.scene.mouseY);
   });
@@ -1770,14 +1769,13 @@ uv.ZoomBehavior = function(display) {
 
 
 uv.PanBehavior = function(display) {
-  var paning = false;
-  
-  var mouseX, mouseY;
-  var startX, startY;
-  var offsetX = 0;
-  var offsetY = 0;
-  var prevOffsetX = 0;
-  var prevOffsetY = 0;
+  var paning = false,
+      mouseX, mouseY,
+      startX, startY,
+      offsetX = 0,
+      offsetY = 0,
+      prevOffsetX = 0,
+      prevOffsetY = 0;
   
   display.$canvas.bind('mousedown', function(event) {
     paning = true;
@@ -1913,6 +1911,8 @@ uv.cmds.RequestFramerate.prototype.unexecute = function() {
 // =============================================================================
 
 uv.Scene = function(properties) {
+  var that = this;
+  
   // super call
   uv.Actor.call(this);
   
@@ -1937,8 +1937,11 @@ uv.Scene = function(properties) {
   // Commands hook in here
   this.commands = {};
   
-  // Keeps track of attached Displays
+  // Attached Displays
   this.displays = [];
+  _.each(properties.displays, function(display) {
+    that.displays.push(new uv.Display(that, display));
+  });
   
   this.fps = 0;
   this.framerate = this.p('framerate');
@@ -2001,22 +2004,16 @@ uv.Scene.prototype.checkActiveActors = function() {
   var ctx = this.displays[0].ctx,
       that = this;
   
-  if (this.running && this.scene.mouseX !== NaN) {
-    _.each(this.interactiveActors, function(actor) {
-      actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
-    });
+  if (this.running) {
+    if (this.scene.mouseX !== NaN) {
+      _.each(this.interactiveActors, function(actor) {
+        actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
+      });
+    }
     setTimeout(function() { that.checkActiveActors(); }, (1000/10));
   }
 };
 
-
-// Creates a display to make the scene visible
-
-uv.Scene.prototype.display = function(options) {
-  var disp = new uv.Display(this, options);
-  this.displays.push(disp);
-  return disp;
-};
 
 uv.Scene.prototype.refreshDisplays = function() {
   _.each(this.displays, function(d) {

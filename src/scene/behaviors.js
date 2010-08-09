@@ -4,7 +4,6 @@ uv.ZoomBehavior = function(display) {
     display.matrix.scale(zoom, zoom);
     display.matrix.translate(-rx, -ry);
   }
-  
   display.$canvas.bind('mousewheel', function(event, delta) {
     zoom(1+0.02 * delta, display.scene.mouseX, display.scene.mouseY);
   });
@@ -12,14 +11,13 @@ uv.ZoomBehavior = function(display) {
 
 
 uv.PanBehavior = function(display) {
-  var paning = false;
-  
-  var mouseX, mouseY;
-  var startX, startY;
-  var offsetX = 0;
-  var offsetY = 0;
-  var prevOffsetX = 0;
-  var prevOffsetY = 0;
+  var paning = false,
+      mouseX, mouseY,
+      startX, startY,
+      offsetX = 0,
+      offsetY = 0,
+      prevOffsetX = 0,
+      prevOffsetY = 0;
   
   display.$canvas.bind('mousedown', function(event) {
     paning = true;

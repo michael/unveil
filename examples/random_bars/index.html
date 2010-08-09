@@ -34,11 +34,18 @@
       // trigger motion tween ticks
       MovingBar.prototype.update = function() {
         this.th.tick();
-      };
+      };    
       
       // create scene
       var scene = new uv.Scene({
-            framerate: 30
+            framerate: 30,
+            displays: [{
+              container: $('#canvas'),
+              width: 800,
+              height: 300,
+              zooming: true,
+              paning: true
+            }]
           }),
           data = pv.range(20).map(function(d) { return Math.random() + .1; }),
           colors = pv.Scale.linear(data).range('lightblue', 'darkblue');
@@ -70,14 +77,6 @@
         scene.add(bar);
       });
       
-      // set up the display
-      scene.display({
-        container: $('#canvas'),
-        width: 800,
-        height: 300,
-        zooming: true,
-        paning: true
-      });
       
       scene.start();
       
