@@ -147,14 +147,31 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   mouseX = pnew.x;
   mouseY = pnew.y;
   
-  if (this.drawMask && ctx.isPointInPath) {
-    this.drawMask(ctx);
+  if (this.hasBounds() && ctx.isPointInPath) {
+    this.drawBounds(ctx);
     if (ctx.isPointInPath(mouseX, mouseY))
       this.active = true;
     else
       this.active = false;
   }
   return false;
+};
+
+uv.Actor.prototype.hasBounds = function() {
+  var bounds = this.p('bounds');
+  return bounds && bounds.length >= 3;
+};
+
+uv.Actor.prototype.drawBounds = function(ctx) {
+  var bounds = this.p('bounds'),
+      start, v;
+  start = bounds.shift();
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  while (v = bounds.shift()) {
+    ctx.lineTo(v.x, v.y);
+  }
+  ctx.lineTo(start.x, start.y);
 };
 
 // Precompile the Transformation Matrix

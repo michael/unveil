@@ -189,7 +189,15 @@ uv.Stacks.Item = function(properties) {
     
   _.extend(this.properties, {
     size: 10,
-    name: 'Unknown'
+    name: 'Unknown',
+    bounds: function() {
+      return [
+        {x: 0, y: 0},
+        {x: this.p('size'), y: 0},
+        {x: this.p('size'), y: this.p('size')},
+        {x: 0, y: this.p('size')}
+      ];
+    }
   }, properties);
   
   this.ts = new uv.Tween({
@@ -267,17 +275,6 @@ uv.Stacks.Item.prototype.update = function() {
 uv.Stacks.Item.prototype.draw = function(ctx) {
   ctx.fillStyle = this.p('fillStyle');
   ctx.fillRect(0, 0, this.p('size'), this.p('size'));
-};
-
-uv.Stacks.Item.prototype.drawMask = function(ctx) {
-  ctx.beginPath();
-  
-  ctx.moveTo(0, 0);
-  ctx.lineTo(this.p('size'), 0);
-  ctx.lineTo(this.p('size'), this.p('size'));
-  ctx.lineTo(0, this.p('size'));
-  ctx.lineTo(0, 0);
-  ctx.closePath();
 };
 
 // Specification

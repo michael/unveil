@@ -8,24 +8,19 @@ uv.Bar = function(properties) {
     height: 50,
     strokeWeight: 2,
     strokeStyle: '#000',
-    fillStyle: '#ccc'
+    fillStyle: '#ccc',
+    bounds: function() {
+      return [
+        {x: 0, y: 0},
+        {x: this.p('width'), y: 0},
+        {x: this.p('width'), y: this.p('height')},
+        {x: 0, y: this.p('height')}
+      ];
+    }
   }, properties));
 };
 
 uv.Bar.prototype = Object.extend(uv.Actor);
-
-uv.Bar.prototype.drawMask = function(ctx, x, y) {
-  x = 0;
-  y = 0;
-  
-  ctx.beginPath();
-  ctx.moveTo(x, y);
-  ctx.lineTo(x+this.properties.width, y);
-  ctx.lineTo(x+this.properties.width, y+this.properties.height);
-  ctx.lineTo(x, y+this.properties.height);
-  ctx.lineTo(x, y);
-  ctx.closePath();
-};
 
 uv.Bar.prototype.draw = function(ctx) {
   ctx.fillStyle = this.prop('fillStyle');
