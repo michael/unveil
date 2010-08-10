@@ -12,9 +12,9 @@ uv.Label = function(properties) {
 uv.Label.prototype = Object.extend(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx) {
-  ctx.font = this.prop('font');
-  ctx.fillStyle = this.prop('fillStyle');
+  ctx.font = this.p('font');
+  ctx.fillStyle = this.p('fillStyle');
   
-  ctx.textAlign = this.prop('textAlign');
-  ctx.fillText(this.prop('text'), 0, 0);
+  ctx.textAlign = this.p('textAlign');
+  ctx.fillText(this.p('text'), 0, 0);
 };

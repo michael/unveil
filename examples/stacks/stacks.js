@@ -175,7 +175,7 @@ uv.Stacks.Stack.prototype.build = function(ctx) {
 uv.Stacks.Stack.prototype.draw = function(ctx) {
   // TODO: implement
   // ctx.fillRect(0, 0, this.properties.width, this.properties.height);
-  // ctx.fillStyle = this.prop('fillStyle');
+  // ctx.fillStyle = this.p('fillStyle');
   // ctx.fillRect(0, 0, this.properties.width, this.properties.height);
 };
 

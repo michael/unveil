@@ -34,6 +34,8 @@ uv.Scene = function(properties) {
     that.displays.push(new uv.Display(that, display));
   });
   
+  this.activeDisplay = null;
+  
   this.fps = 0;
   this.framerate = this.p('framerate');
 };
@@ -73,7 +75,7 @@ uv.Scene.prototype.loop = function() {
   if (this.running) {
     start = new Date().getTime();
     
-    this.preRender();
+    this.compileMatrix();
     this.refreshDisplays();
     
     duration = new Date().getTime()-start;

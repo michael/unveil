@@ -23,6 +23,6 @@ uv.Bar = function(properties) {
 uv.Bar.prototype = Object.extend(uv.Actor);
 
 uv.Bar.prototype.draw = function(ctx) {
-  ctx.fillStyle = this.prop('fillStyle');
-  ctx.fillRect(0, 0, this.prop('width'), this.prop('height'));
+  ctx.fillStyle = this.p('fillStyle');
+  ctx.fillRect(0, 0, this.p('width'), this.p('height'));
 };

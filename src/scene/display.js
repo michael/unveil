@@ -13,7 +13,10 @@ uv.Display = function(scene, opts) {
   this.$element.append(this.$canvas);
   this.ctx = this.$canvas[0].getContext("2d");
   
-  this.matrix = new uv.Matrix2D();
+  this.tView = new uv.Matrix2D();
+  
+  // Provides access to the current zoom value
+  this.zoom = 1;
   
   // attach behaviors
   if (opts.zooming) {
@@ -24,11 +27,11 @@ uv.Display = function(scene, opts) {
     this.panbehavior = new uv.PanBehavior(this);
   }
   
-  // register mouse events
+  // Register mouse events
   function mouseMove(e) {
-    var mat = new uv.Matrix2D(that.matrix),
+    var mat = new uv.Matrix2D(that.tView),
         pos;
-  
+    
     mat.invert();
     if (e.offsetX) {
       pos = new uv.Vector(e.offsetX, e.offsetY);
@@ -42,6 +45,8 @@ uv.Display = function(scene, opts) {
     worldPos = mat.mult(pos);
     that.scene.mouseX = parseInt(worldPos.x);
     that.scene.mouseY = parseInt(worldPos.y);
+    
+    that.scene.activeDisplay = that;
   }
   
   this.$canvas.bind('mousemove', mouseMove);
@@ -59,14 +64,14 @@ uv.Display.prototype.refresh = function() {
   
   // draw the scene
   this.ctx.clearRect(0,0, this.width,this.height);
-  this.ctx.fillStyle = this.scene.prop('fillStyle');
+  this.ctx.fillStyle = this.scene.p('fillStyle');
   this.ctx.fillRect(0, 0, this.width, this.height);
   this.ctx.save();
   
   that.actors = this.scene.traverse();
   that.actors.shift();
   _.each(that.actors, function(actor, index) {
-    actor.render(that.ctx, that.matrix);
+    actor.render(that.ctx, that.tView);
   });
   
   this.ctx.restore();

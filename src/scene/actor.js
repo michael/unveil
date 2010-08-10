@@ -11,22 +11,21 @@ uv.Actor = function(properties) {
     scaleX: 1,
     scaleY: 1,
     rotation: 0,
+    localX: 0,
+    localY: 0,
+    localScaleX: 1,
+    localScaleY: 1,
+    localRotation: 0,
     fillStyle: '#000',
     strokeStyle: '#000',
-    visible: true
+    visible: true,
+    preserveShape: false
   }, properties);
   
   this.replace('children', new uv.SortedHash());
   
   // Under mouse cursor
   this.active = false;
-  
-  // The modification matrix
-  // Works like a regular transformation matrix, with the difference
-  // that it doesn't describe the whole transformation to be applied.
-  // The render() method first applies the current properties 
-  // (x, y, scaleX, scaleY) followed by modification matrix.
-  this.matrix = new uv.Matrix2D();
 };
 
 uv.Actor.prototype = Object.extend(uv.Node);
@@ -47,10 +46,8 @@ uv.Actor.prototype.property = function(property, value) {
   }
 };
 
-// Property get-setter aliases
-
-uv.Actor.prototype.prop = uv.Actor.prototype.property;
 uv.Actor.prototype.p = uv.Actor.prototype.property;
+
 
 // Recursively sets the scene reference to itself and all childs.
 // Registers an interactive node on the scene object if the user explicitly
@@ -62,14 +59,12 @@ uv.Actor.prototype.setScene = function(scene) {
   if (this.properties.interactive) {
     scene.interactiveActors.push(this);
   }
-  
   if (this.all('children')) {
     this.all('children').each(function(index, child) {
       child.setScene(scene);
     });
   }
 };
-
 
 // Adds a new Actor as a child
 
@@ -80,56 +75,70 @@ uv.Actor.prototype.add = function(child) {
 };
 
 
-// Matrix transformations
+// Dynamic Matrices
 // -----------------------------------------------------------------------------
-// 
-// You have full control about the current transformation matrix. Be aware that
-// Actor properties like x, y, scaleX, scaleY, rotation are applied in the first
-// place. After that this modification matrix is applied. It's good practice to
-// not specify any properties when working with the modification matrix. By doing
-// so you can treat the modification matrix as the actual transformation matrix.
-// 
-// Destructive operations
-// .............................................................................
-//
-// Those methods all reset the modification matrix for now. So you can't combine
-// setScale() and setRotation()
 
-
-uv.Actor.prototype.setTranslation = function(x, y) {
-  this.matrix.reset();
-  this.matrix.translate(x, y);
+uv.Actor.prototype.tWorldParent = function() {
+  var m;
+  if (this.parent) {
+    m = new uv.Matrix2D(this.parent._tWorld);
+  } else {
+    m = new uv.Matrix2D();
+  }
+  return m;
 };
 
-uv.Actor.prototype.setScale = function(scaleX, scaleY) {
-  this.matrix.reset();
-  this.matrix.scale(scaleX, scaleY);
+
+uv.Actor.prototype.tWorld = function() {
+  var m = new uv.Matrix2D();
+  m.apply(this.tWorldParent());
+  m.translate(this.p('x'), this.p('y'));
+  m.rotate(this.p('rotation'));
+  m.scale(this.p('scaleX'), this.p('scaleY'));
+  return m;
 };
 
-uv.Actor.prototype.setRotation = function(rotation) {
-  this.matrix.reset();
-  this.matrix.rotate(rotation);
+
+uv.Actor.prototype.tShape = function(x, y) {
+  var m = new uv.Matrix2D();
+  m.translate(this.p('localX'), this.p('localY'));
+  m.rotate(this.p('localRotation'));
+  m.scale(this.p('localScaleX'), this.p('localScaleY'));
+  return m;
 };
 
-// Non destructive operations
-// .............................................................................
-// 
-// Those methods can be chained together. The Modification Matrix is updated
-// according to the specified operation.
+// Compiles and caches the current World Transformation Matrix
 
-uv.Actor.prototype.translate = function(x, y) {
-  this.matrix.translate(x, y);
-  return this;
+uv.Actor.prototype.compileMatrix = function() {
+  this.update();
+  this._tWorld = this.tWorld();
+
+  if (this.all('children')) {
+    this.all('children').each(function(i, child) {
+      child.compileMatrix();
+    });
+  }
 };
 
-uv.Actor.prototype.scale = function(scaleX, scaleY) {
-  this.matrix.scale(scaleX, scaleY);
-  return this;
-};
+// Calculate WorldView Transformation Matrix
 
-uv.Actor.prototype.rotate = function(rotation, rx, ry) {
-  this.matrix.rotate(rotation);
-  return this;
+uv.Actor.prototype.tWorldView = function(tView) {  
+  var t, pos;
+  
+  if (this.properties.preserveShape) {
+    t = new uv.Matrix2D(tView);
+    t.apply(this._tWorld);
+    pos = t.mult(new uv.Vector(0,0));
+    t.reset();
+    t.translate(pos.x, pos.y);
+    t.apply(this.tShape());
+  } else {
+    t = this.tShape();
+    t.apply(tView);
+    t.apply(this._tWorld);
+  }
+  
+  return t;
 };
 
 
@@ -141,9 +150,12 @@ uv.Actor.prototype.draw = function(ctx) {};
 
 uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   var p = new uv.Vector(mouseX,mouseY),
-      transform = new uv.Matrix2D(this.tmatrix);
+      t = new uv.Matrix2D(this._tWorld);
   
-  pnew = transform.inverse().mult(p);
+  // TODO: Add proper check for statically rendered actors,
+  //       based on this.scene.activeDisplay's view matrix  
+  
+  pnew = t.inverse().mult(p);
   mouseX = pnew.x;
   mouseY = pnew.y;
   
@@ -157,10 +169,12 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   return false;
 };
 
+
 uv.Actor.prototype.hasBounds = function() {
   var bounds = this.p('bounds');
   return bounds && bounds.length >= 3;
 };
+
 
 uv.Actor.prototype.drawBounds = function(ctx) {
   var bounds = this.p('bounds'),
@@ -174,44 +188,16 @@ uv.Actor.prototype.drawBounds = function(ctx) {
   ctx.lineTo(start.x, start.y);
 };
 
-// Precompile the Transformation Matrix
 
-uv.Actor.prototype.preRender = function() {
-  // Start with the parent matrix
-  if (this.parent) {
-    this.tmatrix = new uv.Matrix2D(this.parent.tmatrix);
-  } else {
-    this.tmatrix = new uv.Matrix2D();
-  }
-  
-  this.update();
-  this.tmatrix.translate(this.p('x'), this.p('y'));
-  this.tmatrix.rotate(this.p('rotation'));
-  this.tmatrix.scale(this.p('scaleX'), this.p('scaleY'));
-  
-  // Apply the Modification Matrix to the dynamically initialized one
-  this.tmatrix.apply(this.matrix);
-  
-  if (this.all('children')) {
-    this.all('children').each(function(i, child) {
-      child.preRender();
-    });
-  }
-};
+// Draws the Actor to a display
 
-// Draws the Actor to a Display
-
-uv.Actor.prototype.render = function(ctx, view) {
-  var that = this;
-  
+uv.Actor.prototype.render = function(ctx, tView) {
+  var that = this,
+      t = this.tWorldView(tView);
+      
   if (!this.p('visible')) return;
   
-  // Apply the view transformation
-  var transform = new uv.Matrix2D(view);
-  
-  // Apply the Actors Transformation Matrix
-  transform.apply(this.tmatrix);
-  ctx.setTransform(transform.elements[0], transform.elements[1], transform.elements[3], 
-                   transform.elements[4], transform.elements[2], transform.elements[5]);
+  ctx.setTransform(t.elements[0], t.elements[1], t.elements[3], 
+                   t.elements[4], t.elements[2], t.elements[5]);
   this.draw(ctx);
 };

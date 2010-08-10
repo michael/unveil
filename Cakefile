@@ -59,7 +59,7 @@ run = (args) ->
 
 # Log a message with a color.
 log = (message, color, explanation) ->
-  puts "#{color or ''}#message#reset #{explanation or ''}"
+  puts "#{color or ''}#{message}#{reset} #{explanation or ''}"
 
 # Build from source
 build = ->

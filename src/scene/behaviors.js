@@ -1,10 +1,11 @@
 uv.ZoomBehavior = function(display) {
   function zoom(zoom, rx, ry) {
-    display.matrix.translate(rx, ry);
-    display.matrix.scale(zoom, zoom);
-    display.matrix.translate(-rx, -ry);
+    display.tView.translate(rx, ry);
+    display.tView.scale(zoom, zoom);
+    display.tView.translate(-rx, -ry);
   }
   display.$canvas.bind('mousewheel', function(event, delta) {
+    display.zoom += 0.02 * delta;
     zoom(1+0.02 * delta, display.scene.mouseX, display.scene.mouseY);
   });
 };
@@ -42,7 +43,7 @@ uv.PanBehavior = function(display) {
       prevOffsetX = offsetX;
       prevOffsetY = offsetY;
       
-      display.matrix.translate(deltaX,deltaY);
+      display.tView.translate(deltaX,deltaY);
     }
   });
 };
