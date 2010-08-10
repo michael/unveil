@@ -34,13 +34,24 @@ uv.Scene = function(properties) {
     that.displays.push(new uv.Display(that, display));
   });
   
-  this.activeDisplay = null;
+  this.activeDisplay = this.displays[0];
   
   this.fps = 0;
   this.framerate = this.p('framerate');
+  
+  // Callbacks
+  this.callbacks = {};
+  this.callbacks.frame = function() {  };
+  this.callbacks.start = function() {  };
+  this.callbacks.top = function() {  };
 };
 
 uv.Scene.prototype = Object.extend(uv.Actor);
+
+// Register callbacks
+uv.Scene.prototype.on = function(name, fn) {
+  this.callbacks[name] = fn;
+};
 
 uv.Scene.prototype.add = function(child) {
   child.setScene(this);
@@ -76,6 +87,7 @@ uv.Scene.prototype.loop = function() {
     start = new Date().getTime();
     
     this.compileMatrix();
+    this.callbacks.frame();
     this.refreshDisplays();
     
     duration = new Date().getTime()-start;

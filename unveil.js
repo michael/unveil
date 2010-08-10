@@ -1536,7 +1536,8 @@ uv.Actor = function(properties) {
     fillStyle: '#000',
     strokeStyle: '#000',
     visible: true,
-    preserveShape: false
+    preserveShape: false,
+    sticky: false
   }, properties);
   
   this.replace('children', new uv.SortedHash());
@@ -1640,10 +1641,11 @@ uv.Actor.prototype.compileMatrix = function() {
 // Calculate WorldView Transformation Matrix
 
 uv.Actor.prototype.tWorldView = function(tView) {  
-  var t, pos;
+  var t, pos,
+      view = this.properties.sticky ? new uv.Matrix2D() : tView;
   
   if (this.properties.preserveShape) {
-    t = new uv.Matrix2D(tView);
+    t = new uv.Matrix2D(view);
     t.apply(this._tWorld);
     pos = t.mult(new uv.Vector(0,0));
     t.reset();
@@ -1651,7 +1653,7 @@ uv.Actor.prototype.tWorldView = function(tView) {
     t.apply(this.tShape());
   } else {
     t = this.tShape();
-    t.apply(tView);
+    t.apply(view);
     t.apply(this._tWorld);
   }
   
@@ -1953,13 +1955,24 @@ uv.Scene = function(properties) {
     that.displays.push(new uv.Display(that, display));
   });
   
-  this.activeDisplay = null;
+  this.activeDisplay = this.displays[0];
   
   this.fps = 0;
   this.framerate = this.p('framerate');
+  
+  // Callbacks
+  this.callbacks = {};
+  this.callbacks.frame = function() {  };
+  this.callbacks.start = function() {  };
+  this.callbacks.top = function() {  };
 };
 
 uv.Scene.prototype = Object.extend(uv.Actor);
+
+// Register callbacks
+uv.Scene.prototype.on = function(name, fn) {
+  this.callbacks[name] = fn;
+};
 
 uv.Scene.prototype.add = function(child) {
   child.setScene(this);
@@ -1995,6 +2008,7 @@ uv.Scene.prototype.loop = function() {
     start = new Date().getTime();
     
     this.compileMatrix();
+    this.callbacks.frame();
     this.refreshDisplays();
     
     duration = new Date().getTime()-start;

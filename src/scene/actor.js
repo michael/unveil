@@ -19,7 +19,8 @@ uv.Actor = function(properties) {
     fillStyle: '#000',
     strokeStyle: '#000',
     visible: true,
-    preserveShape: false
+    preserveShape: false,
+    sticky: false
   }, properties);
   
   this.replace('children', new uv.SortedHash());
@@ -123,10 +124,11 @@ uv.Actor.prototype.compileMatrix = function() {
 // Calculate WorldView Transformation Matrix
 
 uv.Actor.prototype.tWorldView = function(tView) {  
-  var t, pos;
+  var t, pos,
+      view = this.properties.sticky ? new uv.Matrix2D() : tView;
   
   if (this.properties.preserveShape) {
-    t = new uv.Matrix2D(tView);
+    t = new uv.Matrix2D(view);
     t.apply(this._tWorld);
     pos = t.mult(new uv.Vector(0,0));
     t.reset();
@@ -134,7 +136,7 @@ uv.Actor.prototype.tWorldView = function(tView) {
     t.apply(this.tShape());
   } else {
     t = this.tShape();
-    t.apply(tView);
+    t.apply(view);
     t.apply(this._tWorld);
   }
   

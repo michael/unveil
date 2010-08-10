@@ -46,6 +46,7 @@ files = [
   'src/scene/actors/bar.js'
   'src/scene/actors/label.js'
   'src/scene/actors/dot.js'
+  'src/scene/actors/path.js'
   'src/visualization/visualization.js'
   'src/outro.js'
 ]
