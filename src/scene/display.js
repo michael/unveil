@@ -27,6 +27,10 @@ uv.Display = function(scene, opts) {
     this.panbehavior = new uv.PanBehavior(this);
   }
   
+  // Callbacks
+  this.callbacks = {};
+  this.callbacks.viewChange = function() { };
+  
   // Register mouse events
   function mouseMove(e) {
     var mat = new uv.Matrix2D(that.tView),
@@ -43,8 +47,8 @@ uv.Display = function(scene, opts) {
     that.mouseY = pos.y;    
     
     worldPos = mat.mult(pos);
-    that.scene.mouseX = parseInt(worldPos.x);
-    that.scene.mouseY = parseInt(worldPos.y);
+    that.scene.mouseX = parseInt(worldPos.x, 10);
+    that.scene.mouseY = parseInt(worldPos.y, 10);
     
     that.scene.activeDisplay = that;
   }
@@ -56,6 +60,22 @@ uv.Display = function(scene, opts) {
   });
 };
 
+// Register callbacks
+uv.Display.prototype.on = function(name, fn) {
+  this.callbacks[name] = fn;
+};
+
+// Convert world pos to display pos
+
+uv.Display.prototype.displayPos = function(pos) {
+  return this.tView.mult(pos);
+};
+
+// Convert display pos to world pos
+
+uv.Display.prototype.worldPos = function(pos) {
+  return this.tView.inverse().mult(pos);
+};
 
 // Updates the display (on every frame)
 

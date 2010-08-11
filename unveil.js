@@ -1586,9 +1586,11 @@ uv.Actor.prototype.setScene = function(scene) {
 
 // Adds a new Actor as a child
 
-uv.Actor.prototype.add = function(child) {
-  this.set('children', this.childCount+=1, child);
+uv.Actor.prototype.add = function(child, key) {
+  var k = key ? key : this.childCount+=1;
+  this.set('children', k, child);
   child.parent = this;
+  child.setScene(this.scene);
   return child;
 };
 
@@ -1771,6 +1773,7 @@ uv.ZoomBehavior = function(display) {
   display.$canvas.bind('mousewheel', function(event, delta) {
     display.zoom += 0.02 * delta;
     zoom(1+0.02 * delta, display.scene.mouseX, display.scene.mouseY);
+    display.callbacks.viewChange.call(display);
   });
 };
 
@@ -1808,6 +1811,7 @@ uv.PanBehavior = function(display) {
       prevOffsetY = offsetY;
       
       display.tView.translate(deltaX,deltaY);
+      display.callbacks.viewChange.call(display);
     }
   });
 };
@@ -1842,6 +1846,10 @@ uv.Display = function(scene, opts) {
     this.panbehavior = new uv.PanBehavior(this);
   }
   
+  // Callbacks
+  this.callbacks = {};
+  this.callbacks.viewChange = function() { };
+  
   // Register mouse events
   function mouseMove(e) {
     var mat = new uv.Matrix2D(that.tView),
@@ -1858,8 +1866,8 @@ uv.Display = function(scene, opts) {
     that.mouseY = pos.y;    
     
     worldPos = mat.mult(pos);
-    that.scene.mouseX = parseInt(worldPos.x);
-    that.scene.mouseY = parseInt(worldPos.y);
+    that.scene.mouseX = parseInt(worldPos.x, 10);
+    that.scene.mouseY = parseInt(worldPos.y, 10);
     
     that.scene.activeDisplay = that;
   }
@@ -1871,6 +1879,22 @@ uv.Display = function(scene, opts) {
   });
 };
 
+// Register callbacks
+uv.Display.prototype.on = function(name, fn) {
+  this.callbacks[name] = fn;
+};
+
+// Convert world pos to display pos
+
+uv.Display.prototype.displayPos = function(pos) {
+  return this.tView.mult(pos);
+};
+
+// Convert display pos to world pos
+
+uv.Display.prototype.worldPos = function(pos) {
+  return this.tView.inverse().mult(pos);
+};
 
 // Updates the display (on every frame)
 
@@ -1943,6 +1967,9 @@ uv.Scene = function(properties) {
   // Keeps track of actors that capture mouse events
   this.interactiveActors = [];
   
+  // Keep track of all Actors
+  this.actors = {};
+  
   // The scene property references the Scene an Actor belongs to
   this.scene = this;
   
@@ -1962,9 +1989,9 @@ uv.Scene = function(properties) {
   
   // Callbacks
   this.callbacks = {};
-  this.callbacks.frame = function() {  };
-  this.callbacks.start = function() {  };
-  this.callbacks.top = function() {  };
+  this.callbacks.frame = function() {};
+  this.callbacks.start = function() {};
+  this.callbacks.stop  = function() {};
 };
 
 uv.Scene.prototype = Object.extend(uv.Actor);
@@ -1974,6 +2001,10 @@ uv.Scene.prototype.on = function(name, fn) {
   this.callbacks[name] = fn;
 };
 
+uv.Scene.prototype.get = function(key) {
+  return this.actors[key];
+};
+
 uv.Scene.prototype.add = function(child) {
   child.setScene(this);
   
@@ -1981,10 +2012,13 @@ uv.Scene.prototype.add = function(child) {
   return child;
 };
 
-uv.Scene.prototype.add = function(child) {
-  this.set('children', this.childCount+=1, child);
+uv.Scene.prototype.add = function(child, key) {
+  var k = key ? key : this.childCount+=1;
   
-  // updates all childs that do not have a scene reference
+  this.set('children', k, child);
+  this.actors[k] = child;
+  
+  // Updates all childs that do not have a scene reference yet
   child.setScene(this);
   return child;
 };
@@ -2357,8 +2391,8 @@ uv.Tween.strongEaseInOut = function(t,b,c,d) {
 uv.Bar = function(properties) {
   // super call
   uv.Actor.call(this, _.extend({
-    width: 30,
-    height: 50,
+    width: 0,
+    height: 0,
     strokeWeight: 2,
     strokeStyle: '#000',
     fillStyle: '#ccc',
@@ -2387,14 +2421,62 @@ uv.Label = function(properties) {
   uv.Actor.call(this, _.extend({
     text: '',
     textAlign: 'start',
-    font: '12px Helvetica, Arial'
+    font: '12px Helvetica, Arial',
+    fillStyle: '#444',
+    lineWidth: 0,
+    backgroundStyle: '#eee',
+    background: false
   }, properties));
 };
 
 uv.Label.prototype = Object.extend(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx) {
+  // Draw the label on a background rectangle
   ctx.font = this.p('font');
+  if (this.p('background')) {
+    var textWidth = ctx.measureText(this.p('text')).width;
+    
+    ctx.strokeStyle = this.p('strokeStyle');
+    ctx.fillStyle = this.p('backgroundStyle');
+        
+    function roundedRect(ctx, x, y, width, height, radius, stroke) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+      if (stroke)
+        ctx.stroke();
+      ctx.fill();
+    }
+    
+    var x, y, width, height;
+    
+    if (this.p('textAlign') == 'start') {
+      x = -5; y = -13;
+      width = textWidth+10;
+      height = 20;
+    } else if (this.p('textAlign') == 'center') {
+      x = -textWidth/2-5; y = -13;
+      width = textWidth+10;
+      height = 20;
+    } else if (this.p('textAlign') == 'right') {
+      x = -textWidth-5; y = -13;
+      width = textWidth+10;
+      height = 20;
+    }
+    
+    ctx.lineWidth = this.p('lineWidth');
+    roundedRect(ctx, x, y, width, height, 5, this.p('lineWidth') > 0);
+  }
+  
   ctx.fillStyle = this.p('fillStyle');
   
   ctx.textAlign = this.p('textAlign');
@@ -2409,7 +2491,8 @@ uv.Dot = function(properties) {
   uv.Actor.call(this, _.extend({
     radius: 20,
     strokeWeight: 2,
-    strokeStyle: '#ccc',
+    lineWidth: 3,
+    strokeStyle: '#fff',
     bounds: function() {
       return [
         { x: -this.p('radius'), y: -this.p('radius') },
@@ -2425,10 +2508,13 @@ uv.Dot.prototype = Object.extend(uv.Actor);
 
 uv.Dot.prototype.draw = function(ctx) {
   ctx.fillStyle = this.p('fillStyle');
+  ctx.strokeStyle = this.p('strokeStyle');
+  ctx.lineWidth = this.p('lineWidth');
   
   ctx.beginPath();
-  ctx.arc(0,0,this.p('radius'),0,Math.PI*2);
+  ctx.arc(0,0,this.p('radius'),0,Math.PI*2, false);
   ctx.closePath();
+  ctx.stroke();
   ctx.fill();
 };
 

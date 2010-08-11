@@ -7,6 +7,7 @@ uv.ZoomBehavior = function(display) {
   display.$canvas.bind('mousewheel', function(event, delta) {
     display.zoom += 0.02 * delta;
     zoom(1+0.02 * delta, display.scene.mouseX, display.scene.mouseY);
+    display.callbacks.viewChange.call(display);
   });
 };
 
@@ -44,6 +45,7 @@ uv.PanBehavior = function(display) {
       prevOffsetY = offsetY;
       
       display.tView.translate(deltaX,deltaY);
+      display.callbacks.viewChange.call(display);
     }
   });
 };

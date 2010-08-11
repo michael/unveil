@@ -69,9 +69,11 @@ uv.Actor.prototype.setScene = function(scene) {
 
 // Adds a new Actor as a child
 
-uv.Actor.prototype.add = function(child) {
-  this.set('children', this.childCount+=1, child);
+uv.Actor.prototype.add = function(child, key) {
+  var k = key ? key : this.childCount+=1;
+  this.set('children', k, child);
   child.parent = this;
+  child.setScene(this.scene);
   return child;
 };
 

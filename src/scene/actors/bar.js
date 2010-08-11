@@ -4,8 +4,8 @@
 uv.Bar = function(properties) {
   // super call
   uv.Actor.call(this, _.extend({
-    width: 30,
-    height: 50,
+    width: 0,
+    height: 0,
     strokeWeight: 2,
     strokeStyle: '#000',
     fillStyle: '#ccc',

@@ -22,6 +22,9 @@ uv.Scene = function(properties) {
   // Keeps track of actors that capture mouse events
   this.interactiveActors = [];
   
+  // Keep track of all Actors
+  this.actors = {};
+  
   // The scene property references the Scene an Actor belongs to
   this.scene = this;
   
@@ -41,9 +44,9 @@ uv.Scene = function(properties) {
   
   // Callbacks
   this.callbacks = {};
-  this.callbacks.frame = function() {  };
-  this.callbacks.start = function() {  };
-  this.callbacks.top = function() {  };
+  this.callbacks.frame = function() {};
+  this.callbacks.start = function() {};
+  this.callbacks.stop  = function() {};
 };
 
 uv.Scene.prototype = Object.extend(uv.Actor);
@@ -53,6 +56,10 @@ uv.Scene.prototype.on = function(name, fn) {
   this.callbacks[name] = fn;
 };
 
+uv.Scene.prototype.get = function(key) {
+  return this.actors[key];
+};
+
 uv.Scene.prototype.add = function(child) {
   child.setScene(this);
   
@@ -60,10 +67,13 @@ uv.Scene.prototype.add = function(child) {
   return child;
 };
 
-uv.Scene.prototype.add = function(child) {
-  this.set('children', this.childCount+=1, child);
+uv.Scene.prototype.add = function(child, key) {
+  var k = key ? key : this.childCount+=1;
   
-  // updates all childs that do not have a scene reference
+  this.set('children', k, child);
+  this.actors[k] = child;
+  
+  // Updates all childs that do not have a scene reference yet
   child.setScene(this);
   return child;
 };
