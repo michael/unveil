@@ -73,7 +73,9 @@ uv.Actor.prototype.add = function(child, key) {
   var k = key ? key : this.childCount+=1;
   this.set('children', k, child);
   child.parent = this;
-  child.setScene(this.scene);
+  if (this.scene) {
+    child.setScene(this.scene);
+  }  
   return child;
 };
 

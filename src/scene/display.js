@@ -43,14 +43,17 @@ uv.Display = function(scene, opts) {
       pos = new uv.Vector(e.layerX, e.layerY);
     }
     
-    that.mouseX = pos.x;
-    that.mouseY = pos.y;    
-    
-    worldPos = mat.mult(pos);
-    that.scene.mouseX = parseInt(worldPos.x, 10);
-    that.scene.mouseY = parseInt(worldPos.y, 10);
-    
-    that.scene.activeDisplay = that;
+    if (pos) {
+      that.mouseX = pos.x;
+      that.mouseY = pos.y;    
+
+      worldPos = mat.mult(pos);
+      that.scene.mouseX = parseInt(worldPos.x, 10);
+      that.scene.mouseY = parseInt(worldPos.y, 10);
+
+      that.scene.activeDisplay = that;
+      
+    }
   }
   
   this.$canvas.bind('mousemove', mouseMove);

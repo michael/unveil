@@ -1590,7 +1590,9 @@ uv.Actor.prototype.add = function(child, key) {
   var k = key ? key : this.childCount+=1;
   this.set('children', k, child);
   child.parent = this;
-  child.setScene(this.scene);
+  if (this.scene) {
+    child.setScene(this.scene);
+  }  
   return child;
 };
 
@@ -1862,14 +1864,17 @@ uv.Display = function(scene, opts) {
       pos = new uv.Vector(e.layerX, e.layerY);
     }
     
-    that.mouseX = pos.x;
-    that.mouseY = pos.y;    
-    
-    worldPos = mat.mult(pos);
-    that.scene.mouseX = parseInt(worldPos.x, 10);
-    that.scene.mouseY = parseInt(worldPos.y, 10);
-    
-    that.scene.activeDisplay = that;
+    if (pos) {
+      that.mouseX = pos.x;
+      that.mouseY = pos.y;    
+
+      worldPos = mat.mult(pos);
+      that.scene.mouseX = parseInt(worldPos.x, 10);
+      that.scene.mouseY = parseInt(worldPos.y, 10);
+
+      that.scene.activeDisplay = that;
+      
+    }
   }
   
   this.$canvas.bind('mousemove', mouseMove);
@@ -2040,9 +2045,8 @@ uv.Scene.prototype.loop = function() {
   
   if (this.running) {
     start = new Date().getTime();
-    
-    this.compileMatrix();
     this.callbacks.frame();
+    this.compileMatrix();
     this.refreshDisplays();
     
     duration = new Date().getTime()-start;
@@ -2483,10 +2487,10 @@ uv.Label.prototype.draw = function(ctx) {
   ctx.fillText(this.p('text'), 0, 0);
 };
 
-// Dot
+// Circle
 // =============================================================================
 
-uv.Dot = function(properties) {
+uv.Circle = function(properties) {
   // super call
   uv.Actor.call(this, _.extend({
     radius: 20,
@@ -2504,9 +2508,9 @@ uv.Dot = function(properties) {
   }, properties));
 };
 
-uv.Dot.prototype = Object.extend(uv.Actor);
+uv.Circle.prototype = Object.extend(uv.Actor);
 
-uv.Dot.prototype.draw = function(ctx) {
+uv.Circle.prototype.draw = function(ctx) {
   ctx.fillStyle = this.p('fillStyle');
   ctx.strokeStyle = this.p('strokeStyle');
   ctx.lineWidth = this.p('lineWidth');
