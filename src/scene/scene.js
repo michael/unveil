@@ -95,9 +95,8 @@ uv.Scene.prototype.loop = function() {
   
   if (this.running) {
     start = new Date().getTime();
-    
-    this.compileMatrix();
     this.callbacks.frame();
+    this.compileMatrix();
     this.refreshDisplays();
     
     duration = new Date().getTime()-start;
