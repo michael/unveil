@@ -1,7 +1,7 @@
-// Dot
+// Circle
 // =============================================================================
 
-uv.Dot = function(properties) {
+uv.Circle = function(properties) {
   // super call
   uv.Actor.call(this, _.extend({
     radius: 20,
@@ -19,9 +19,9 @@ uv.Dot = function(properties) {
   }, properties));
 };
 
-uv.Dot.prototype = Object.extend(uv.Actor);
+uv.Circle.prototype = Object.extend(uv.Actor);
 
-uv.Dot.prototype.draw = function(ctx) {
+uv.Circle.prototype.draw = function(ctx) {
   ctx.fillStyle = this.p('fillStyle');
   ctx.strokeStyle = this.p('strokeStyle');
   ctx.lineWidth = this.p('lineWidth');
