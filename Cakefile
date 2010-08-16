@@ -71,9 +71,9 @@ build = ->
 # Watch a source file for changes
 watch = (file) ->
   fs.watchFile file, {persistent: true, interval: 300}, (curr, prev) ->
-    if "#{curr.mtime}" != "#{prev.mtime}"
-      build()
-      log "Sucessfully rebuilt ./unveil.js at #{curr.mtime}", green  
+    return if curr.mtime.getTime() is prev.mtime.getTime()
+    build()
+    log "Sucessfully rebuilt ./unveil.js at #{curr.mtime}", green  
 
 
 task 'build:continuously', 'Build continuously (during development)', ->

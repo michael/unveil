@@ -62,8 +62,6 @@
       }
     }
   },
-  
-  
   "/doc/protovis_introduction": {
     "type": "/dc/document",
     "properties": {
@@ -90,10 +88,6 @@
       "page_count": 20
     }
   },
-  
-  
-  
-  
   "/location/stanford": {
     "type": "/dc/entity",
     "properties": {
@@ -122,10 +116,6 @@
       "mentions": ["M0000005"]
     }
   },
-
-
-
-
   "M0000001": {
     "type": "/dc/mention",
     "properties": {
@@ -166,5 +156,4 @@
       "page": 1
     }
   }
-
 }

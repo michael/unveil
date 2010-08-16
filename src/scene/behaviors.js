@@ -22,11 +22,13 @@ uv.PanBehavior = function(display) {
       prevOffsetY = 0;
   
   display.$canvas.bind('mousedown', function(event) {
-    paning = true;
-    startX = display.mouseX;
-    startY = display.mouseY;
-    prevOffsetX = 0;
-    prevOffsetY = 0;
+    if (display.mouseX) {
+      paning = true;
+      startX = display.mouseX;
+      startY = display.mouseY;
+      prevOffsetX = 0;
+      prevOffsetY = 0;      
+    }
   });
   
   display.$canvas.bind('mouseup', function(event) {

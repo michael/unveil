@@ -27,6 +27,7 @@ uv.Display = function(scene, opts) {
     this.panbehavior = new uv.PanBehavior(this);
   }
   
+  
   // Callbacks
   this.callbacks = {};
   this.callbacks.viewChange = function() { };
