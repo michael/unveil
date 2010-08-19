@@ -1804,6 +1804,7 @@ uv.PanBehavior = function(display) {
   });
   
   display.$canvas.bind('mousemove', function(event) {
+    var cache;
     if (paning) {
       offsetX = display.mouseX-startX;
       offsetY = display.mouseY -startY;
@@ -1814,7 +1815,12 @@ uv.PanBehavior = function(display) {
       prevOffsetX = offsetX;
       prevOffsetY = offsetY;
       
-      display.tView.translate(deltaX,deltaY);
+      // The new translate is performed first, to prevent
+      // it from being scaled by the current view matrix
+      cache = new uv.Matrix2D(display.tView);
+      display.tView.reset();
+      display.tView.translate(deltaX, deltaY);
+      display.tView.apply(cache);
       display.callbacks.viewChange.call(display);
     }
   });
