@@ -53,7 +53,6 @@ uv.Display = function(scene, opts) {
       that.scene.mouseY = parseInt(worldPos.y, 10);
 
       that.scene.activeDisplay = that;
-      
     }
   }
   
