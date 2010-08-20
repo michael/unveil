@@ -9,8 +9,9 @@ software design.
 Features:
 --------------------------------------------------------------------------------
 
-* Generic data abstraction via Collections
-* Visualization API (Pluggable visualizations)
+* Data Abstractions
+  * Collection (for simple collections of similar data items)
+  * DataGraph (for linked data)
 * Scene API
   * SceneGraph implementation
   * Custom Actors (graphical objects)
@@ -40,6 +41,71 @@ Examples
 * [Random Bars](http://quasipartikel.at/unveil/examples/random_bars.html)
 * [Linechart](http://quasipartikel.at/unveil/examples/linechart.html)
 * [Artist Similarities](http://quasipartikel.at/unveil/examples/artist_similarities.html)
+
+
+New Syntax (soon)
+--------------------------------------------------------------------------------
+
+I'm currently working on a Scene Definition Format (inspired by [Scene.js](http://www.google.com/url?sa=D&q=http://scenejs.wikispaces.com/JSON%2BScene%2BDefinition&usg=AFQjCNEk85cBgWeuJ9ZZO3XaXpOc2FgDVA))
+to give the whole thing an even more declarative feel. This is being implemented at the very moment, so in the meanwhile use the imperative syntax that is used in the examples.
+
+    var scene = new Scene({
+      framerate: 30,
+      traverser: uv.traverser.BreadthFirst
+      displays: [{
+        container: $('#canvas'),
+        width: 500,
+        height: 320,
+        zooming: true,
+        paning: true
+      }],
+      actors: [
+        {
+          id: 'moving_bar',
+          type: "uv.Bar",
+          properties: {
+            x: 50,
+            y: 70,
+            width: 200,
+            height: 150            
+          },
+          actors: [
+            {
+              type: "uv.Label",
+              properties: {
+                text: "I'm moving"
+              }
+            }
+          ]
+        },
+        {
+          id: 'animated_circle',
+          type: "uv.Circle",
+          properties: {
+            x: 50,
+            y: 70,
+            radius: 50,
+            height: 150            
+          }
+        }
+      ]
+    });
+    
+
+Since all actors have a unique id you can reference them programmatically and add special behavior (e.g. animation).
+
+    scene.get('moving_bar').on('mouseover', function() {
+      this.animate('x', 100, 200, uv.Tween.bounceEaseInOut);
+      this.animate('y', 200, 200);
+    });
+    
+    scene.get('moving_bar').on('click', function() {
+      this.animate('rotation', Math.PI/2, 2000);
+    });
+    
+    scene.get('animated_circle').on('click', function() {
+      this.animate('radius', 70, 200);
+    });
 
 
 Supported Browsers
