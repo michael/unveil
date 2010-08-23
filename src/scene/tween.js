@@ -1,39 +1,7 @@
-/**********************************************************************
-TERMS OF USE - EASING EQUATIONS
-Open source under the BSD License.
-Copyright (c) 2001 Robert Penner
-JavaScript version copyright (c) 2006 by Philippe Maegerman
-Adapted to work along with Processing.js (c) 2009 by Michael Aufreiter
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of the author nor the names of contributors may
-be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*****************************************/
+// Tween
+// =============================================================================
+//
+// Adapted from EASING EQUATIONS (R. Penner) and JSTween (P. Maegerman)
 
 uv.Tween = function(opts) {
   this.prop = opts.property;
@@ -42,18 +10,16 @@ uv.Tween = function(opts) {
   this._pos = this.begin;
   this.setDuration(opts.duration);
   
-  this.func = opts.easer || uv.Tween.strongEaseInOut;
+  this.easer = opts.easer || uv.Tween.strongEaseInOut;
   this.setFinish(opts.finish || opts.obj[this.prop]);
   
-  // callbacks
-  this.callbacks = {};
-  this.callbacks.start = function() {  };
-  this.callbacks.finish = function() {  };
+  // event handlers
+  this.handlers = {};
 };
 
 uv.Tween.prototype = {
   obj: new Object(),
-  func: function (t, b, c, d) { return c*t/d + b; },
+  easer: function (t, b, c, d) { return c*t/d + b; },
   begin: 0,
   change: 0,
   prevTime: 0,
@@ -68,8 +34,21 @@ uv.Tween.prototype = {
   _finish: 0,
   name: '',
   suffixe: '',
-  on: function(name, fn) {
-    this.callbacks[name] = fn;
+  // Bind event handler
+  bind: function(name, fn) {
+    if (!this.handlers[name]) {
+      this.handlers[name] = [];
+    }
+    this.handlers[name].push(fn);
+  },
+  // Trigger event
+  trigger: function(name) {
+    var that = this;
+    if (this.handlers[name]) {
+      _.each(this.handlers[name], function(fn) {
+        fn.apply(that, []);
+      });
+    }
   },
   setTime: function(t) {
   	this.prevTime = this._time;
@@ -81,8 +60,7 @@ uv.Tween.prototype = {
   		} else {
   			this._time = this._duration;
   			this.update();
-        
-        this.stop(); // CHECK!
+        this.stop();
   		}
   	} else if (t < 0) {
   		this.rewind();
@@ -96,7 +74,7 @@ uv.Tween.prototype = {
   	return this._time;
   },
   setDuration: function(d){
-  	this._duration = (d == null || d <= 0) ? 100000 : d;
+  	this._duration = (d == null || d <= 0) ? 0.2 : d / 1000;
   },
   getDuration: function(){
   	return this._duration;
@@ -109,7 +87,7 @@ uv.Tween.prototype = {
   },
   getPosition: function(t) {
   	if (t == undefined) t = this._time;
-  	return this.func(t, this.begin, this.change, this._duration);
+  	return this.easer(t, this.begin, this.change, this._duration);
   },
   setFinish: function(f) {
   	this.change = f - this.begin;
@@ -120,7 +98,7 @@ uv.Tween.prototype = {
   isPlaying: function() {
     return this._playing;
   },
-  init: function(obj, prop, func, begin, finish, duration, suffixe) {
+  init: function(obj, prop, easer, begin, finish, duration, suffixe) {
   	if (!arguments.length) return;
   	this._listeners = new Array();
   	this.addListener(this);
@@ -129,8 +107,8 @@ uv.Tween.prototype = {
   	this.begin = begin;
   	this._pos = begin;
   	this.setDuration(duration);
-  	if (func!=null && func!='') {
-  		this.func = func;
+  	if (easer!=null && easer!='') {
+  		this.easer = easer;
   	}
   	this.setFinish(finish);
   },
@@ -138,7 +116,7 @@ uv.Tween.prototype = {
   start: function() {
   	this.rewind();
   	this._playing = true;
-  	this.callbacks.start();
+  	this.trigger('start');
   },
   rewind: function(t) {
   	this.reset();
@@ -167,7 +145,7 @@ uv.Tween.prototype = {
   },
   stop: function() {
     this._playing = false;    
-    this.callbacks.finish();
+    this.trigger('finish');
   },
   continueTo: function(finish, duration) {
   	this.begin = this._pos;
@@ -197,7 +175,7 @@ uv.Tween.prototype = {
 uv.Tween.backEaseIn = function(t,b,c,d,a,p) {
 	if (s == undefined) var s = 1.70158;
 	return c*(t/=d)*t*((s+1)*t - s) + b;
-}
+};
 
 uv.Tween.backEaseOut = function(t,b,c,d,a,p) {
 	if (s === undefined) var s = 1.70158;
@@ -211,42 +189,45 @@ uv.Tween.backEaseInOut = function(t,b,c,d,a,p) {
 };
 
 uv.Tween.elasticEaseIn = function(t,b,c,d,a,p) {
+  var s;
 	if (t==0) return b;  
 	if ((t/=d)==1) return b+c;  
-	if (!p) p=d*.3;
+	if (!p) p=d*0.3;
 	if (!a || a < Math.abs(c)) {
-		a=c; var s=p/4;
+		a=c; s=p/4;
 	}
 	else 
-		var s = p/(2*Math.PI) * Math.asin (c/a);
+		s = p/(2*Math.PI) * Math.asin (c/a);
 
 	return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
 };
 
 uv.Tween.elasticEaseOut = function (t,b,c,d,a,p) {
-		if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
-		if (!a || a < Math.abs(c)) { a=c; var s=p/4; }
-		else var s = p/(2*Math.PI) * Math.asin (c/a);
-		return (a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b);
+  var s;
+	if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*0.3;
+	if (!a || a < Math.abs(c)) { a=c; s=p/4; }
+	else s = p/(2*Math.PI) * Math.asin (c/a);
+	return (a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b);
 };
 
 uv.Tween.elasticEaseInOut = function (t,b,c,d,a,p) {
-	if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) var p=d*(.3*1.5);
-	if (!a || a < Math.abs(c)) {var a=c; var s=p/4; }
-	else var s = p/(2*Math.PI) * Math.asin (c/a);
-	if (t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-	return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
+  var s;
+	if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) p=d*(0.3*1.5);
+	if (!a || a < Math.abs(c)) { a=c; s=p/4; }
+	else s = p/(2*Math.PI) * Math.asin (c/a);
+	if (t < 1) return -0.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+	return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*0.5 + c + b;
 };
 
 uv.Tween.bounceEaseOut = function(t,b,c,d) {
 	if ((t/=d) < (1/2.75)) {
 		return c*(7.5625*t*t) + b;
 	} else if (t < (2/2.75)) {
-		return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;
+		return c*(7.5625*(t-=(1.5/2.75))*t + 0.75) + b;
 	} else if (t < (2.5/2.75)) {
-		return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;
+		return c*(7.5625*(t-=(2.25/2.75))*t + 0.9375) + b;
 	} else {
-		return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;
+		return c*(7.5625*(t-=(2.625/2.75))*t + 0.984375) + b;
 	}
 };
 
@@ -255,8 +236,8 @@ uv.Tween.bounceEaseIn = function(t,b,c,d) {
 };
 
 uv.Tween.bounceEaseInOut = function(t,b,c,d) {
-	if (t < d/2) return Tween.bounceEaseIn (t*2, 0, c, d) * .5 + b;
-	else return Tween.bounceEaseOut (t*2-d, 0, c, d) * .5 + c*.5 + b;
+	if (t < d/2) return Tween.bounceEaseIn (t*2, 0, c, d) * 0.5 + b;
+	else return Tween.bounceEaseOut (t*2-d, 0, c, d) * 0.5 + c*0.5 + b;
 };
 
 uv.Tween.strongEaseInOut = function(t,b,c,d) {

@@ -7,19 +7,22 @@ uv.Circle = function(properties) {
     radius: 20,
     strokeWeight: 2,
     lineWidth: 3,
-    strokeStyle: '#fff',
-    bounds: function() {
-      return [
-        { x: -this.p('radius'), y: -this.p('radius') },
-        { x: this.p('radius'),  y: -this.p('radius') },
-        { x: this.p('radius'),  y: this.p('radius') },
-        { x: -this.p('radius'), y: this.p('radius') }
-      ];
-    }
+    strokeStyle: '#fff'
   }, properties));
 };
 
+uv.Actor.registeredActors.circle = uv.Circle;
+
 uv.Circle.prototype = Object.extend(uv.Actor);
+
+uv.Circle.prototype.bounds = function() {
+  return [
+    { x: -this.p('radius'), y: -this.p('radius') },
+    { x: this.p('radius'),  y: -this.p('radius') },
+    { x: this.p('radius'),  y: this.p('radius') },
+    { x: -this.p('radius'), y: this.p('radius') }
+  ];
+};
 
 uv.Circle.prototype.draw = function(ctx) {
   ctx.fillStyle = this.p('fillStyle');

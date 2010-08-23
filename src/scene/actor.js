@@ -23,13 +23,82 @@ uv.Actor = function(properties) {
     sticky: false
   }, properties);
   
+  // init children
   this.replace('children', new uv.SortedHash());
+  
+  // Init motion tween container
+  this.tweens = {};
   
   // Under mouse cursor
   this.active = false;
+  
+  // Event handlers
+  this.handlers = {};
 };
 
+// Registration point for custom actors
+uv.Actor.registeredActors = {};
+
 uv.Actor.prototype = Object.extend(uv.Node);
+
+
+// Bind event
+
+uv.Actor.prototype.bind = function(name, fn) {
+  if (!this.handlers[name]) {
+    this.handlers[name] = [];
+  }
+  this.handlers[name].push(fn);
+};
+
+
+// Trigger event
+
+uv.Actor.prototype.trigger = function(name) {
+  var that = this;
+  if (this.handlers[name]) {
+    _.each(this.handlers[name], function(fn) {
+      fn.apply(that, []);
+    });
+  }
+};
+
+
+// Generic factory method that creates an actor based on an Actor Spec
+
+uv.Actor.create = function(spec) {
+  var constructor = uv.Actor.registeredActors[spec.type];
+  if (!constructor) { 
+    throw "Actor type unregistered: '" + spec.type + "'"; 
+  }
+  return new constructor(spec);
+};
+
+
+// The actor's unique id
+
+uv.Actor.prototype.id = function() {
+  return this.p('id') || this.nodeId;
+};
+
+
+uv.Actor.prototype.add = function(spec) {
+  var actor = uv.Actor.create(spec);
+  
+  // Register actor at the scene object
+  this.scene.registerActor(actor);
+  
+  // Register as a child
+  this.set('children', actor.id(), actor);
+  actor.parent = this;
+  
+  // Register children
+  if (spec.actors) {
+    _.each(spec.actors, function(actorSpec) {
+      actor.add(actorSpec);
+    });
+  }
+};
 
 
 // Evaluates a property (in case of a function
@@ -50,34 +119,38 @@ uv.Actor.prototype.property = function(property, value) {
 uv.Actor.prototype.p = uv.Actor.prototype.property;
 
 
-// Recursively sets the scene reference to itself and all childs.
-// Registers an interactive node on the scene object if the user explicitly
-// declares the node as interactive, where interactivity conforms to activated
-// enabled interaction.
+// Registers a Tween on demand
 
-uv.Actor.prototype.setScene = function(scene) {
-  this.scene = scene;
-  if (this.properties.interactive) {
-    scene.interactiveActors.push(this);
-  }
-  if (this.all('children')) {
-    this.all('children').each(function(index, child) {
-      child.setScene(scene);
+uv.Actor.prototype.animate = function(property, value, duration, easer) {
+  var scene = this.scene;
+  
+  if (!this.tweens[property]) {
+    this.tweens[property] = new uv.Tween({
+      obj: this.properties,
+      property: property,
+      duration: duration || 1000
     });
   }
+  
+  if (easer) {
+    this.tweens[property].easer = uv.Tween[easer];
+  }
+  
+  // Request a higher framerate for the transition
+  // and release it after completion.
+  if (scene.commands.RequestFramerate) {
+    this.tweens[property].bind('start', function() {
+      scene.execute(uv.cmds.RequestFramerate);
+    });
+    this.tweens[property].bind('finish', function() {
+      scene.unexecute(uv.cmds.RequestFramerate);
+    });      
+  }
+
+  this.tweens[property].continueTo(value, duration || 1000);
+  return this.tweens[property];
 };
 
-// Adds a new Actor as a child
-
-uv.Actor.prototype.add = function(child, key) {
-  var k = key ? key : this.childCount+=1;
-  this.set('children', k, child);
-  child.parent = this;
-  if (this.scene) {
-    child.setScene(this.scene);
-  }  
-  return child;
-};
 
 
 // Dynamic Matrices
@@ -151,7 +224,13 @@ uv.Actor.prototype.tWorldView = function(tView) {
 // Drawing, masking and rendering
 // -----------------------------------------------------------------------------
 
-uv.Actor.prototype.update = function() {};
+uv.Actor.prototype.update = function() {
+  // update motion tweens
+  _.each(this.tweens, function(t) {
+    t.tick();
+  });
+};
+
 uv.Actor.prototype.draw = function(ctx) {};
 
 uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
@@ -165,25 +244,21 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   mouseX = pnew.x;
   mouseY = pnew.y;
   
-  if (this.hasBounds() && ctx.isPointInPath) {
+  // if (this.hasBounds() && ctx.isPointInPath) {
+  if (this.bounds && ctx.isPointInPath) {
     this.drawBounds(ctx);
     if (ctx.isPointInPath(mouseX, mouseY))
       this.active = true;
     else
       this.active = false;
   }
-  return false;
+  return this.active;
 };
 
-
-uv.Actor.prototype.hasBounds = function() {
-  var bounds = this.p('bounds');
-  return bounds && bounds.length >= 3;
-};
 
 
 uv.Actor.prototype.drawBounds = function(ctx) {
-  var bounds = this.p('bounds'),
+  var bounds = this.bounds(),
       start, v;
   start = bounds.shift();
   ctx.beginPath();

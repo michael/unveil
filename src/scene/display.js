@@ -27,7 +27,6 @@ uv.Display = function(scene, opts) {
     this.panbehavior = new uv.PanBehavior(this);
   }
   
-  
   // Callbacks
   this.callbacks = {};
   this.callbacks.viewChange = function() { };
@@ -51,7 +50,6 @@ uv.Display = function(scene, opts) {
       worldPos = mat.mult(pos);
       that.scene.mouseX = parseInt(worldPos.x, 10);
       that.scene.mouseY = parseInt(worldPos.y, 10);
-
       that.scene.activeDisplay = that;
     }
   }
@@ -60,6 +58,12 @@ uv.Display = function(scene, opts) {
   this.$canvas.bind('mouseout', function() {
     that.scene.mouseX = NaN;
     that.scene.mouseY = NaN;
+  });
+  
+  this.$canvas.bind('click', function() {
+    _.each(that.scene.activeActors, function(a) {
+      a.trigger('click');
+    });
   });
 };
 

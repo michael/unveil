@@ -13,17 +13,19 @@ uv.Label = function(properties) {
   }, properties));
 };
 
+uv.Actor.registeredActors.label = uv.Label;
+
 uv.Label.prototype = Object.extend(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx) {
-  // Draw the label on a background rectangle
   ctx.font = this.p('font');
+  // Draw the label on a background rectangle
   if (this.p('background')) {
     var textWidth = ctx.measureText(this.p('text')).width;
     
     ctx.strokeStyle = this.p('strokeStyle');
     ctx.fillStyle = this.p('backgroundStyle');
-        
+
     function roundedRect(ctx, x, y, width, height, radius, stroke) {
       ctx.beginPath();
       ctx.moveTo(x + radius, y);

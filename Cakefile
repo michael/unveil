@@ -43,7 +43,7 @@ files = [
   'src/scene/commands.js'
   'src/scene/scene.js'
   'src/scene/tween.js'
-  'src/scene/actors/bar.js'
+  'src/scene/actors/rect.js'
   'src/scene/actors/label.js'
   'src/scene/actors/circle.js'
   'src/scene/actors/path.js'

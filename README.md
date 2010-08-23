@@ -6,6 +6,7 @@ software design.
 
 [Documentation](http://docs.quasipartikel.at/#/unveil) is under construction but already available.
 
+
 Features:
 --------------------------------------------------------------------------------
 
@@ -14,10 +15,10 @@ Features:
   * DataGraph (for linked data)
 * Scene API
   * SceneGraph implementation
+  * Declarative syntax
   * Custom Actors (graphical objects)
   * Dynamic Actor Properties (you can assign functions instead of values)
   * Motion Tweening
-  * Modification Matrix (applied after the initial transforms, which are specified via properties)
   * Commands (e.g. save cpu cycles using event-based framerate determination)
   * Multiple Displays (the scene can be projected to one or more canvas elements)
   * Adjustable drawing order through Graph Traversers
@@ -43,11 +44,13 @@ Examples
 * [Artist Similarities](http://quasipartikel.at/unveil/examples/artist_similarities.html)
 
 
-New Syntax (soon)
+New declarative Syntax
 --------------------------------------------------------------------------------
 
-I'm currently working on a Scene Definition Format (inspired by [Scene.js](http://www.google.com/url?sa=D&q=http://scenejs.wikispaces.com/JSON%2BScene%2BDefinition&usg=AFQjCNEk85cBgWeuJ9ZZO3XaXpOc2FgDVA))
-to give the whole thing an even more declarative feel. This is being implemented at the very moment, so in the meanwhile use the imperative syntax that is used in the examples.
+I took some inspiration from Scene.js's [Scene Definition Format](http://www.google.com/url?sa=D&q=http://scenejs.wikispaces.com/JSON%2BScene%2BDefinition&usg=AFQjCNEk85cBgWeuJ9ZZO3XaXpOc2FgDVA)
+to give the whole thing an even more declarative feel.
+
+Actors as well as the whole Scene are now specified declaratively using a simple Specification Syntax.
 
     var scene = new Scene({
       framerate: 30,
@@ -61,49 +64,42 @@ to give the whole thing an even more declarative feel. This is being implemented
       }],
       actors: [
         {
-          id: 'moving_bar',
-          type: "uv.Bar",
-          properties: {
-            x: 50,
-            y: 70,
-            width: 200,
-            height: 150            
-          },
+          id: 'moving_rect',
+          type: "rect",
+          x: 50,
+          y: 70,
+          width: 200,
+          height: 150,
           actors: [
             {
-              type: "uv.Label",
-              properties: {
-                text: "I'm moving"
-              }
+              type: "label",
+              text: "I'm moving"
             }
           ]
         },
         {
           id: 'animated_circle',
-          type: "uv.Circle",
-          properties: {
-            x: 50,
-            y: 70,
-            radius: 50,
-            height: 150            
-          }
+          type: "circle",
+          x: 50,
+          y: 70,
+          radius: 50,
+          height: 150
         }
       ]
     });
-    
 
 Since all actors have a unique id you can reference them programmatically and add special behavior (e.g. animation).
 
-    scene.get('moving_bar').on('mouseover', function() {
-      this.animate('x', 100, 200, uv.Tween.bounceEaseInOut);
+    scene.get('moving_rect').bind('mouseover', function() {
+      this.animate('x', 100, 200, 'bounceEaseInOut');
       this.animate('y', 200, 200);
     });
     
-    scene.get('moving_bar').on('click', function() {
+    scene.get('moving_rect').bind('click', function() {
       this.animate('rotation', Math.PI/2, 2000);
     });
     
-    scene.get('animated_circle').on('click', function() {
+    scene.get('animated_circle').bind('click', function() {
       this.animate('radius', 70, 200);
     });
 

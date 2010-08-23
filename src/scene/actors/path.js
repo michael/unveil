@@ -11,6 +11,8 @@ uv.Path = function(properties) {
   }, properties));
 };
 
+uv.Actor.registeredActors.path = uv.Path;
+
 uv.Path.prototype = Object.extend(uv.Actor);
 
 uv.Path.prototype.draw = function(ctx) {

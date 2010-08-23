@@ -5,13 +5,12 @@ uv.Scene = function(properties) {
   var that = this;
   
   // super call
-  uv.Actor.call(this);
+  uv.Actor.call(this, properties);
   
   _.extend(this.properties, {
     width: 0,
     height: 0,
     fillStyle: '#fff',
-    element: '#canvas',
     framerate: 10,
     traverser: uv.traverser.DepthFirst
   }, properties);
@@ -22,14 +21,14 @@ uv.Scene = function(properties) {
   // Keeps track of actors that capture mouse events
   this.interactiveActors = [];
   
+  // Currently active actors (under cursor)
+  this.activeActors = [];
+  
   // Keep track of all Actors
   this.actors = {};
   
   // The scene property references the Scene an Actor belongs to
   this.scene = this;
-  
-  // Commands hook in here
-  this.commands = {};
   
   // Attached Displays
   this.displays = [];
@@ -42,41 +41,43 @@ uv.Scene = function(properties) {
   this.fps = 0;
   this.framerate = this.p('framerate');
   
-  // Callbacks
-  this.callbacks = {};
-  this.callbacks.frame = function() {};
-  this.callbacks.start = function() {};
-  this.callbacks.stop  = function() {};
+  // Commands hook in here
+  this.commands = {};
+  this.register(uv.cmds.RequestFramerate, {framerate: 60});
+  
+  // Register actors
+  if (properties.actors) {
+    _.each(properties.actors, function(actorSpec) {
+      that.add(actorSpec);
+    });
+  }
 };
 
 uv.Scene.prototype = Object.extend(uv.Actor);
 
-// Register callbacks
-uv.Scene.prototype.on = function(name, fn) {
-  this.callbacks[name] = fn;
+
+uv.Scene.prototype.registerActor = function(actor) {
+  var id = actor.id();
+  if (this.actors[id])
+    throw "ID '" + id + "' already registered.";
+  
+  // Set the scene reference
+  actor.scene = this;
+  
+  // Register actor in scene space
+  this.actors[id] = actor;
+  
+  // Register as interactive
+  if (actor.p('interactive')) {
+    this.interactiveActors.push(actor);
+  }
 };
+
 
 uv.Scene.prototype.get = function(key) {
   return this.actors[key];
 };
 
-uv.Scene.prototype.add = function(child) {
-  child.setScene(this);
-  
-  uv.Actor.prototype.add.call(this, child);
-  return child;
-};
-
-uv.Scene.prototype.add = function(child, key) {
-  var k = key ? key : this.childCount+=1;
-  
-  this.set('children', k, child);
-  this.actors[k] = child;
-  
-  // Updates all childs that do not have a scene reference yet
-  child.setScene(this);
-  return child;
-};
 
 uv.Scene.prototype.start = function(options) {
   var that = this,
@@ -84,21 +85,23 @@ uv.Scene.prototype.start = function(options) {
       
   _.extend(opts, options);
   this.running = true;
+  this.trigger('start');
   this.loop();
   this.checkActiveActors();
 };
 
-// the draw loop
+
+// The draw loop
+
 uv.Scene.prototype.loop = function() {
   var that = this,
       start, duration;
   
   if (this.running) {
     start = new Date().getTime();
-    this.callbacks.frame();
+    this.trigger('frame');
     this.compileMatrix();
     this.refreshDisplays();
-    
     duration = new Date().getTime()-start;
     
     this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
@@ -108,6 +111,7 @@ uv.Scene.prototype.loop = function() {
 
 uv.Scene.prototype.stop = function(options) {
   this.running = false;
+  this.trigger('stop');
 };
 
 uv.Scene.prototype.traverse = function() {
@@ -116,12 +120,25 @@ uv.Scene.prototype.traverse = function() {
 
 uv.Scene.prototype.checkActiveActors = function() {
   var ctx = this.displays[0].ctx,
-      that = this;
+      that = this,
+      prevActiveActors = this.activeActors;
   
   if (this.running) {
     if (this.scene.mouseX !== NaN) {
+      
+      this.activeActors = [];
       _.each(this.interactiveActors, function(actor) {
-        actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
+        var active = actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
+        if (active) {
+          that.activeActors.push(actor);
+          if (!_.include(prevActiveActors, actor)) {
+            actor.trigger('mouseover');
+          }
+        } else {
+          if (_.include(prevActiveActors, actor)) {
+            actor.trigger('mouseout');
+          }
+        }
       });
     }
     setTimeout(function() { that.checkActiveActors(); }, (1000/10));
@@ -144,8 +161,8 @@ uv.Scene.prototype.register = function(cmd, options) {
 
 uv.Scene.prototype.execute = function(cmd) {
   this.commands[cmd.className].execute();
-}
+};
 
 uv.Scene.prototype.unexecute = function(cmd) {
   this.commands[cmd.className].unexecute();
-}
+};

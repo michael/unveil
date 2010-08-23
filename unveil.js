@@ -390,7 +390,7 @@ uv.Comparators.DESC = function(item1, item2) {
 // Returns:
 //   => [Node] the constructed Node
 uv.Node = function (options) {
-  this.id = uv.Node.generateId();
+  this.nodeId = uv.Node.generateId();
   if (options) {
     this.val = options.value; // used for leave nodes (simple types)
   }
@@ -402,7 +402,7 @@ uv.Node = function (options) {
 // Returns:
 //   => [String, Number] The Node's identity which is simply the node's id
 uv.Node.prototype.identity = function() {
-  return this.id;
+  return this.nodeId;
 };
 
 uv.Node.nodeCount = 0;
@@ -477,6 +477,7 @@ uv.Node.prototype.value = function(property) {
   return this.values(property).first();
 };
 
+
 // Values of associated target nodes for non-unique properties
 // 
 // Returns:
@@ -490,8 +491,9 @@ uv.Node.prototype.values = function(property) {
   });
 };
 
+
 uv.Node.prototype.toString = function() {
-  var str = "Node#"+this.id+" {\n",
+  var str = "Node#"+this.nodeId+" {\n",
       that = this;
       
   _.each(this._properties, function(node, key) {
@@ -1186,10 +1188,9 @@ uv.Resource.prototype.get = function(property, key) {
   }
 };
 
-////////////////////////////////////////////////////////////////////////////
-// Vector
-// Taken from Processing.js
-////////////////////////////////////////////////////////////////////////////
+// Vector (taken from Processing.js)
+// =============================================================================
+
 uv.Vector = function(x, y, z) {
   this.x = x || 0;
   this.y = y || 0;
@@ -1540,13 +1541,82 @@ uv.Actor = function(properties) {
     sticky: false
   }, properties);
   
+  // init children
   this.replace('children', new uv.SortedHash());
+  
+  // Init motion tween container
+  this.tweens = {};
   
   // Under mouse cursor
   this.active = false;
+  
+  // Event handlers
+  this.handlers = {};
 };
 
+// Registration point for custom actors
+uv.Actor.registeredActors = {};
+
 uv.Actor.prototype = Object.extend(uv.Node);
+
+
+// Bind event
+
+uv.Actor.prototype.bind = function(name, fn) {
+  if (!this.handlers[name]) {
+    this.handlers[name] = [];
+  }
+  this.handlers[name].push(fn);
+};
+
+
+// Trigger event
+
+uv.Actor.prototype.trigger = function(name) {
+  var that = this;
+  if (this.handlers[name]) {
+    _.each(this.handlers[name], function(fn) {
+      fn.apply(that, []);
+    });
+  }
+};
+
+
+// Generic factory method that creates an actor based on an Actor Spec
+
+uv.Actor.create = function(spec) {
+  var constructor = uv.Actor.registeredActors[spec.type];
+  if (!constructor) { 
+    throw "Actor type unregistered: '" + spec.type + "'"; 
+  }
+  return new constructor(spec);
+};
+
+
+// The actor's unique id
+
+uv.Actor.prototype.id = function() {
+  return this.p('id') || this.nodeId;
+};
+
+
+uv.Actor.prototype.add = function(spec) {
+  var actor = uv.Actor.create(spec);
+  
+  // Register actor at the scene object
+  this.scene.registerActor(actor);
+  
+  // Register as a child
+  this.set('children', actor.id(), actor);
+  actor.parent = this;
+  
+  // Register children
+  if (spec.actors) {
+    _.each(spec.actors, function(actorSpec) {
+      actor.add(actorSpec);
+    });
+  }
+};
 
 
 // Evaluates a property (in case of a function
@@ -1567,34 +1637,38 @@ uv.Actor.prototype.property = function(property, value) {
 uv.Actor.prototype.p = uv.Actor.prototype.property;
 
 
-// Recursively sets the scene reference to itself and all childs.
-// Registers an interactive node on the scene object if the user explicitly
-// declares the node as interactive, where interactivity conforms to activated
-// enabled interaction.
+// Registers a Tween on demand
 
-uv.Actor.prototype.setScene = function(scene) {
-  this.scene = scene;
-  if (this.properties.interactive) {
-    scene.interactiveActors.push(this);
-  }
-  if (this.all('children')) {
-    this.all('children').each(function(index, child) {
-      child.setScene(scene);
+uv.Actor.prototype.animate = function(property, value, duration, easer) {
+  var scene = this.scene;
+  
+  if (!this.tweens[property]) {
+    this.tweens[property] = new uv.Tween({
+      obj: this.properties,
+      property: property,
+      duration: duration || 1000
     });
   }
+  
+  if (easer) {
+    this.tweens[property].easer = uv.Tween[easer];
+  }
+  
+  // Request a higher framerate for the transition
+  // and release it after completion.
+  if (scene.commands.RequestFramerate) {
+    this.tweens[property].bind('start', function() {
+      scene.execute(uv.cmds.RequestFramerate);
+    });
+    this.tweens[property].bind('finish', function() {
+      scene.unexecute(uv.cmds.RequestFramerate);
+    });      
+  }
+
+  this.tweens[property].continueTo(value, duration || 1000);
+  return this.tweens[property];
 };
 
-// Adds a new Actor as a child
-
-uv.Actor.prototype.add = function(child, key) {
-  var k = key ? key : this.childCount+=1;
-  this.set('children', k, child);
-  child.parent = this;
-  if (this.scene) {
-    child.setScene(this.scene);
-  }  
-  return child;
-};
 
 
 // Dynamic Matrices
@@ -1668,7 +1742,13 @@ uv.Actor.prototype.tWorldView = function(tView) {
 // Drawing, masking and rendering
 // -----------------------------------------------------------------------------
 
-uv.Actor.prototype.update = function() {};
+uv.Actor.prototype.update = function() {
+  // update motion tweens
+  _.each(this.tweens, function(t) {
+    t.tick();
+  });
+};
+
 uv.Actor.prototype.draw = function(ctx) {};
 
 uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
@@ -1682,25 +1762,21 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   mouseX = pnew.x;
   mouseY = pnew.y;
   
-  if (this.hasBounds() && ctx.isPointInPath) {
+  // if (this.hasBounds() && ctx.isPointInPath) {
+  if (this.bounds && ctx.isPointInPath) {
     this.drawBounds(ctx);
     if (ctx.isPointInPath(mouseX, mouseY))
       this.active = true;
     else
       this.active = false;
   }
-  return false;
+  return this.active;
 };
 
-
-uv.Actor.prototype.hasBounds = function() {
-  var bounds = this.p('bounds');
-  return bounds && bounds.length >= 3;
-};
 
 
 uv.Actor.prototype.drawBounds = function(ctx) {
-  var bounds = this.p('bounds'),
+  var bounds = this.bounds(),
       start, v;
   start = bounds.shift();
   ctx.beginPath();
@@ -1856,7 +1932,6 @@ uv.Display = function(scene, opts) {
     this.panbehavior = new uv.PanBehavior(this);
   }
   
-  
   // Callbacks
   this.callbacks = {};
   this.callbacks.viewChange = function() { };
@@ -1880,9 +1955,7 @@ uv.Display = function(scene, opts) {
       worldPos = mat.mult(pos);
       that.scene.mouseX = parseInt(worldPos.x, 10);
       that.scene.mouseY = parseInt(worldPos.y, 10);
-
       that.scene.activeDisplay = that;
-      
     }
   }
   
@@ -1890,6 +1963,12 @@ uv.Display = function(scene, opts) {
   this.$canvas.bind('mouseout', function() {
     that.scene.mouseX = NaN;
     that.scene.mouseY = NaN;
+  });
+  
+  this.$canvas.bind('click', function() {
+    _.each(that.scene.activeActors, function(a) {
+      a.trigger('click');
+    });
   });
 };
 
@@ -1964,13 +2043,12 @@ uv.Scene = function(properties) {
   var that = this;
   
   // super call
-  uv.Actor.call(this);
+  uv.Actor.call(this, properties);
   
   _.extend(this.properties, {
     width: 0,
     height: 0,
     fillStyle: '#fff',
-    element: '#canvas',
     framerate: 10,
     traverser: uv.traverser.DepthFirst
   }, properties);
@@ -1981,14 +2059,14 @@ uv.Scene = function(properties) {
   // Keeps track of actors that capture mouse events
   this.interactiveActors = [];
   
+  // Currently active actors (under cursor)
+  this.activeActors = [];
+  
   // Keep track of all Actors
   this.actors = {};
   
   // The scene property references the Scene an Actor belongs to
   this.scene = this;
-  
-  // Commands hook in here
-  this.commands = {};
   
   // Attached Displays
   this.displays = [];
@@ -2001,41 +2079,43 @@ uv.Scene = function(properties) {
   this.fps = 0;
   this.framerate = this.p('framerate');
   
-  // Callbacks
-  this.callbacks = {};
-  this.callbacks.frame = function() {};
-  this.callbacks.start = function() {};
-  this.callbacks.stop  = function() {};
+  // Commands hook in here
+  this.commands = {};
+  this.register(uv.cmds.RequestFramerate, {framerate: 60});
+  
+  // Register actors
+  if (properties.actors) {
+    _.each(properties.actors, function(actorSpec) {
+      that.add(actorSpec);
+    });
+  }
 };
 
 uv.Scene.prototype = Object.extend(uv.Actor);
 
-// Register callbacks
-uv.Scene.prototype.on = function(name, fn) {
-  this.callbacks[name] = fn;
+
+uv.Scene.prototype.registerActor = function(actor) {
+  var id = actor.id();
+  if (this.actors[id])
+    throw "ID '" + id + "' already registered.";
+  
+  // Set the scene reference
+  actor.scene = this;
+  
+  // Register actor in scene space
+  this.actors[id] = actor;
+  
+  // Register as interactive
+  if (actor.p('interactive')) {
+    this.interactiveActors.push(actor);
+  }
 };
+
 
 uv.Scene.prototype.get = function(key) {
   return this.actors[key];
 };
 
-uv.Scene.prototype.add = function(child) {
-  child.setScene(this);
-  
-  uv.Actor.prototype.add.call(this, child);
-  return child;
-};
-
-uv.Scene.prototype.add = function(child, key) {
-  var k = key ? key : this.childCount+=1;
-  
-  this.set('children', k, child);
-  this.actors[k] = child;
-  
-  // Updates all childs that do not have a scene reference yet
-  child.setScene(this);
-  return child;
-};
 
 uv.Scene.prototype.start = function(options) {
   var that = this,
@@ -2043,21 +2123,23 @@ uv.Scene.prototype.start = function(options) {
       
   _.extend(opts, options);
   this.running = true;
+  this.trigger('start');
   this.loop();
   this.checkActiveActors();
 };
 
-// the draw loop
+
+// The draw loop
+
 uv.Scene.prototype.loop = function() {
   var that = this,
       start, duration;
   
   if (this.running) {
     start = new Date().getTime();
-    this.callbacks.frame();
+    this.trigger('frame');
     this.compileMatrix();
     this.refreshDisplays();
-    
     duration = new Date().getTime()-start;
     
     this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
@@ -2067,6 +2149,7 @@ uv.Scene.prototype.loop = function() {
 
 uv.Scene.prototype.stop = function(options) {
   this.running = false;
+  this.trigger('stop');
 };
 
 uv.Scene.prototype.traverse = function() {
@@ -2075,12 +2158,25 @@ uv.Scene.prototype.traverse = function() {
 
 uv.Scene.prototype.checkActiveActors = function() {
   var ctx = this.displays[0].ctx,
-      that = this;
+      that = this,
+      prevActiveActors = this.activeActors;
   
   if (this.running) {
     if (this.scene.mouseX !== NaN) {
+      
+      this.activeActors = [];
       _.each(this.interactiveActors, function(actor) {
-        actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
+        var active = actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
+        if (active) {
+          that.activeActors.push(actor);
+          if (!_.include(prevActiveActors, actor)) {
+            actor.trigger('mouseover');
+          }
+        } else {
+          if (_.include(prevActiveActors, actor)) {
+            actor.trigger('mouseout');
+          }
+        }
       });
     }
     setTimeout(function() { that.checkActiveActors(); }, (1000/10));
@@ -2103,47 +2199,15 @@ uv.Scene.prototype.register = function(cmd, options) {
 
 uv.Scene.prototype.execute = function(cmd) {
   this.commands[cmd.className].execute();
-}
+};
 
 uv.Scene.prototype.unexecute = function(cmd) {
   this.commands[cmd.className].unexecute();
-}
-/**********************************************************************
-TERMS OF USE - EASING EQUATIONS
-Open source under the BSD License.
-Copyright (c) 2001 Robert Penner
-JavaScript version copyright (c) 2006 by Philippe Maegerman
-Adapted to work along with Processing.js (c) 2009 by Michael Aufreiter
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are
-met:
-
-   * Redistributions of source code must retain the above copyright
-notice, this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above
-copyright notice, this list of conditions and the following disclaimer
-in the documentation and/or other materials provided with the
-distribution.
-   * Neither the name of the author nor the names of contributors may
-be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-*****************************************/
+};
+// Tween
+// =============================================================================
+//
+// Adapted from EASING EQUATIONS (R. Penner) and JSTween (P. Maegerman)
 
 uv.Tween = function(opts) {
   this.prop = opts.property;
@@ -2152,18 +2216,16 @@ uv.Tween = function(opts) {
   this._pos = this.begin;
   this.setDuration(opts.duration);
   
-  this.func = opts.easer || uv.Tween.strongEaseInOut;
+  this.easer = opts.easer || uv.Tween.strongEaseInOut;
   this.setFinish(opts.finish || opts.obj[this.prop]);
   
-  // callbacks
-  this.callbacks = {};
-  this.callbacks.start = function() {  };
-  this.callbacks.finish = function() {  };
+  // event handlers
+  this.handlers = {};
 };
 
 uv.Tween.prototype = {
   obj: new Object(),
-  func: function (t, b, c, d) { return c*t/d + b; },
+  easer: function (t, b, c, d) { return c*t/d + b; },
   begin: 0,
   change: 0,
   prevTime: 0,
@@ -2178,8 +2240,21 @@ uv.Tween.prototype = {
   _finish: 0,
   name: '',
   suffixe: '',
-  on: function(name, fn) {
-    this.callbacks[name] = fn;
+  // Bind event handler
+  bind: function(name, fn) {
+    if (!this.handlers[name]) {
+      this.handlers[name] = [];
+    }
+    this.handlers[name].push(fn);
+  },
+  // Trigger event
+  trigger: function(name) {
+    var that = this;
+    if (this.handlers[name]) {
+      _.each(this.handlers[name], function(fn) {
+        fn.apply(that, []);
+      });
+    }
   },
   setTime: function(t) {
   	this.prevTime = this._time;
@@ -2191,8 +2266,7 @@ uv.Tween.prototype = {
   		} else {
   			this._time = this._duration;
   			this.update();
-        
-        this.stop(); // CHECK!
+        this.stop();
   		}
   	} else if (t < 0) {
   		this.rewind();
@@ -2206,7 +2280,7 @@ uv.Tween.prototype = {
   	return this._time;
   },
   setDuration: function(d){
-  	this._duration = (d == null || d <= 0) ? 100000 : d;
+  	this._duration = (d == null || d <= 0) ? 0.2 : d / 1000;
   },
   getDuration: function(){
   	return this._duration;
@@ -2219,7 +2293,7 @@ uv.Tween.prototype = {
   },
   getPosition: function(t) {
   	if (t == undefined) t = this._time;
-  	return this.func(t, this.begin, this.change, this._duration);
+  	return this.easer(t, this.begin, this.change, this._duration);
   },
   setFinish: function(f) {
   	this.change = f - this.begin;
@@ -2230,7 +2304,7 @@ uv.Tween.prototype = {
   isPlaying: function() {
     return this._playing;
   },
-  init: function(obj, prop, func, begin, finish, duration, suffixe) {
+  init: function(obj, prop, easer, begin, finish, duration, suffixe) {
   	if (!arguments.length) return;
   	this._listeners = new Array();
   	this.addListener(this);
@@ -2239,8 +2313,8 @@ uv.Tween.prototype = {
   	this.begin = begin;
   	this._pos = begin;
   	this.setDuration(duration);
-  	if (func!=null && func!='') {
-  		this.func = func;
+  	if (easer!=null && easer!='') {
+  		this.easer = easer;
   	}
   	this.setFinish(finish);
   },
@@ -2248,7 +2322,7 @@ uv.Tween.prototype = {
   start: function() {
   	this.rewind();
   	this._playing = true;
-  	this.callbacks.start();
+  	this.trigger('start');
   },
   rewind: function(t) {
   	this.reset();
@@ -2277,7 +2351,7 @@ uv.Tween.prototype = {
   },
   stop: function() {
     this._playing = false;    
-    this.callbacks.finish();
+    this.trigger('finish');
   },
   continueTo: function(finish, duration) {
   	this.begin = this._pos;
@@ -2307,7 +2381,7 @@ uv.Tween.prototype = {
 uv.Tween.backEaseIn = function(t,b,c,d,a,p) {
 	if (s == undefined) var s = 1.70158;
 	return c*(t/=d)*t*((s+1)*t - s) + b;
-}
+};
 
 uv.Tween.backEaseOut = function(t,b,c,d,a,p) {
 	if (s === undefined) var s = 1.70158;
@@ -2321,42 +2395,45 @@ uv.Tween.backEaseInOut = function(t,b,c,d,a,p) {
 };
 
 uv.Tween.elasticEaseIn = function(t,b,c,d,a,p) {
+  var s;
 	if (t==0) return b;  
 	if ((t/=d)==1) return b+c;  
-	if (!p) p=d*.3;
+	if (!p) p=d*0.3;
 	if (!a || a < Math.abs(c)) {
-		a=c; var s=p/4;
+		a=c; s=p/4;
 	}
 	else 
-		var s = p/(2*Math.PI) * Math.asin (c/a);
+		s = p/(2*Math.PI) * Math.asin (c/a);
 
 	return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
 };
 
 uv.Tween.elasticEaseOut = function (t,b,c,d,a,p) {
-		if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*.3;
-		if (!a || a < Math.abs(c)) { a=c; var s=p/4; }
-		else var s = p/(2*Math.PI) * Math.asin (c/a);
-		return (a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b);
+  var s;
+	if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*0.3;
+	if (!a || a < Math.abs(c)) { a=c; s=p/4; }
+	else s = p/(2*Math.PI) * Math.asin (c/a);
+	return (a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b);
 };
 
 uv.Tween.elasticEaseInOut = function (t,b,c,d,a,p) {
-	if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) var p=d*(.3*1.5);
-	if (!a || a < Math.abs(c)) {var a=c; var s=p/4; }
-	else var s = p/(2*Math.PI) * Math.asin (c/a);
-	if (t < 1) return -.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-	return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*.5 + c + b;
+  var s;
+	if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) p=d*(0.3*1.5);
+	if (!a || a < Math.abs(c)) { a=c; s=p/4; }
+	else s = p/(2*Math.PI) * Math.asin (c/a);
+	if (t < 1) return -0.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
+	return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*0.5 + c + b;
 };
 
 uv.Tween.bounceEaseOut = function(t,b,c,d) {
 	if ((t/=d) < (1/2.75)) {
 		return c*(7.5625*t*t) + b;
 	} else if (t < (2/2.75)) {
-		return c*(7.5625*(t-=(1.5/2.75))*t + .75) + b;
+		return c*(7.5625*(t-=(1.5/2.75))*t + 0.75) + b;
 	} else if (t < (2.5/2.75)) {
-		return c*(7.5625*(t-=(2.25/2.75))*t + .9375) + b;
+		return c*(7.5625*(t-=(2.25/2.75))*t + 0.9375) + b;
 	} else {
-		return c*(7.5625*(t-=(2.625/2.75))*t + .984375) + b;
+		return c*(7.5625*(t-=(2.625/2.75))*t + 0.984375) + b;
 	}
 };
 
@@ -2365,8 +2442,8 @@ uv.Tween.bounceEaseIn = function(t,b,c,d) {
 };
 
 uv.Tween.bounceEaseInOut = function(t,b,c,d) {
-	if (t < d/2) return Tween.bounceEaseIn (t*2, 0, c, d) * .5 + b;
-	else return Tween.bounceEaseOut (t*2-d, 0, c, d) * .5 + c*.5 + b;
+	if (t < d/2) return Tween.bounceEaseIn (t*2, 0, c, d) * 0.5 + b;
+	else return Tween.bounceEaseOut (t*2-d, 0, c, d) * 0.5 + c*0.5 + b;
 };
 
 uv.Tween.strongEaseInOut = function(t,b,c,d) {
@@ -2398,31 +2475,34 @@ uv.Tween.strongEaseInOut = function(t,b,c,d) {
 	if ((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
 	return c/2*((t-=2)*t*t*t*t + 2) + b;
 };
-// Bar
+// Rect
 // =============================================================================
 
-uv.Bar = function(properties) {
+uv.Rect = function(properties) {
   // super call
   uv.Actor.call(this, _.extend({
     width: 0,
     height: 0,
     strokeWeight: 2,
     strokeStyle: '#000',
-    fillStyle: '#ccc',
-    bounds: function() {
-      return [
-        {x: 0, y: 0},
-        {x: this.p('width'), y: 0},
-        {x: this.p('width'), y: this.p('height')},
-        {x: 0, y: this.p('height')}
-      ];
-    }
+    fillStyle: '#555'
   }, properties));
 };
 
-uv.Bar.prototype = Object.extend(uv.Actor);
+uv.Actor.registeredActors.rect = uv.Rect;
 
-uv.Bar.prototype.draw = function(ctx) {
+uv.Rect.prototype = Object.extend(uv.Actor);
+
+uv.Rect.prototype.bounds = function() {
+  return [
+    { x: 0, y: 0 },
+    { x: this.p('width'), y: 0 },
+    { x: this.p('width'), y: this.p('height') },
+    { x: 0, y: this.p('height') }
+  ];
+};
+
+uv.Rect.prototype.draw = function(ctx) {
   ctx.fillStyle = this.p('fillStyle');
   ctx.fillRect(0, 0, this.p('width'), this.p('height'));
 };
@@ -2442,17 +2522,19 @@ uv.Label = function(properties) {
   }, properties));
 };
 
+uv.Actor.registeredActors.label = uv.Label;
+
 uv.Label.prototype = Object.extend(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx) {
-  // Draw the label on a background rectangle
   ctx.font = this.p('font');
+  // Draw the label on a background rectangle
   if (this.p('background')) {
     var textWidth = ctx.measureText(this.p('text')).width;
     
     ctx.strokeStyle = this.p('strokeStyle');
     ctx.fillStyle = this.p('backgroundStyle');
-        
+
     function roundedRect(ctx, x, y, width, height, radius, stroke) {
       ctx.beginPath();
       ctx.moveTo(x + radius, y);
@@ -2505,19 +2587,22 @@ uv.Circle = function(properties) {
     radius: 20,
     strokeWeight: 2,
     lineWidth: 3,
-    strokeStyle: '#fff',
-    bounds: function() {
-      return [
-        { x: -this.p('radius'), y: -this.p('radius') },
-        { x: this.p('radius'),  y: -this.p('radius') },
-        { x: this.p('radius'),  y: this.p('radius') },
-        { x: -this.p('radius'), y: this.p('radius') }
-      ];
-    }
+    strokeStyle: '#fff'
   }, properties));
 };
 
+uv.Actor.registeredActors.circle = uv.Circle;
+
 uv.Circle.prototype = Object.extend(uv.Actor);
+
+uv.Circle.prototype.bounds = function() {
+  return [
+    { x: -this.p('radius'), y: -this.p('radius') },
+    { x: this.p('radius'),  y: -this.p('radius') },
+    { x: this.p('radius'),  y: this.p('radius') },
+    { x: -this.p('radius'), y: this.p('radius') }
+  ];
+};
 
 uv.Circle.prototype.draw = function(ctx) {
   ctx.fillStyle = this.p('fillStyle');
@@ -2543,6 +2628,8 @@ uv.Path = function(properties) {
     fillStyle: '#ccc'
   }, properties));
 };
+
+uv.Actor.registeredActors.path = uv.Path;
 
 uv.Path.prototype = Object.extend(uv.Actor);
 

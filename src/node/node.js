@@ -27,7 +27,7 @@
 // Returns:
 //   => [Node] the constructed Node
 uv.Node = function (options) {
-  this.id = uv.Node.generateId();
+  this.nodeId = uv.Node.generateId();
   if (options) {
     this.val = options.value; // used for leave nodes (simple types)
   }
@@ -39,7 +39,7 @@ uv.Node = function (options) {
 // Returns:
 //   => [String, Number] The Node's identity which is simply the node's id
 uv.Node.prototype.identity = function() {
-  return this.id;
+  return this.nodeId;
 };
 
 uv.Node.nodeCount = 0;
@@ -114,6 +114,7 @@ uv.Node.prototype.value = function(property) {
   return this.values(property).first();
 };
 
+
 // Values of associated target nodes for non-unique properties
 // 
 // Returns:
@@ -127,8 +128,9 @@ uv.Node.prototype.values = function(property) {
   });
 };
 
+
 uv.Node.prototype.toString = function() {
-  var str = "Node#"+this.id+" {\n",
+  var str = "Node#"+this.nodeId+" {\n",
       that = this;
       
   _.each(this._properties, function(node, key) {

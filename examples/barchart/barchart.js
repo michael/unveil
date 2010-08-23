@@ -18,7 +18,7 @@ uv.Barchart = uv.Visualization.extend({
     this.scene = new uv.Scene();
 
     this.items.each(function(index, item) {
-      that.scene.add(new uv.Bar({
+      that.scene.add(new uv.Rect({
         x: 40+30*index,
         y: 300,
         width: 20,

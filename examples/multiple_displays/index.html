@@ -12,7 +12,7 @@
   
   <script>
     $(function() {
-      // create scene
+      
       var scene = new uv.Scene({
             width: 800,
             height: 500,
@@ -20,52 +20,79 @@
             displays: [{
               container: $('#bigscreen'),
               width: 500,
-              height: 200,
+              height: 250,
               paning: true,
               zooming: true
             },{
               container: $('#miniscreen'),
-              width: 150,
-              height: 150,
+              width: 200,
+              height: 200,
               zooming: true
-            }]
+            }],
+            actors: [
+              {
+                type: "rect",
+                id: "blue_rect",
+                x: 24,
+                y: 26,
+                width: 100,
+                height: 70,
+                interactive: true,
+                fillStyle: function() {
+                  return this.active ? 'lightblue' : 'darkblue';
+                },
+                actors: [
+                  {
+                    type: 'label',
+                    textAlign: 'center',
+                    text: "click me!",
+                    fillStyle: 'white',
+                    x: 50,
+                    y: 50
+                  },
+                  {
+                    type: "circle",
+                    id: "animated_circle",
+                    x: 140,
+                    y: 50,
+                    fillStyle: "gray",
+                    interactive: true,
+                    radius: 30,
+                    actors: [
+                      {
+                        textAlign: 'center',
+                        type: "label",
+                        text: "hover me!",
+                        fillStyle: "white"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                type: 'label',
+                x: 400,
+                y: 40,
+                text: function() { return "FPS: "+parseInt(this.scene.fps, 10); },
+                fillStyle: 'black'
+              }
+            ]
           });
       
-      var bar = new uv.Bar({
-        x: 50,
-        y: 120,
-        width: 100,
-        height: 60,
-        fillStyle: function() { return this.active ? 'lightblue' : 'darkblue'; },
-        interactive: true
+      scene.get('blue_rect').bind('click', function() {
+        this.animate('x', 100, 1200);
+        this.animate('y', 120, 1500, 'elasticEaseInOut');
       });
       
-      scene.add(bar);
+      scene.get('animated_circle').bind('mouseover', function() {
+        this.animate('radius', 50, 1000, 'elasticEaseInOut');
+      });
       
-      scene.add(new uv.Bar({
-        x: function() { return 50; },
-        y: function() { return 50; },
-        width: 10,
-        height: 10,
-        fillStyle: 'red'
-      }));
-      
-      scene.add(new uv.Label({
-        x: 300,
-        y: 40,
-        text: function() { return parseInt(scene.fps, 10); },
-        fillStyle: 'black'
-      }));
-      
-      scene.add(new uv.Label({
-        x: 70,
-        y: 40,
-        text: function() { return parseInt(scene.mouseX, 10)+" / "+parseInt(scene.mouseY, 10); },
-        fillStyle: 'black'
-      }));
-            
-      scene.start();
+      scene.get('animated_circle').bind('mouseout', function() {
+        this.animate('radius', 30, 1000);
+      });
 
+      scene.start();
     });
   </script>
   
