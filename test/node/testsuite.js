@@ -89,3 +89,10 @@ test("Node#value", function() {
   ok(eu.value('president') === 'Barroso');
 });
 
+test("Allows null as a key for property values", function() {
+  var root = new uv.Node({value: 'RootNode'});
+  var nullNode = new uv.Node({value: null});
+  root.set('values', null, nullNode);
+  ok(root.value('values', null) === null);
+});
+

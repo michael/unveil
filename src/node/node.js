@@ -79,7 +79,7 @@ uv.Node.prototype.set = function (property, key, value) {
 // Returns:
 //   => [Node] The target Node
 uv.Node.prototype.get = function (property, key) {
-  if (key && this._properties[property]!== undefined) {
+  if (key !== undefined && this._properties[property] !== undefined) {
     return this._properties[property].get(key);
   }
 };

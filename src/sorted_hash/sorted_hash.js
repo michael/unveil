@@ -37,7 +37,7 @@ uv.SortedHash.prototype.clone = function () {
 // Parameters:
 //   * key [String]
 uv.SortedHash.prototype.set = function (key, value) {
-  if (key === null || key === undefined)
+  if (key === undefined)
     return this;
   if (!this.data[key]) {
     this.keyOrder.push(key);

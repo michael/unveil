@@ -117,7 +117,7 @@ uv.SortedHash.prototype.clone = function () {
 // Parameters:
 //   * key [String]
 uv.SortedHash.prototype.set = function (key, value) {
-  if (key === null || key === undefined)
+  if (key === undefined)
     return this;
   if (!this.data[key]) {
     this.keyOrder.push(key);
@@ -442,7 +442,7 @@ uv.Node.prototype.set = function (property, key, value) {
 // Returns:
 //   => [Node] The target Node
 uv.Node.prototype.get = function (property, key) {
-  if (key && this._properties[property]!== undefined) {
+  if (key !== undefined && this._properties[property] !== undefined) {
     return this._properties[property].get(key);
   }
 };
@@ -559,7 +559,7 @@ uv.Item = function (collection, key, attributes, nested) {
         value.set('items', that.key, that);
       }
       // connect item with its values
-      that.set(key, valueKey, value);
+      that.set(key, index, value);
     });
   });
   
@@ -1587,7 +1587,7 @@ uv.Actor.prototype.trigger = function(name) {
 uv.Actor.create = function(spec) {
   var constructor = uv.Actor.registeredActors[spec.type];
   if (!constructor) { 
-    throw "Actor type unregistered: '" + spec.type + "'"; 
+    throw "Actor type unregistered: '" + spec.type + "'";
   }
   return new constructor(spec);
 };
@@ -1599,16 +1599,30 @@ uv.Actor.prototype.id = function() {
   return this.p('id') || this.nodeId;
 };
 
-
 uv.Actor.prototype.add = function(spec) {
-  var actor = uv.Actor.create(spec);
+  var actor;
+  
+  if (spec instanceof uv.Actor) {
+    actor = spec;
+  } else {
+    actor = uv.Actor.create(spec);
+  }
+  
+  if (!this.scene) {
+    throw "You can't add childs to actors that don't have a scene reference";
+  }
   
   // Register actor at the scene object
   this.scene.registerActor(actor);
   
+  
   // Register as a child
   this.set('children', actor.id(), actor);
   actor.parent = this;
+  
+  // Call added hook if defined
+  if (actor.init)
+    actor.init();
   
   // Register children
   if (spec.actors) {
@@ -1762,7 +1776,6 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   mouseX = pnew.x;
   mouseY = pnew.y;
   
-  // if (this.hasBounds() && ctx.isPointInPath) {
   if (this.bounds && ctx.isPointInPath) {
     this.drawBounds(ctx);
     if (ctx.isPointInPath(mouseX, mouseY))
@@ -1772,7 +1785,6 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   }
   return this.active;
 };
-
 
 
 uv.Actor.prototype.drawBounds = function(ctx) {
@@ -2612,7 +2624,9 @@ uv.Circle.prototype.draw = function(ctx) {
   ctx.beginPath();
   ctx.arc(0,0,this.p('radius'),0,Math.PI*2, false);
   ctx.closePath();
-  ctx.stroke();
+  if (this.p('lineWidth') > 0) {
+    ctx.stroke();
+  }
   ctx.fill();
 };
 
@@ -2623,7 +2637,7 @@ uv.Path = function(properties) {
   // super call
   uv.Actor.call(this, _.extend({
     points: [],
-    strokeWeight: 2,
+    lineWidth: 1,
     strokeStyle: '#000',
     fillStyle: '#ccc'
   }, properties));
@@ -2637,9 +2651,13 @@ uv.Path.prototype.draw = function(ctx) {
   var points = [].concat(this.p('points')),
       v;
   
+  ctx.lineWidth = this.p('lineWidth');
+  
   if (this.p('points').length >= 1) {
     ctx.beginPath();
-    ctx.moveTo(0, 0);
+    v = points.shift();
+    ctx.moveTo(v.x, v.y);
+    
     while (v = points.shift()) {
       ctx.lineTo(v.x, v.y);
     }

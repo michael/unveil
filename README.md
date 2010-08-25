@@ -91,8 +91,8 @@ Actors as well as the whole Scene are now specified declaratively using a simple
 Since all actors have a unique id you can reference them programmatically and add special behavior (e.g. animation).
 
     scene.get('moving_rect').bind('mouseover', function() {
-      this.animate('x', 100, 200, 'bounceEaseInOut');
-      this.animate('y', 200, 200);
+      this.animate('x', 100, 2000, 'bounceEaseInOut');
+      this.animate('y', 200, 2000);
     });
     
     scene.get('moving_rect').bind('click', function() {
@@ -100,7 +100,7 @@ Since all actors have a unique id you can reference them programmatically and ad
     });
     
     scene.get('animated_circle').bind('click', function() {
-      this.animate('radius', 70, 200);
+      this.animate('radius', 70, 2000);
     });
 
 
