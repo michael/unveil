@@ -30,7 +30,7 @@ uv.Item = function (collection, key, attributes, nested) {
         value.set('items', that.key, that);
       }
       // connect item with its values
-      that.set(key, valueKey, value);
+      that.set(key, index, value);
     });
   });
   
