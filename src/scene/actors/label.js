@@ -23,7 +23,7 @@ uv.Label.prototype.draw = function(ctx) {
   if (this.p('background')) {
     var textWidth = ctx.measureText(this.p('text')).width;
     
-    ctx.strokeStyle = this.p('strokeStyle');
+    // ctx.strokeStyle = this.p('strokeStyle');
     ctx.fillStyle = this.p('backgroundStyle');
 
     function roundedRect(ctx, x, y, width, height, radius, stroke) {
@@ -59,11 +59,8 @@ uv.Label.prototype.draw = function(ctx) {
       height = 20;
     }
     
-    ctx.lineWidth = this.p('lineWidth');
     roundedRect(ctx, x, y, width, height, 5, this.p('lineWidth') > 0);
   }
-  
-  ctx.fillStyle = this.p('fillStyle');
   
   ctx.textAlign = this.p('textAlign');
   ctx.fillText(this.p('text'), 0, 0);

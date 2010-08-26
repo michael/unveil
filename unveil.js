@@ -1137,7 +1137,8 @@ uv.Resource = function(g, key, data) {
   this.g = g;
   this.key = key;
   this.type = g.get('types', data.type);
-  // memoize raw data for the build process
+  
+  // Memoize raw data for the build process
   this.data = data;
 };
 
@@ -1160,7 +1161,8 @@ uv.Resource.prototype.build = function() {
     } else {
       _.each(values, function(v, index) {
         var val = p.get('values', v);
-        // look if this value is already registerd
+        
+        // Check if this value is already registered
         // on this property
         if (!val) {
           val = new uv.Node({value: v});
@@ -1536,6 +1538,12 @@ uv.Actor = function(properties) {
     localRotation: 0,
     fillStyle: '#000',
     strokeStyle: '#000',
+    lineWidth: 1,
+    lineCap: 'butt',
+    lineJoin: 'miter',
+    globalAlpha: 1,
+    miterLimit: 10,
+    
     visible: true,
     preserveShape: false,
     sticky: false
@@ -1763,6 +1771,16 @@ uv.Actor.prototype.update = function() {
   });
 };
 
+uv.Actor.prototype.applyStyles = function(ctx) {
+  ctx.fillStyle = this.p('fillStyle');
+  ctx.strokeStyle = this.p('strokeStyle');
+  ctx.lineWidth = this.p('lineWidth');
+  ctx.lineCap = this.p('butt');
+  ctx.lineJoin = this.p('lineJoin');
+  ctx.globalAlpha = this.p('globalAlpha');
+  ctx.miterLimit = this.p('miterLimit');
+};
+
 uv.Actor.prototype.draw = function(ctx) {};
 
 uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
@@ -1810,6 +1828,8 @@ uv.Actor.prototype.render = function(ctx, tView) {
   
   ctx.setTransform(t.elements[0], t.elements[1], t.elements[3], 
                    t.elements[4], t.elements[2], t.elements[5]);
+                   
+  this.applyStyles(ctx);
   this.draw(ctx);
 };
 
@@ -1866,7 +1886,6 @@ uv.ZoomBehavior = function(display) {
     display.callbacks.viewChange.call(display);
   });
 };
-
 
 uv.PanBehavior = function(display) {
   var paning = false,
@@ -2497,7 +2516,8 @@ uv.Rect = function(properties) {
     height: 0,
     strokeWeight: 2,
     strokeStyle: '#000',
-    fillStyle: '#555'
+    fillStyle: '#fff',
+    lineWidth: 0
   }, properties));
 };
 
@@ -2515,8 +2535,10 @@ uv.Rect.prototype.bounds = function() {
 };
 
 uv.Rect.prototype.draw = function(ctx) {
-  ctx.fillStyle = this.p('fillStyle');
   ctx.fillRect(0, 0, this.p('width'), this.p('height'));
+  if (this.p('lineWidth') > 0) {
+    ctx.strokeRect(0, 0, this.p('width'), this.p('height'));
+  }
 };
 
 // Label
@@ -2544,7 +2566,7 @@ uv.Label.prototype.draw = function(ctx) {
   if (this.p('background')) {
     var textWidth = ctx.measureText(this.p('text')).width;
     
-    ctx.strokeStyle = this.p('strokeStyle');
+    // ctx.strokeStyle = this.p('strokeStyle');
     ctx.fillStyle = this.p('backgroundStyle');
 
     function roundedRect(ctx, x, y, width, height, radius, stroke) {
@@ -2580,11 +2602,8 @@ uv.Label.prototype.draw = function(ctx) {
       height = 20;
     }
     
-    ctx.lineWidth = this.p('lineWidth');
     roundedRect(ctx, x, y, width, height, 5, this.p('lineWidth') > 0);
   }
-  
-  ctx.fillStyle = this.p('fillStyle');
   
   ctx.textAlign = this.p('textAlign');
   ctx.fillText(this.p('text'), 0, 0);
@@ -2650,8 +2669,6 @@ uv.Path.prototype = Object.extend(uv.Actor);
 uv.Path.prototype.draw = function(ctx) {
   var points = [].concat(this.p('points')),
       v;
-  
-  ctx.lineWidth = this.p('lineWidth');
   
   if (this.p('points').length >= 1) {
     ctx.beginPath();

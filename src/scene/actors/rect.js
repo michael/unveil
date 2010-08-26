@@ -8,7 +8,8 @@ uv.Rect = function(properties) {
     height: 0,
     strokeWeight: 2,
     strokeStyle: '#000',
-    fillStyle: '#555'
+    fillStyle: '#fff',
+    lineWidth: 0
   }, properties));
 };
 
@@ -26,6 +27,8 @@ uv.Rect.prototype.bounds = function() {
 };
 
 uv.Rect.prototype.draw = function(ctx) {
-  ctx.fillStyle = this.p('fillStyle');
   ctx.fillRect(0, 0, this.p('width'), this.p('height'));
+  if (this.p('lineWidth') > 0) {
+    ctx.strokeRect(0, 0, this.p('width'), this.p('height'));
+  }
 };

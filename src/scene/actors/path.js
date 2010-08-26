@@ -5,7 +5,7 @@ uv.Path = function(properties) {
   // super call
   uv.Actor.call(this, _.extend({
     points: [],
-    strokeWeight: 2,
+    lineWidth: 1,
     strokeStyle: '#000',
     fillStyle: '#ccc'
   }, properties));
@@ -21,7 +21,9 @@ uv.Path.prototype.draw = function(ctx) {
   
   if (this.p('points').length >= 1) {
     ctx.beginPath();
-    ctx.moveTo(0, 0);
+    v = points.shift();
+    ctx.moveTo(v.x, v.y);
+    
     while (v = points.shift()) {
       ctx.lineTo(v.x, v.y);
     }

@@ -18,6 +18,12 @@ uv.Actor = function(properties) {
     localRotation: 0,
     fillStyle: '#000',
     strokeStyle: '#000',
+    lineWidth: 1,
+    lineCap: 'butt',
+    lineJoin: 'miter',
+    globalAlpha: 1,
+    miterLimit: 10,
+    
     visible: true,
     preserveShape: false,
     sticky: false
@@ -69,7 +75,7 @@ uv.Actor.prototype.trigger = function(name) {
 uv.Actor.create = function(spec) {
   var constructor = uv.Actor.registeredActors[spec.type];
   if (!constructor) { 
-    throw "Actor type unregistered: '" + spec.type + "'"; 
+    throw "Actor type unregistered: '" + spec.type + "'";
   }
   return new constructor(spec);
 };
@@ -81,16 +87,30 @@ uv.Actor.prototype.id = function() {
   return this.p('id') || this.nodeId;
 };
 
-
 uv.Actor.prototype.add = function(spec) {
-  var actor = uv.Actor.create(spec);
+  var actor;
+  
+  if (spec instanceof uv.Actor) {
+    actor = spec;
+  } else {
+    actor = uv.Actor.create(spec);
+  }
+  
+  if (!this.scene) {
+    throw "You can't add childs to actors that don't have a scene reference";
+  }
   
   // Register actor at the scene object
   this.scene.registerActor(actor);
   
+  
   // Register as a child
   this.set('children', actor.id(), actor);
   actor.parent = this;
+  
+  // Call added hook if defined
+  if (actor.init)
+    actor.init();
   
   // Register children
   if (spec.actors) {
@@ -231,6 +251,16 @@ uv.Actor.prototype.update = function() {
   });
 };
 
+uv.Actor.prototype.applyStyles = function(ctx) {
+  ctx.fillStyle = this.p('fillStyle');
+  ctx.strokeStyle = this.p('strokeStyle');
+  ctx.lineWidth = this.p('lineWidth');
+  ctx.lineCap = this.p('butt');
+  ctx.lineJoin = this.p('lineJoin');
+  ctx.globalAlpha = this.p('globalAlpha');
+  ctx.miterLimit = this.p('miterLimit');
+};
+
 uv.Actor.prototype.draw = function(ctx) {};
 
 uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
@@ -244,7 +274,6 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   mouseX = pnew.x;
   mouseY = pnew.y;
   
-  // if (this.hasBounds() && ctx.isPointInPath) {
   if (this.bounds && ctx.isPointInPath) {
     this.drawBounds(ctx);
     if (ctx.isPointInPath(mouseX, mouseY))
@@ -254,7 +283,6 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   }
   return this.active;
 };
-
 
 
 uv.Actor.prototype.drawBounds = function(ctx) {
@@ -280,5 +308,7 @@ uv.Actor.prototype.render = function(ctx, tView) {
   
   ctx.setTransform(t.elements[0], t.elements[1], t.elements[3], 
                    t.elements[4], t.elements[2], t.elements[5]);
+                   
+  this.applyStyles(ctx);
   this.draw(ctx);
 };

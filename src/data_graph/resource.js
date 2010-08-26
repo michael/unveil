@@ -4,7 +4,8 @@ uv.Resource = function(g, key, data) {
   this.g = g;
   this.key = key;
   this.type = g.get('types', data.type);
-  // memoize raw data for the build process
+  
+  // Memoize raw data for the build process
   this.data = data;
 };
 
@@ -27,7 +28,8 @@ uv.Resource.prototype.build = function() {
     } else {
       _.each(values, function(v, index) {
         var val = p.get('values', v);
-        // look if this value is already registerd
+        
+        // Check if this value is already registered
         // on this property
         if (!val) {
           val = new uv.Node({value: v});

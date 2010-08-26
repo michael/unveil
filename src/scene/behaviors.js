@@ -11,7 +11,6 @@ uv.ZoomBehavior = function(display) {
   });
 };
 
-
 uv.PanBehavior = function(display) {
   var paning = false,
       mouseX, mouseY,

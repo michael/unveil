@@ -32,6 +32,8 @@ uv.Circle.prototype.draw = function(ctx) {
   ctx.beginPath();
   ctx.arc(0,0,this.p('radius'),0,Math.PI*2, false);
   ctx.closePath();
-  ctx.stroke();
+  if (this.p('lineWidth') > 0) {
+    ctx.stroke();
+  }
   ctx.fill();
 };
