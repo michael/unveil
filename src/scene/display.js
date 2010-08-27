@@ -2,10 +2,16 @@ uv.Display = function(scene, opts) {
   var that = this;
   
   this.scene = scene;
+  
+  this.element = document.getElementById(opts.container);
+  this.canvas = document.createElement("canvas");
+  this.canvas.setAttribute('width', opts.width);
+  this.canvas.setAttribute('height', opts.height);
+  this.canvas.style.position = 'relative';
+  this.element.appendChild(this.canvas);
 
-  this.$element = opts.container;
-  this.$canvas = $('<canvas width="'+opts.width+'" ' +
-                    'height="'+opts.height+'" style="position: relative;"></canvas>');
+  this.$element = $(this.element);
+  this.$canvas = $(this.canvas);
   
   this.width = opts.width;
   this.height = opts.height;
@@ -23,7 +29,7 @@ uv.Display = function(scene, opts) {
     this.zoombehavior = new uv.ZoomBehavior(this);
   }
   
-  if (opts.paning) {
+  if (opts.panning) {
     this.panbehavior = new uv.PanBehavior(this);
   }
   

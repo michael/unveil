@@ -138,7 +138,6 @@ uv.SortedHash.prototype.get = function (key) {
 // Parameters:
 //   * key [String]
 uv.SortedHash.prototype.del = function (key) {
-  // return this.data[key];
   if (this.data[key]) {
     this.keyOrder.splice($.inArray(key, this.keyOrder), 1);
     delete this.data[key];
@@ -1623,7 +1622,6 @@ uv.Actor.prototype.add = function(spec) {
   // Register actor at the scene object
   this.scene.registerActor(actor);
   
-  
   // Register as a child
   this.set('children', actor.id(), actor);
   actor.parent = this;
@@ -1640,6 +1638,37 @@ uv.Actor.prototype.add = function(spec) {
   }
 };
 
+
+// Remove child by ID
+uv.Actor.prototype.remove = function(matcher) {
+  var that = this;
+  if (matcher instanceof Function) {
+    _.each(this.traverse(), function(actor) {
+      if (matcher(actor)) {
+        that.scene.remove(actor.id());
+      }
+    })
+  } else {
+    if (this.get('children', matcher)) {
+      // Remove child
+      this.all('children').del(matcher);
+      
+      // Remove from scene
+      delete this.scene.actors[matcher];
+      delete this.scene.interactiveActors[matcher];
+    }
+
+    // Children hunt
+    this.all('children').each(function(index, child) {
+      child.remove(matcher);
+    });    
+  }
+};
+
+
+uv.Actor.prototype.traverse = function() {
+  return this.scene.properties.traverser(this);
+};
 
 // Evaluates a property (in case of a function
 // the result of the function is returned)
@@ -1690,7 +1719,6 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
   this.tweens[property].continueTo(value, duration || 1000);
   return this.tweens[property];
 };
-
 
 
 // Dynamic Matrices
@@ -1835,12 +1863,12 @@ uv.Actor.prototype.render = function(ctx, tView) {
 
 uv.traverser = {};
 
-uv.traverser.BreadthFirst = function(scene) {
+uv.traverser.BreadthFirst = function(root) {
   var queue = [],
       nodes = [],
       node;
   
-  queue.push(scene); // enqueue
+  queue.push(root); // enqueue
   while (queue.length > 0) {
     node = queue.shift(); // dequeue
     if (node.p('visible')) {
@@ -1854,13 +1882,12 @@ uv.traverser.BreadthFirst = function(scene) {
   return nodes;
 };
 
-
-uv.traverser.DepthFirst = function(scene) {
+uv.traverser.DepthFirst = function(root) {
   var stack = [],
       nodes = [],
       node;
   
-  stack.push(scene);
+  stack.push(root);
   while (stack.length > 0) {
     node = stack.pop();
     if (node.p('visible')) {
@@ -1938,10 +1965,16 @@ uv.Display = function(scene, opts) {
   var that = this;
   
   this.scene = scene;
+  
+  this.element = document.getElementById(opts.container);
+  this.canvas = document.createElement("canvas");
+  this.canvas.setAttribute('width', opts.width);
+  this.canvas.setAttribute('height', opts.height);
+  this.canvas.style.position = 'relative';
+  this.element.appendChild(this.canvas);
 
-  this.$element = opts.container;
-  this.$canvas = $('<canvas width="'+opts.width+'" ' +
-                    'height="'+opts.height+'" style="position: relative;"></canvas>');
+  this.$element = $(this.element);
+  this.$canvas = $(this.canvas);
   
   this.width = opts.width;
   this.height = opts.height;
@@ -1959,7 +1992,7 @@ uv.Display = function(scene, opts) {
     this.zoombehavior = new uv.ZoomBehavior(this);
   }
   
-  if (opts.paning) {
+  if (opts.panning) {
     this.panbehavior = new uv.PanBehavior(this);
   }
   
@@ -2088,7 +2121,7 @@ uv.Scene = function(properties) {
   this.mouseY = NaN;
   
   // Keeps track of actors that capture mouse events
-  this.interactiveActors = [];
+  this.interactiveActors = {};
   
   // Currently active actors (under cursor)
   this.activeActors = [];
@@ -2101,9 +2134,11 @@ uv.Scene = function(properties) {
   
   // Attached Displays
   this.displays = [];
-  _.each(properties.displays, function(display) {
-    that.displays.push(new uv.Display(that, display));
-  });
+  if (properties.displays) {
+    _.each(properties.displays, function(display) {
+      that.displays.push(new uv.Display(that, display));
+    });    
+  }
   
   this.activeDisplay = this.displays[0];
   
@@ -2138,15 +2173,19 @@ uv.Scene.prototype.registerActor = function(actor) {
   
   // Register as interactive
   if (actor.p('interactive')) {
-    this.interactiveActors.push(actor);
+    this.interactiveActors[actor.id()] = actor;
+    // this.interactiveActors.push(actor);
   }
 };
 
-
-uv.Scene.prototype.get = function(key) {
-  return this.actors[key];
+uv.Scene.prototype.get = function() {
+  if (arguments.length === 1) {
+    return this.actors[arguments[0]];
+  } else {
+    // Delegate to Node#get
+    return uv.Node.prototype.get.call(this, arguments[0], arguments[1]);
+  }
 };
-
 
 uv.Scene.prototype.start = function(options) {
   var that = this,
@@ -2181,10 +2220,6 @@ uv.Scene.prototype.loop = function() {
 uv.Scene.prototype.stop = function(options) {
   this.running = false;
   this.trigger('stop');
-};
-
-uv.Scene.prototype.traverse = function() {
-  return this.properties.traverser(this);
 };
 
 uv.Scene.prototype.checkActiveActors = function() {
@@ -2514,9 +2549,8 @@ uv.Rect = function(properties) {
   uv.Actor.call(this, _.extend({
     width: 0,
     height: 0,
-    strokeWeight: 2,
+    fillStyle: '#777',
     strokeStyle: '#000',
-    fillStyle: '#fff',
     lineWidth: 0
   }, properties));
 };
@@ -2535,7 +2569,10 @@ uv.Rect.prototype.bounds = function() {
 };
 
 uv.Rect.prototype.draw = function(ctx) {
-  ctx.fillRect(0, 0, this.p('width'), this.p('height'));
+  if (this.p('fillStyle')) {
+    ctx.fillRect(0, 0, this.p('width'), this.p('height'));
+  }
+  
   if (this.p('lineWidth') > 0) {
     ctx.strokeRect(0, 0, this.p('width'), this.p('height'));
   }
@@ -2566,7 +2603,6 @@ uv.Label.prototype.draw = function(ctx) {
   if (this.p('background')) {
     var textWidth = ctx.measureText(this.p('text')).width;
     
-    // ctx.strokeStyle = this.p('strokeStyle');
     ctx.fillStyle = this.p('backgroundStyle');
 
     function roundedRect(ctx, x, y, width, height, radius, stroke) {
@@ -2658,7 +2694,7 @@ uv.Path = function(properties) {
     points: [],
     lineWidth: 1,
     strokeStyle: '#000',
-    fillStyle: '#ccc'
+    fillStyle: null
   }, properties));
 };
 
@@ -2678,8 +2714,15 @@ uv.Path.prototype.draw = function(ctx) {
     while (v = points.shift()) {
       ctx.lineTo(v.x, v.y);
     }
-    ctx.strokeStyle = this.p('strokeStyle');
-    ctx.stroke();
+    
+    if (this.p('fillStyle')) {
+      ctx.fill();
+    }
+    if (this.p('strokeStyle')) {
+      ctx.stroke();
+    }
+    
+    ctx.closePath();
   }
 };
 
