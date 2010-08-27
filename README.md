@@ -50,7 +50,7 @@ New declarative Syntax
 I took some inspiration from Scene.js's [Scene Definition Format](http://www.google.com/url?sa=D&q=http://scenejs.wikispaces.com/JSON%2BScene%2BDefinition&usg=AFQjCNEk85cBgWeuJ9ZZO3XaXpOc2FgDVA)
 to give the whole thing an even more declarative feel.
 
-Actors as well as the whole Scene are now specified declaratively using a simple Specification Syntax.
+Actors as well as the whole Scene can now be specified declaratively using a simple Specification Syntax.
 
     var scene = new Scene({
       framerate: 30,

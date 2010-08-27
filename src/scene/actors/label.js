@@ -23,7 +23,6 @@ uv.Label.prototype.draw = function(ctx) {
   if (this.p('background')) {
     var textWidth = ctx.measureText(this.p('text')).width;
     
-    // ctx.strokeStyle = this.p('strokeStyle');
     ctx.fillStyle = this.p('backgroundStyle');
 
     function roundedRect(ctx, x, y, width, height, radius, stroke) {

@@ -7,7 +7,7 @@ uv.Path = function(properties) {
     points: [],
     lineWidth: 1,
     strokeStyle: '#000',
-    fillStyle: '#ccc'
+    fillStyle: null
   }, properties));
 };
 
@@ -27,7 +27,14 @@ uv.Path.prototype.draw = function(ctx) {
     while (v = points.shift()) {
       ctx.lineTo(v.x, v.y);
     }
-    ctx.strokeStyle = this.p('strokeStyle');
-    ctx.stroke();
+    
+    if (this.p('fillStyle')) {
+      ctx.fill();
+    }
+    if (this.p('strokeStyle')) {
+      ctx.stroke();
+    }
+    
+    ctx.closePath();
   }
 };

@@ -1,11 +1,11 @@
 uv.traverser = {};
 
-uv.traverser.BreadthFirst = function(scene) {
+uv.traverser.BreadthFirst = function(root) {
   var queue = [],
       nodes = [],
       node;
   
-  queue.push(scene); // enqueue
+  queue.push(root); // enqueue
   while (queue.length > 0) {
     node = queue.shift(); // dequeue
     if (node.p('visible')) {
@@ -19,13 +19,12 @@ uv.traverser.BreadthFirst = function(scene) {
   return nodes;
 };
 
-
-uv.traverser.DepthFirst = function(scene) {
+uv.traverser.DepthFirst = function(root) {
   var stack = [],
       nodes = [],
       node;
   
-  stack.push(scene);
+  stack.push(root);
   while (stack.length > 0) {
     node = stack.pop();
     if (node.p('visible')) {

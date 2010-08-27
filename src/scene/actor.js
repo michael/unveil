@@ -103,7 +103,6 @@ uv.Actor.prototype.add = function(spec) {
   // Register actor at the scene object
   this.scene.registerActor(actor);
   
-  
   // Register as a child
   this.set('children', actor.id(), actor);
   actor.parent = this;
@@ -120,6 +119,37 @@ uv.Actor.prototype.add = function(spec) {
   }
 };
 
+
+// Remove child by ID
+uv.Actor.prototype.remove = function(matcher) {
+  var that = this;
+  if (matcher instanceof Function) {
+    _.each(this.traverse(), function(actor) {
+      if (matcher(actor)) {
+        that.scene.remove(actor.id());
+      }
+    })
+  } else {
+    if (this.get('children', matcher)) {
+      // Remove child
+      this.all('children').del(matcher);
+      
+      // Remove from scene
+      delete this.scene.actors[matcher];
+      delete this.scene.interactiveActors[matcher];
+    }
+
+    // Children hunt
+    this.all('children').each(function(index, child) {
+      child.remove(matcher);
+    });    
+  }
+};
+
+
+uv.Actor.prototype.traverse = function() {
+  return this.scene.properties.traverser(this);
+};
 
 // Evaluates a property (in case of a function
 // the result of the function is returned)
@@ -170,7 +200,6 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
   this.tweens[property].continueTo(value, duration || 1000);
   return this.tweens[property];
 };
-
 
 
 // Dynamic Matrices

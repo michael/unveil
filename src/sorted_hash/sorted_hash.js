@@ -58,7 +58,6 @@ uv.SortedHash.prototype.get = function (key) {
 // Parameters:
 //   * key [String]
 uv.SortedHash.prototype.del = function (key) {
-  // return this.data[key];
   if (this.data[key]) {
     this.keyOrder.splice($.inArray(key, this.keyOrder), 1);
     delete this.data[key];

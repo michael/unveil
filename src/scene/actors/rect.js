@@ -6,9 +6,8 @@ uv.Rect = function(properties) {
   uv.Actor.call(this, _.extend({
     width: 0,
     height: 0,
-    strokeWeight: 2,
+    fillStyle: '#777',
     strokeStyle: '#000',
-    fillStyle: '#fff',
     lineWidth: 0
   }, properties));
 };
@@ -27,7 +26,10 @@ uv.Rect.prototype.bounds = function() {
 };
 
 uv.Rect.prototype.draw = function(ctx) {
-  ctx.fillRect(0, 0, this.p('width'), this.p('height'));
+  if (this.p('fillStyle')) {
+    ctx.fillRect(0, 0, this.p('width'), this.p('height'));
+  }
+  
   if (this.p('lineWidth') > 0) {
     ctx.strokeRect(0, 0, this.p('width'), this.p('height'));
   }

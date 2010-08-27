@@ -19,7 +19,7 @@ uv.Scene = function(properties) {
   this.mouseY = NaN;
   
   // Keeps track of actors that capture mouse events
-  this.interactiveActors = [];
+  this.interactiveActors = {};
   
   // Currently active actors (under cursor)
   this.activeActors = [];
@@ -32,9 +32,11 @@ uv.Scene = function(properties) {
   
   // Attached Displays
   this.displays = [];
-  _.each(properties.displays, function(display) {
-    that.displays.push(new uv.Display(that, display));
-  });
+  if (properties.displays) {
+    _.each(properties.displays, function(display) {
+      that.displays.push(new uv.Display(that, display));
+    });    
+  }
   
   this.activeDisplay = this.displays[0];
   
@@ -69,15 +71,19 @@ uv.Scene.prototype.registerActor = function(actor) {
   
   // Register as interactive
   if (actor.p('interactive')) {
-    this.interactiveActors.push(actor);
+    this.interactiveActors[actor.id()] = actor;
+    // this.interactiveActors.push(actor);
   }
 };
 
-
-uv.Scene.prototype.get = function(key) {
-  return this.actors[key];
+uv.Scene.prototype.get = function() {
+  if (arguments.length === 1) {
+    return this.actors[arguments[0]];
+  } else {
+    // Delegate to Node#get
+    return uv.Node.prototype.get.call(this, arguments[0], arguments[1]);
+  }
 };
-
 
 uv.Scene.prototype.start = function(options) {
   var that = this,
@@ -112,10 +118,6 @@ uv.Scene.prototype.loop = function() {
 uv.Scene.prototype.stop = function(options) {
   this.running = false;
   this.trigger('stop');
-};
-
-uv.Scene.prototype.traverse = function() {
-  return this.properties.traverser(this);
 };
 
 uv.Scene.prototype.checkActiveActors = function() {
