@@ -104,9 +104,9 @@ task 'test', 'run the test suite', ->
   
   process.on 'exit', ->
     time = ((new Date - startTime) / 1000).toFixed(2)
-    message = "passed #passedTests tests in #time seconds#reset"
+    message = "passed #{passedTests} tests in #{time} seconds#{reset}"
     if failedTests
-      log "failed #failedTests and #message", red
+      log "failed #{failedTests} and #{message}", red
     else
       log message, green
   fs.readdir 'test', (err, files) ->
@@ -118,4 +118,4 @@ task 'test', 'run the test suite', ->
           CoffeeScript.run code.toString(), {fileName}
         catch err
           failedTests += 1
-          log "failed #fileName", red, '\n' + err.stack.toString()
+          log "failed #{fileName}", red, '\n' + err.stack.toString()
