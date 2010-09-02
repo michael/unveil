@@ -2,16 +2,12 @@ var countries_fixture = {
   "properties": {
     "name": {
       "type": "string",
-      "property_key": "name",
       "unique": true,
-      "value_key": "name",
       "name": "Country Name"
     },
     "currency_used": {
       "type": "string",
-      "property_key": "currency_used",
       "unique": true,
-      "value_key": "name",
       "name": "Currency used"
     },
     "internet_users": {
@@ -68,9 +64,7 @@ var countries_fixture = {
     },
     "form_of_government": {
       "type": "string",
-      "property_key": "form_of_government",
       "unique": false,
-      "value_key": "name",
       "name": "Form of governmennt"
     },
     "life_expectancy_male": {
@@ -153,9 +147,7 @@ var countries_fixture = {
     },
     "official_language": {
       "type": "string",
-      "property_key": "official_language",
       "unique": false,
-      "value_key": "name",
       "name": "Official language"
     },
     "population": {
@@ -238,7 +230,6 @@ var countries_fixture = {
     },
     "date_founded": {
       "type": "date",
-      "property_key": "/location/dated_location/date_founded",
       "name": "Date founded",
       "unqiue": true
     },

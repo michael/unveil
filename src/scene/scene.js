@@ -102,6 +102,7 @@ uv.Scene.prototype.start = function(options) {
 uv.Scene.prototype.loop = function() {
   var that = this,
       start, duration;
+      
   
   if (this.running) {
     start = new Date().getTime();

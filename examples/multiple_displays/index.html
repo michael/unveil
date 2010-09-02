@@ -17,18 +17,21 @@
             width: 800,
             height: 500,
             fillStyle: '#ccc',
+            framerate: 30,
             displays: [{
-              container: '#bigscreen',
+              container: 'bigscreen',
               width: 500,
               height: 250,
-              paning: true,
+              panning: true,
               zooming: true
-            },{
-              container: '#miniscreen',
+            },
+            {
+              container: 'miniscreen',
               width: 200,
               height: 200,
               zooming: true
-            }],
+            }
+            ],
             actors: [
               {
                 type: "rect",
@@ -75,6 +78,18 @@
                 y: 40,
                 text: function() { return "FPS: "+parseInt(this.scene.fps, 10); },
                 fillStyle: 'black'
+              },
+              {
+                type: 'label',
+                x: 300,
+                y: 60,
+                text: function() { return "Worldpos: ("+this.scene.mouseX+", "+this.scene.mouseY+")"; }
+              },
+              {
+                type: 'label',
+                x: 300,
+                y: 80,
+                text: function() { return "Displaypos: ("+this.scene.displays[0].mouseX+", "+this.scene.displays[0].mouseY+")"; }
               }
             ]
           });

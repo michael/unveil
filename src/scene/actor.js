@@ -107,9 +107,10 @@ uv.Actor.prototype.add = function(spec) {
   this.set('children', actor.id(), actor);
   actor.parent = this;
   
-  // Call added hook if defined
-  if (actor.init)
+  // Call init hook if defined
+  if (actor.init) {
     actor.init();
+  }
   
   // Register children
   if (spec.actors) {
@@ -206,32 +207,26 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
 // -----------------------------------------------------------------------------
 
 uv.Actor.prototype.tWorldParent = function() {
-  var m;
   if (this.parent) {
-    m = new uv.Matrix2D(this.parent._tWorld);
+    return this.parent._tWorld;
   } else {
-    m = new uv.Matrix2D();
+    return uv.Matrix();
   }
-  return m;
 };
-
 
 uv.Actor.prototype.tWorld = function() {
-  var m = new uv.Matrix2D();
-  m.apply(this.tWorldParent());
-  m.translate(this.p('x'), this.p('y'));
-  m.rotate(this.p('rotation'));
-  m.scale(this.p('scaleX'), this.p('scaleY'));
-  return m;
+  return uv.Matrix()
+         .concat(this.tWorldParent())
+         .translate(this.p('x'), this.p('y'))
+         .rotate(this.p('rotation'))
+         .scale(this.p('scaleX'), this.p('scaleY'));
 };
 
-
 uv.Actor.prototype.tShape = function(x, y) {
-  var m = new uv.Matrix2D();
-  m.translate(this.p('localX'), this.p('localY'));
-  m.rotate(this.p('localRotation'));
-  m.scale(this.p('localScaleX'), this.p('localScaleY'));
-  return m;
+  return uv.Matrix()
+         .translate(this.p('localX'), this.p('localY'))
+         .rotate(this.p('localRotation'))
+         .scale(this.p('localScaleX'), this.p('localScaleY'));
 };
 
 // Compiles and caches the current World Transformation Matrix
@@ -251,21 +246,19 @@ uv.Actor.prototype.compileMatrix = function() {
 
 uv.Actor.prototype.tWorldView = function(tView) {  
   var t, pos,
-      view = this.properties.sticky ? new uv.Matrix2D() : tView;
+      view = this.properties.sticky ? uv.Matrix() : tView;
   
   if (this.properties.preserveShape) {
-    t = new uv.Matrix2D(view);
-    t.apply(this._tWorld);
-    pos = t.mult(new uv.Vector(0,0));
-    t.reset();
-    t.translate(pos.x, pos.y);
-    t.apply(this.tShape());
+    t = view.concat(this._tWorld);
+    pos = t.transformPoint(uv.Point(0,0));
+    t = uv.Matrix()
+        .translate(pos.x, pos.y)
+        .concat(this.tShape());
   } else {
-    t = this.tShape();
-    t.apply(view);
-    t.apply(this._tWorld);
+    t = this.tShape()
+        .concat(view)
+        .concat(this._tWorld);
   }
-  
   return t;
 };
 
@@ -293,13 +286,11 @@ uv.Actor.prototype.applyStyles = function(ctx) {
 uv.Actor.prototype.draw = function(ctx) {};
 
 uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
-  var p = new uv.Vector(mouseX,mouseY),
-      t = new uv.Matrix2D(this._tWorld);
-  
+  var p = new uv.Point(mouseX,mouseY);
+    
   // TODO: Add proper check for statically rendered actors,
   //       based on this.scene.activeDisplay's view matrix  
-  
-  pnew = t.inverse().mult(p);
+  var pnew = this._tWorld.inverse().transformPoint(p);
   mouseX = pnew.x;
   mouseY = pnew.y;
   
@@ -312,7 +303,6 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   }
   return this.active;
 };
-
 
 uv.Actor.prototype.drawBounds = function(ctx) {
   var bounds = this.bounds(),
@@ -334,10 +324,7 @@ uv.Actor.prototype.render = function(ctx, tView) {
       t = this.tWorldView(tView);
       
   if (!this.p('visible')) return;
-  
-  ctx.setTransform(t.elements[0], t.elements[1], t.elements[3], 
-                   t.elements[4], t.elements[2], t.elements[5]);
-                   
+  ctx.setTransform(t.a, t.b, t.c, t.d, t.tx, t.ty);                 
   this.applyStyles(ctx);
   this.draw(ctx);
 };

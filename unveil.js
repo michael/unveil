@@ -1189,334 +1189,381 @@ uv.Resource.prototype.get = function(property, key) {
   }
 };
 
-// Vector (taken from Processing.js)
-// =============================================================================
-
-uv.Vector = function(x, y, z) {
-  this.x = x || 0;
-  this.y = y || 0;
-  this.z = z || 0;
-};
-
-uv.Vector.angleBetween = function(v1, v2) {
-  return Math.acos(v1.dot(v2) / (v1.mag() * v2.mag()));
-};
-
-// Common vector operations for Vector
-uv.Vector.prototype = {
-  set: function(v, y, z) {
-    if (arguments.length === 1) {
-      this.set(v.x || v[0], v.y || v[1], v.z || v[2]);
-    } else {
-      this.x = v;
-      this.y = y;
-      this.z = z;
-    }
-  },
-  get: function() {
-    return new uv.Vector(this.x, this.y, this.z);
-  },
-  mag: function() {
-    return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
-  },
-  add: function(v, y, z) {
-    if (arguments.length === 3) {
-      this.x += v;
-      this.y += y;
-      this.z += z;
-    } else if (arguments.length === 1) {
-      this.x += v.x;
-      this.y += v.y;
-      this.z += v.z;
-    }
-  },
-  sub: function(v, y, z) {
-    if (arguments.length === 3) {
-      this.x -= v;
-      this.y -= y;
-      this.z -= z;
-    } else if (arguments.length === 1) {
-      this.x -= v.x;
-      this.y -= v.y;
-      this.z -= v.z;
-    }
-  },
-  mult: function(v) {
-    if (typeof v === 'number') {
-      this.x *= v;
-      this.y *= v;
-      this.z *= v;
-    } else if (typeof v === 'object') {
-      this.x *= v.x;
-      this.y *= v.y;
-      this.z *= v.z;
-    }
-  },
-  div: function(v) {
-    if (typeof v === 'number') {
-      this.x /= v;
-      this.y /= v;
-      this.z /= v;
-    } else if (typeof v === 'object') {
-      this.x /= v.x;
-      this.y /= v.y;
-      this.z /= v.z;
-    }
-  },
-  dist: function(v) {
-    var dx = this.x - v.x,
-      dy = this.y - v.y,
-      dz = this.z - v.z;
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
-  },
-  dot: function(v, y, z) {
-    var num;
-    if (arguments.length === 3) {
-      num = this.x * v + this.y * y + this.z * z;
-    } else if (arguments.length === 1) {
-      num = this.x * v.x + this.y * v.y + this.z * v.z;
-    }
-    return num;
-  },
-  cross: function(v) {
-    var
-    crossX = this.y * v.z - v.y * this.z,
-      crossY = this.z * v.x - v.z * this.x,
-      crossZ = this.x * v.y - v.x * this.y;
-    return new uv.Vector(crossX, crossY, crossZ);
-  },
-  normalize: function() {
-    var m = this.mag();
-    if (m > 0) {
-      this.div(m);
-    }
-  },
-  limit: function(high) {
-    if (this.mag() > high) {
-      this.normalize();
-      this.mult(high);
-    }
-  },
-  heading2D: function() {
-    var angle = Math.atan2(-this.y, this.x);
-    return -angle;
-  },
-  toString: function() {
-    return "[" + this.x + ", " + this.y + ", " + this.z + "]";
-  },
-  array: function() {
-    return [this.x, this.y, this.z];
-  }
-};
-
-// Matrix2D (taken from Processing.js)
-// =============================================================================
-// 
-// TODO: look for a more functional-style matrix implementation
-// http://files.geomajas.org/doc/jsdoc/1.3.1/overview-summary-Matrix2D.js.html
-
-uv.printMatrixHelper = function printMatrixHelper(elements) {
-  var big = 0;
-  for (var i = 0; i < elements.length; i++) {
-
-    if (i !== 0) {
-      big = Math.max(big, Math.abs(elements[i]));
-    } else {
-      big = Math.abs(elements[i]);
-    }
-  }
-  var digits = (big + " ").indexOf(".");
-  if (digits === 0) {
-    digits = 1;
-  } else if (digits === -1) {
-    digits = (big + " ").length;
-  }
-  return digits;
-};
-
-uv.Matrix2D = function() {
-  if (arguments.length === 0) {
-    this.reset();
-  } else if (arguments.length === 1 && arguments[0] instanceof uv.Matrix2D) {
-    this.set(arguments[0].array());
-  } else if (arguments.length === 6) {
-    this.set(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5]);
-  }
-};
-
-uv.Matrix2D.prototype = {
-  set: function() {
-    if (arguments.length === 6) {
-      var a = arguments;
-      this.set([a[0], a[1], a[2],
-                a[3], a[4], a[5]]);
-    } else if (arguments.length === 1 && arguments[0] instanceof uv.Matrix2D) {
-      this.elements = arguments[0].array();
-    } else if (arguments.length === 1 && arguments[0] instanceof Array) {
-      this.elements = arguments[0].slice();
-    }
-  },
-  get: function() {
-    var outgoing = new pv.Matrix2D();
-    outgoing.set(this.elements);
-    return outgoing;
-  },
-  reset: function() {
-    this.set([1, 0, 0, 0, 1, 0]);
-  },
-  // Returns a copy of the element values.
-  array: function array() {
-    return this.elements.slice();
-  },
-  translate: function(tx, ty) {
-    this.elements[2] = tx * this.elements[0] + ty * this.elements[1] + this.elements[2];
-    this.elements[5] = tx * this.elements[3] + ty * this.elements[4] + this.elements[5];
-  },
-  // Does nothing in Processing.
-  transpose: function() {
-  },
-  mult: function(source, target) {
-    var x, y;
-    if (source instanceof uv.Vector) {
-      x = source.x;
-      y = source.y;
-      if (!target) {
-        target = new uv.Vector();
-      }
-    } else if (source instanceof Array) {
-      x = source[0];
-      y = source[1];
-      if (!target) {
-        target = [];
+/**
+* Matrix.js v1.1.0
+* 
+* Copyright (c) 2010 STRd6
+*
+* Permission is hereby granted, free of charge, to any person obtaining a copy
+* of this software and associated documentation files (the "Software"), to deal
+* in the Software without restriction, including without limitation the rights
+* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+* copies of the Software, and to permit persons to whom the Software is
+* furnished to do so, subject to the following conditions:
+*
+* The above copyright notice and this permission notice shall be included in
+* all copies or substantial portions of the Software.
+*
+* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+* THE SOFTWARE.
+*
+* Loosely based on flash:
+* http://www.adobe.com/livedocs/flash/9.0/ActionScriptLangRefV3/flash/geom/Matrix.html
+*/
+(function() {
+  /**
+   * Create a new point with given x and y coordinates. If no arguments are given
+   * defaults to (0, 0).
+   * @name Point
+   * @param {Number} [x]
+   * @param {Number} [y]
+   * @constructor
+   */
+  function Point(x, y) {
+    return {
+      /**
+       * The x coordinate of this point.
+       * @name x
+       * @fieldOf Point#
+       */
+      x: x || 0,
+      /**
+       * The y coordinate of this point.
+       * @name y
+       * @fieldOf Point#
+       */
+      y: y || 0,
+      /**
+       * Adds a point to this one and returns the new point.
+       * @name add
+       * @methodOf Point#
+       *
+       * @param {Point} other The point to add this point to.
+       * @returns A new point, the sum of both.
+       * @type Point
+       */
+      add: function(other) {
+        return Point(this.x + other.x, this.y + other.y);
       }
     }
-    if (target instanceof Array) {
-      target[0] = this.elements[0] * x + this.elements[1] * y + this.elements[2];
-      target[1] = this.elements[3] * x + this.elements[4] * y + this.elements[5];
-    } else if (target instanceof uv.Vector) {
-      target.x = this.elements[0] * x + this.elements[1] * y + this.elements[2];
-      target.y = this.elements[3] * x + this.elements[4] * y + this.elements[5];
-      target.z = 0;
-    }
-    return target;
-  },
-  multX: function(x, y) {
-    return x * this.elements[0] + y * this.elements[1] + this.elements[2];
-  },
-  multY: function(x, y) {
-    return x * this.elements[3] + y * this.elements[4] + this.elements[5];
-  },
-  skewX: function(angle) {
-    this.apply(1, 0, 1, angle, 0, 0);
-  },
-  skewY: function(angle) {
-    this.apply(1, 0, 1, 0, angle, 0);
-  },
-  determinant: function() {
-    return this.elements[0] * this.elements[4] - this.elements[1] * this.elements[3];
-  },
-  // non-destructive version
-  inverse: function() {
-    var res = new uv.Matrix2D(this);
-    return res.invert() ? res : null;
-  },
-  invert: function() {
-    var d = this.determinant();
-    
-    if ( Math.abs( d ) > uv.MIN_FLOAT ) {
-      var old00 = this.elements[0];
-      var old01 = this.elements[1];
-      var old02 = this.elements[2];
-      var old10 = this.elements[3];
-      var old11 = this.elements[4];
-      var old12 = this.elements[5];
-      this.elements[0] =  old11 / d;
-      this.elements[3] = -old10 / d;
-      this.elements[1] = -old01 / d;
-      this.elements[4] =  old00 / d;
-      this.elements[2] = (old01 * old12 - old11 * old02) / d;
-      this.elements[5] = (old10 * old02 - old00 * old12) / d;
-      return true;
-    }
-    return false;
-  },
-  scale: function(sx, sy) {
-    if (sx && !sy) {
-      sy = sx;
-    }
-    if (sx && sy) {
-      this.elements[0] *= sx;
-      this.elements[1] *= sy;
-      this.elements[3] *= sx;
-      this.elements[4] *= sy;
-    }
-  },
-  // matrix mult of the current matrix with the given matrix, stored in the current matrix
-  apply: function() {
-    if (arguments.length === 1 && arguments[0] instanceof uv.Matrix2D) {
-      this.apply(arguments[0].array());
-    } else if (arguments.length === 6) {
-      var a = arguments;
-      this.apply([a[0], a[1], a[2],
-                  a[3], a[4], a[5]]);
-    } else if (arguments.length === 1 && arguments[0] instanceof Array) {
-      var source = arguments[0];
-      var result = [0, 0, this.elements[2],
-                    0, 0, this.elements[5]];
-      var e = 0;
-      for (var row = 0; row < 2; row++) {
-        for (var col = 0; col < 3; col++, e++) {
-          result[e] += this.elements[row * 3 + 0] * source[col + 0] + this.elements[row * 3 + 1] * source[col + 3];
-        }
-      }
-      this.elements = result.slice();
-    }
-  },
-  preApply: function() {
-    if (arguments.length === 1 && arguments[0] instanceof uv.Matrix2D) {
-      this.preApply(arguments[0].array());
-    } else if (arguments.length === 6) {
-      var a = arguments;
-      this.preApply([a[0], a[1], a[2],
-                     a[3], a[4], a[5]]);
-    } else if (arguments.length === 1 && arguments[0] instanceof Array) {
-      var source = arguments[0];
-      var result = [0, 0, source[2],
-                    0, 0, source[5]];
-      result[2]= source[2] + this.elements[2] * source[0] + this.elements[5] * source[1];
-      result[5]= source[5] + this.elements[2] * source[3] + this.elements[5] * source[4];
-      result[0] = this.elements[0] * source[0] + this.elements[3] * source[1];
-      result[3] = this.elements[0] * source[3] + this.elements[3] * source[4];
-      result[1] = this.elements[1] * source[0] + this.elements[4] * source[1];
-      result[4] = this.elements[1] * source[3] + this.elements[4] * source[4];
-      this.elements = result.slice();
-    }
-  },
-  rotate: function(angle) {
-    var c = Math.cos(angle);
-    var s = Math.sin(angle);
-    var temp1 = this.elements[0];
-    var temp2 = this.elements[1];
-    this.elements[0] =  c * temp1 + s * temp2;
-    this.elements[1] = -s * temp1 + c * temp2;
-    temp1 = this.elements[3];
-    temp2 = this.elements[4];
-    this.elements[3] =  c * temp1 + s * temp2;
-    this.elements[4] = -s * temp1 + c * temp2;
-  },
-  rotateZ: function(angle) {
-    this.rotate(angle);
-  },
-  toString: function() {
-    var digits = uv.printMatrixHelper(this.elements);
-    var output = "";
-    
-    output += "[" +this.elements[0] + " " + this.elements[1] + " " + this.elements[2] + " ]\n";
-    output += "[" +this.elements[3] + " " + this.elements[4] + " " + this.elements[5] + " ]\n\n";
-    
-    return output;
   }
-};
+
+  /**
+   * @param {Point} p1
+   * @param {Point} p2
+   * @returns The Euclidean distance between two points.
+   */
+  Point.distance = function(p1, p2) {
+    return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+  };
+
+  /**
+   * If you have two dudes, one standing at point p1, and the other
+   * standing at point p2, then this method will return the direction
+   * that the dude standing at p1 will need to face to look at p2.
+   * @param {Point} p1 The starting point.
+   * @param {Point} p2 The ending point.
+   * @returns The direction from p1 to p2 in radians.
+   */
+  Point.direction = function(p1, p2) {
+    return Math.atan2(
+      p2.y - p1.y,
+      p2.x - p1.x
+    );
+  }
+
+  /**
+   * <pre>
+   *  _        _
+   * | a  c tx  |
+   * | b  d ty  |
+   * |_0  0  1 _|
+   * </pre>
+   * Creates a matrix for 2d affine transformations.
+   *
+   * concat, inverse, rotate, scale and translate return new matrices with the
+   * transformations applied. The matrix is not modified in place.
+   *
+   * Returns the identity matrix when called with no arguments.
+   * @name Matrix
+   * @param {Number} [a]
+   * @param {Number} [b]
+   * @param {Number} [c]
+   * @param {Number} [d]
+   * @param {Number} [tx]
+   * @param {Number} [ty]
+   * @constructor
+   */
+  function Matrix(a, b, c, d, tx, ty) {
+    a = a !== undefined ? a : 1;
+    d = d !== undefined ? d : 1;
+
+    return {
+      /**
+       * @name a
+       * @fieldOf Matrix#
+       */
+      a: a,
+      /**
+       * @name b
+       * @fieldOf Matrix#
+       */
+      b: b || 0,
+      /**
+       * @name c
+       * @fieldOf Matrix#
+       */
+      c: c || 0,
+      /**
+       * @name d
+       * @fieldOf Matrix#
+       */
+      d: d,
+      /**
+       * @name tx
+       * @fieldOf Matrix#
+       */
+      tx: tx || 0,
+      /**
+       * @name ty
+       * @fieldOf Matrix#
+       */
+      ty: ty || 0,
+
+      /**
+       * Returns the result of this matrix multiplied by another matrix
+       * combining the geometric effects of the two. In mathematical terms, 
+       * concatenating two matrixes is the same as combining them using matrix multiplication.
+       * If this matrix is A and the matrix passed in is B, the resulting matrix is A x B
+       * http://mathworld.wolfram.com/MatrixMultiplication.html
+       * @name concat
+       * @methodOf Matrix#
+       *
+       * @param {Matrix} matrix The matrix to multiply this matrix by.
+       * @returns The result of the matrix multiplication, a new matrix.
+       * @type Matrix
+       */
+      concat: function(matrix) {
+        return Matrix(
+          this.a * matrix.a + this.c * matrix.b,
+          this.b * matrix.a + this.d * matrix.b,
+          this.a * matrix.c + this.c * matrix.d,
+          this.b * matrix.c + this.d * matrix.d,
+          this.a * matrix.tx + this.c * matrix.ty + this.tx,
+          this.b * matrix.tx + this.d * matrix.ty + this.ty
+        );
+      },
+
+      /**
+       * Given a point in the pretransform coordinate space, returns the coordinates of 
+       * that point after the transformation occurs. Unlike the standard transformation 
+       * applied using the transformPoint() method, the deltaTransformPoint() method's 
+       * transformation does not consider the translation parameters tx and ty.
+       * @name deltaTransformPoint
+       * @methodOf Matrix#
+       * @see #transformPoint
+       *
+       * @return A new point transformed by this matrix ignoring tx and ty.
+       * @type Point
+       */
+      deltaTransformPoint: function(point) {
+        return Point(
+          this.a * point.x + this.c * point.y,
+          this.b * point.x + this.d * point.y
+        );
+      },
+
+      /**
+       * Returns the inverse of the matrix.
+       * http://mathworld.wolfram.com/MatrixInverse.html
+       * @name inverse
+       * @methodOf Matrix#
+       *
+       * @returns A new matrix that is the inverse of this matrix.
+       * @type Matrix
+       */
+      inverse: function() {
+        var determinant = this.a * this.d - this.b * this.c;
+        return Matrix(
+          this.d / determinant,
+          -this.b / determinant,
+          -this.c / determinant,
+          this.a / determinant,
+          (this.c * this.ty - this.d * this.tx) / determinant,
+          (this.b * this.tx - this.a * this.ty) / determinant
+        );
+      },
+
+      /**
+       * Returns a new matrix that corresponds this matrix multiplied by a
+       * a rotation matrix.
+       * @name rotate
+       * @methodOf Matrix#
+       * @see Matrix.rotation
+       *
+       * @param {Number} theta Amount to rotate in radians.
+       * @param {Point} [aboutPoint] The point about which this rotation occurs. Defaults to (0,0).
+       * @returns A new matrix, rotated by the specified amount.
+       * @type Matrix
+       */
+      rotate: function(theta, aboutPoint) {
+        return this.concat(Matrix.rotation(theta, aboutPoint));
+      },
+
+      /**
+       * Returns a new matrix that corresponds this matrix multiplied by a
+       * a scaling matrix.
+       * @name scale
+       * @methodOf Matrix#
+       * @see Matrix.scale
+       *
+       * @param {Number} sx
+       * @param {Number} [sy]
+       * @param {Point} [aboutPoint] The point that remains fixed during the scaling
+       * @type Matrix
+       */
+      scale: function(sx, sy, aboutPoint) {
+        return this.concat(Matrix.scale(sx, sy, aboutPoint));
+      },
+
+      /**
+       * Returns the result of applying the geometric transformation represented by the 
+       * Matrix object to the specified point.
+       * @name transformPoint
+       * @methodOf Matrix#
+       * @see #deltaTransformPoint
+       *
+       * @returns A new point with the transformation applied.
+       * @type Point
+       */
+      transformPoint: function(point) {
+        return Point(
+          this.a * point.x + this.c * point.y + this.tx,
+          this.b * point.x + this.d * point.y + this.ty
+        );
+      },
+
+      /**
+       * Translates the matrix along the x and y axes, as specified by the tx and ty parameters.
+       * @name translate
+       * @methodOf Matrix#
+       * @see Matrix.translation
+       *
+       * @param {Number} tx The translation along the x axis.
+       * @param {Number} ty The translation along the y axis.
+       * @returns A new matrix with the translation applied.
+       * @type Matrix
+       */
+      translate: function(tx, ty) {
+        return this.concat(Matrix.translation(tx, ty));
+      }
+    }
+  }
+
+  /**
+   * Creates a matrix transformation that corresponds to the given rotation,
+   * around (0,0) or the specified point.
+   * @see Matrix#rotate
+   *
+   * @param {Number} theta Rotation in radians.
+   * @param {Point} [aboutPoint] The point about which this rotation occurs. Defaults to (0,0).
+   * @returns 
+   * @type Matrix
+   */
+  Matrix.rotation = function(theta, aboutPoint) {
+    var rotationMatrix = Matrix(
+      Math.cos(theta),
+      Math.sin(theta),
+      -Math.sin(theta),
+      Math.cos(theta)
+    );
+
+    if(aboutPoint) {
+      rotationMatrix =
+        Matrix.translation(aboutPoint.x, aboutPoint.y).concat(
+          rotationMatrix
+        ).concat(
+          Matrix.translation(-aboutPoint.x, -aboutPoint.y)
+        );
+    }
+
+    return rotationMatrix;
+  };
+
+  /**
+   * Returns a matrix that corresponds to scaling by factors of sx, sy along
+   * the x and y axis respectively.
+   * If only one parameter is given the matrix is scaled uniformly along both axis.
+   * If the optional aboutPoint parameter is given the scaling takes place
+   * about the given point.
+   * @see Matrix#scale
+   *
+   * @param {Number} sx The amount to scale by along the x axis or uniformly if no sy is given.
+   * @param {Number} [sy] The amount to scale by along the y axis.
+   * @param {Point} [aboutPoint] The point about which the scaling occurs. Defaults to (0,0).
+   * @returns A matrix transformation representing scaling by sx and sy.
+   * @type Matrix
+   */
+  Matrix.scale = function(sx, sy, aboutPoint) {
+    sy = sy || sx;
+
+    var scaleMatrix = Matrix(sx, 0, 0, sy);
+
+    if(aboutPoint) {
+      scaleMatrix =
+        Matrix.translation(aboutPoint.x, aboutPoint.y).concat(
+          scaleMatrix
+        ).concat(
+          Matrix.translation(-aboutPoint.x, -aboutPoint.y)
+        );
+    }
+
+    return scaleMatrix;
+  };
+
+  /**
+   * Returns a matrix that corresponds to a translation of tx, ty.
+   * @see Matrix#translate
+   *
+   * @param {Number} tx The amount to translate in the x direction.
+   * @param {Number} ty The amount to translate in the y direction.
+   * @return A matrix transformation representing a translation by tx and ty.
+   * @type Matrix
+   */
+  Matrix.translation = function(tx, ty) {
+    return Matrix(1, 0, 0, 1, tx, ty);
+  };
+
+  /**
+   * A constant representing the identity matrix.
+   * @name IDENTITY
+   * @fieldOf Matrix
+   */
+  Matrix.IDENTITY = Matrix();
+  /**
+   * A constant representing the horizontal flip transformation matrix.
+   * @name HORIZONTAL_FLIP
+   * @fieldOf Matrix
+   */
+  Matrix.HORIZONTAL_FLIP = Matrix(-1, 0, 0, 1);
+  /**
+   * A constant representing the vertical flip transformation matrix.
+   * @name VERTICAL_FLIP
+   * @fieldOf Matrix
+   */
+  Matrix.VERTICAL_FLIP = Matrix(1, 0, 0, -1);
+  
+  // Export to Unveil
+  uv.Point = Point;
+  uv.Matrix = Matrix;
+}());
+
+
 // Actor - Graphical object to be attached to the scene graph
 // =============================================================================
 
@@ -1626,9 +1673,10 @@ uv.Actor.prototype.add = function(spec) {
   this.set('children', actor.id(), actor);
   actor.parent = this;
   
-  // Call added hook if defined
-  if (actor.init)
+  // Call init hook if defined
+  if (actor.init) {
     actor.init();
+  }
   
   // Register children
   if (spec.actors) {
@@ -1725,32 +1773,26 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
 // -----------------------------------------------------------------------------
 
 uv.Actor.prototype.tWorldParent = function() {
-  var m;
   if (this.parent) {
-    m = new uv.Matrix2D(this.parent._tWorld);
+    return this.parent._tWorld;
   } else {
-    m = new uv.Matrix2D();
+    return uv.Matrix();
   }
-  return m;
 };
-
 
 uv.Actor.prototype.tWorld = function() {
-  var m = new uv.Matrix2D();
-  m.apply(this.tWorldParent());
-  m.translate(this.p('x'), this.p('y'));
-  m.rotate(this.p('rotation'));
-  m.scale(this.p('scaleX'), this.p('scaleY'));
-  return m;
+  return uv.Matrix()
+         .concat(this.tWorldParent())
+         .translate(this.p('x'), this.p('y'))
+         .rotate(this.p('rotation'))
+         .scale(this.p('scaleX'), this.p('scaleY'));
 };
 
-
 uv.Actor.prototype.tShape = function(x, y) {
-  var m = new uv.Matrix2D();
-  m.translate(this.p('localX'), this.p('localY'));
-  m.rotate(this.p('localRotation'));
-  m.scale(this.p('localScaleX'), this.p('localScaleY'));
-  return m;
+  return uv.Matrix()
+         .translate(this.p('localX'), this.p('localY'))
+         .rotate(this.p('localRotation'))
+         .scale(this.p('localScaleX'), this.p('localScaleY'));
 };
 
 // Compiles and caches the current World Transformation Matrix
@@ -1770,21 +1812,19 @@ uv.Actor.prototype.compileMatrix = function() {
 
 uv.Actor.prototype.tWorldView = function(tView) {  
   var t, pos,
-      view = this.properties.sticky ? new uv.Matrix2D() : tView;
+      view = this.properties.sticky ? uv.Matrix() : tView;
   
   if (this.properties.preserveShape) {
-    t = new uv.Matrix2D(view);
-    t.apply(this._tWorld);
-    pos = t.mult(new uv.Vector(0,0));
-    t.reset();
-    t.translate(pos.x, pos.y);
-    t.apply(this.tShape());
+    t = view.concat(this._tWorld);
+    pos = t.transformPoint(uv.Point(0,0));
+    t = uv.Matrix()
+        .translate(pos.x, pos.y)
+        .concat(this.tShape());
   } else {
-    t = this.tShape();
-    t.apply(view);
-    t.apply(this._tWorld);
+    t = this.tShape()
+        .concat(view)
+        .concat(this._tWorld);
   }
-  
   return t;
 };
 
@@ -1812,13 +1852,11 @@ uv.Actor.prototype.applyStyles = function(ctx) {
 uv.Actor.prototype.draw = function(ctx) {};
 
 uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
-  var p = new uv.Vector(mouseX,mouseY),
-      t = new uv.Matrix2D(this._tWorld);
-  
+  var p = new uv.Point(mouseX,mouseY);
+    
   // TODO: Add proper check for statically rendered actors,
   //       based on this.scene.activeDisplay's view matrix  
-  
-  pnew = t.inverse().mult(p);
+  var pnew = this._tWorld.inverse().transformPoint(p);
   mouseX = pnew.x;
   mouseY = pnew.y;
   
@@ -1831,7 +1869,6 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   }
   return this.active;
 };
-
 
 uv.Actor.prototype.drawBounds = function(ctx) {
   var bounds = this.bounds(),
@@ -1853,10 +1890,7 @@ uv.Actor.prototype.render = function(ctx, tView) {
       t = this.tWorldView(tView);
       
   if (!this.p('visible')) return;
-  
-  ctx.setTransform(t.elements[0], t.elements[1], t.elements[3], 
-                   t.elements[4], t.elements[2], t.elements[5]);
-                   
+  ctx.setTransform(t.a, t.b, t.c, t.d, t.tx, t.ty);                 
   this.applyStyles(ctx);
   this.draw(ctx);
 };
@@ -1901,71 +1935,64 @@ uv.traverser.DepthFirst = function(root) {
   return nodes;
 };
 
-uv.ZoomBehavior = function(display) {
-  function zoom(zoom, rx, ry) {
-    display.tView.translate(rx, ry);
-    display.tView.scale(zoom, zoom);
-    display.tView.translate(-rx, -ry);
+uv.behaviors = {};
+
+uv.behaviors.adjust = function(display, m) {
+  var b = display.bounds();
+  
+  // clamp to scene boundaries
+  if (display.bounded) {
+    m.a = m.d = Math.max(1, m.a);
+    m.tx = Math.max(b.x, Math.min(0, m.tx));
+    m.ty = Math.max(b.y, Math.min(0, m.ty));
   }
+  return m;
+};
+
+uv.behaviors.Zoom = function(display) {
   display.$canvas.bind('mousewheel', function(event, delta) {
-    display.zoom += 0.02 * delta;
-    zoom(1+0.02 * delta, display.scene.mouseX, display.scene.mouseY);
+    var m = display.tView.scale(
+          1+0.005 * delta,
+          1+0.005 * delta,
+          uv.Point(display.scene.mouseX, display.scene.mouseY)
+        );
+    display.tView = uv.behaviors.adjust(display, m);
     display.callbacks.viewChange.call(display);
   });
 };
 
-uv.PanBehavior = function(display) {
-  var paning = false,
-      mouseX, mouseY,
-      startX, startY,
-      offsetX = 0,
-      offsetY = 0,
-      prevOffsetX = 0,
-      prevOffsetY = 0;
+uv.behaviors.Pan = function(display) {
+  var pos, // initial mouse position
+      view, // cached view matrix
+      panning = false;
   
-  display.$canvas.bind('mousedown', function(event) {
-    if (display.mouseX) {
-      paning = true;
-      startX = display.mouseX;
-      startY = display.mouseY;
-      prevOffsetX = 0;
-      prevOffsetY = 0;      
-    }
-  });
+  function mouseDown() {
+    p = uv.Point(display.mouseX, display.mouseY);
+    view = display.tView;
+    panning = true;
+  }
   
-  display.$canvas.bind('mouseup', function(event) {
-    paning = false;
-  });
+  function mouseMove() {
+    if (!panning) return;
+    var x = (display.mouseX - p.x),
+        y = (display.mouseY - p.y),
+        m = uv.Matrix.translation(x, y).concat(view);
+    display.tView = uv.behaviors.adjust(display, m);
+  }
   
-  display.$canvas.bind('mousemove', function(event) {
-    var cache;
-    if (paning) {
-      offsetX = display.mouseX-startX;
-      offsetY = display.mouseY -startY;
-      
-      deltaX = offsetX - prevOffsetX;
-      deltaY = offsetY - prevOffsetY;
-      
-      prevOffsetX = offsetX;
-      prevOffsetY = offsetY;
-      
-      // The new translate is performed first, to prevent
-      // it from being scaled by the current view matrix
-      cache = new uv.Matrix2D(display.tView);
-      display.tView.reset();
-      display.tView.translate(deltaX, deltaY);
-      display.tView.apply(cache);
-      display.callbacks.viewChange.call(display);
-    }
-  });
+  function release() {
+    panning = false;
+  }
+  
+  display.$canvas.bind('mousedown', mouseDown);
+  display.$canvas.bind('mousemove', mouseMove);
+  display.$canvas.bind('mouseup', release);
+  display.$canvas.bind('mouseout', release);
 };
-
-
 uv.Display = function(scene, opts) {
   var that = this;
   
   this.scene = scene;
-  
   this.element = document.getElementById(opts.container);
   this.canvas = document.createElement("canvas");
   this.canvas.setAttribute('width', opts.width);
@@ -1979,21 +2006,20 @@ uv.Display = function(scene, opts) {
   this.width = opts.width;
   this.height = opts.height;
   
+  this.bounded = opts.bounded || true;
+  
   this.$element.append(this.$canvas);
   this.ctx = this.$canvas[0].getContext("2d");
   
-  this.tView = new uv.Matrix2D();
-  
-  // Provides access to the current zoom value
-  this.zoom = 1;
+  this.tView = uv.Matrix();
   
   // attach behaviors
   if (opts.zooming) {
-    this.zoombehavior = new uv.ZoomBehavior(this);
+    this.zoombehavior = new uv.behaviors.Zoom(this);
   }
   
   if (opts.panning) {
-    this.panbehavior = new uv.PanBehavior(this);
+    this.panbehavior = new uv.behaviors.Pan(this);
   }
   
   // Callbacks
@@ -2002,21 +2028,19 @@ uv.Display = function(scene, opts) {
   
   // Register mouse events
   function mouseMove(e) {
-    var mat = new uv.Matrix2D(that.tView),
-        pos;
+    var mat = that.tView.inverse();
     
-    mat.invert();
     if (e.offsetX) {
-      pos = new uv.Vector(e.offsetX, e.offsetY);
+      pos = new uv.Point(e.offsetX, e.offsetY);
     } else if (e.layerX) {
-      pos = new uv.Vector(e.layerX, e.layerY);
+      pos = new uv.Point(e.layerX, e.layerY);
     }
     
     if (pos) {
       that.mouseX = pos.x;
       that.mouseY = pos.y;    
 
-      worldPos = mat.mult(pos);
+      worldPos = mat.transformPoint(pos);
       that.scene.mouseX = parseInt(worldPos.x, 10);
       that.scene.mouseY = parseInt(worldPos.y, 10);
       that.scene.activeDisplay = that;
@@ -2043,14 +2067,27 @@ uv.Display.prototype.on = function(name, fn) {
 
 // Convert world pos to display pos
 
-uv.Display.prototype.displayPos = function(pos) {
-  return this.tView.mult(pos);
+uv.Display.prototype.displayPos = function(point) {
+  return this.tView.transformPoint(pos);
+};
+
+uv.Display.prototype.zoom = function(point) {
+  return this.tView.a;
 };
 
 // Convert display pos to world pos
 
 uv.Display.prototype.worldPos = function(pos) {
-  return this.tView.inverse().mult(pos);
+  return this.tView.inverse().transformPoint(pos);
+};
+
+// Yield bounds used for viewport constraining
+
+uv.Display.prototype.bounds = function() {
+  return {
+      x: (1 - this.tView.a) * this.width,
+      y: (1 - this.tView.a) * this.height
+  };
 };
 
 // Updates the display (on every frame)
@@ -2204,6 +2241,7 @@ uv.Scene.prototype.start = function(options) {
 uv.Scene.prototype.loop = function() {
   var that = this,
       start, duration;
+      
   
   if (this.running) {
     start = new Date().getTime();

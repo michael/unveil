@@ -2,7 +2,6 @@ uv.Display = function(scene, opts) {
   var that = this;
   
   this.scene = scene;
-  
   this.element = document.getElementById(opts.container);
   this.canvas = document.createElement("canvas");
   this.canvas.setAttribute('width', opts.width);
@@ -16,21 +15,20 @@ uv.Display = function(scene, opts) {
   this.width = opts.width;
   this.height = opts.height;
   
+  this.bounded = opts.bounded || true;
+  
   this.$element.append(this.$canvas);
   this.ctx = this.$canvas[0].getContext("2d");
   
-  this.tView = new uv.Matrix2D();
-  
-  // Provides access to the current zoom value
-  this.zoom = 1;
+  this.tView = uv.Matrix();
   
   // attach behaviors
   if (opts.zooming) {
-    this.zoombehavior = new uv.ZoomBehavior(this);
+    this.zoombehavior = new uv.behaviors.Zoom(this);
   }
   
   if (opts.panning) {
-    this.panbehavior = new uv.PanBehavior(this);
+    this.panbehavior = new uv.behaviors.Pan(this);
   }
   
   // Callbacks
@@ -39,21 +37,19 @@ uv.Display = function(scene, opts) {
   
   // Register mouse events
   function mouseMove(e) {
-    var mat = new uv.Matrix2D(that.tView),
-        pos;
+    var mat = that.tView.inverse();
     
-    mat.invert();
     if (e.offsetX) {
-      pos = new uv.Vector(e.offsetX, e.offsetY);
+      pos = new uv.Point(e.offsetX, e.offsetY);
     } else if (e.layerX) {
-      pos = new uv.Vector(e.layerX, e.layerY);
+      pos = new uv.Point(e.layerX, e.layerY);
     }
     
     if (pos) {
       that.mouseX = pos.x;
       that.mouseY = pos.y;    
 
-      worldPos = mat.mult(pos);
+      worldPos = mat.transformPoint(pos);
       that.scene.mouseX = parseInt(worldPos.x, 10);
       that.scene.mouseY = parseInt(worldPos.y, 10);
       that.scene.activeDisplay = that;
@@ -80,14 +76,27 @@ uv.Display.prototype.on = function(name, fn) {
 
 // Convert world pos to display pos
 
-uv.Display.prototype.displayPos = function(pos) {
-  return this.tView.mult(pos);
+uv.Display.prototype.displayPos = function(point) {
+  return this.tView.transformPoint(pos);
+};
+
+uv.Display.prototype.zoom = function(point) {
+  return this.tView.a;
 };
 
 // Convert display pos to world pos
 
 uv.Display.prototype.worldPos = function(pos) {
-  return this.tView.inverse().mult(pos);
+  return this.tView.inverse().transformPoint(pos);
+};
+
+// Yield bounds used for viewport constraining
+
+uv.Display.prototype.bounds = function() {
+  return {
+      x: (1 - this.tView.a) * this.width,
+      y: (1 - this.tView.a) * this.height
+  };
 };
 
 // Updates the display (on every frame)
