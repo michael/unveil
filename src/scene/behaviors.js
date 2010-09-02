@@ -1,59 +1,54 @@
-uv.ZoomBehavior = function(display) {
-  function zoom(zoom, rx, ry) {
-    display.tView.translate(rx, ry);
-    display.tView.scale(zoom, zoom);
-    display.tView.translate(-rx, -ry);
+uv.behaviors = {};
+
+uv.behaviors.adjust = function(display, m) {
+  var b = display.bounds();
+  
+  // clamp to scene boundaries
+  if (display.bounded) {
+    m.a = m.d = Math.max(1, m.a);
+    m.tx = Math.max(b.x, Math.min(0, m.tx));
+    m.ty = Math.max(b.y, Math.min(0, m.ty));
   }
+  return m;
+};
+
+uv.behaviors.Zoom = function(display) {
   display.$canvas.bind('mousewheel', function(event, delta) {
-    display.zoom += 0.02 * delta;
-    zoom(1+0.02 * delta, display.scene.mouseX, display.scene.mouseY);
+    var m = display.tView.scale(
+          1+0.005 * delta,
+          1+0.005 * delta,
+          uv.Point(display.scene.mouseX, display.scene.mouseY)
+        );
+    display.tView = uv.behaviors.adjust(display, m);
     display.callbacks.viewChange.call(display);
   });
 };
 
-uv.PanBehavior = function(display) {
-  var paning = false,
-      mouseX, mouseY,
-      startX, startY,
-      offsetX = 0,
-      offsetY = 0,
-      prevOffsetX = 0,
-      prevOffsetY = 0;
+uv.behaviors.Pan = function(display) {
+  var pos, // initial mouse position
+      view, // cached view matrix
+      panning = false;
   
-  display.$canvas.bind('mousedown', function(event) {
-    if (display.mouseX) {
-      paning = true;
-      startX = display.mouseX;
-      startY = display.mouseY;
-      prevOffsetX = 0;
-      prevOffsetY = 0;      
-    }
-  });
+  function mouseDown() {
+    p = uv.Point(display.mouseX, display.mouseY);
+    view = display.tView;
+    panning = true;
+  }
   
-  display.$canvas.bind('mouseup', function(event) {
-    paning = false;
-  });
+  function mouseMove() {
+    if (!panning) return;
+    var x = (display.mouseX - p.x),
+        y = (display.mouseY - p.y),
+        m = uv.Matrix.translation(x, y).concat(view);
+    display.tView = uv.behaviors.adjust(display, m);
+  }
   
-  display.$canvas.bind('mousemove', function(event) {
-    var cache;
-    if (paning) {
-      offsetX = display.mouseX-startX;
-      offsetY = display.mouseY -startY;
-      
-      deltaX = offsetX - prevOffsetX;
-      deltaY = offsetY - prevOffsetY;
-      
-      prevOffsetX = offsetX;
-      prevOffsetY = offsetY;
-      
-      // The new translate is performed first, to prevent
-      // it from being scaled by the current view matrix
-      cache = new uv.Matrix2D(display.tView);
-      display.tView.reset();
-      display.tView.translate(deltaX, deltaY);
-      display.tView.apply(cache);
-      display.callbacks.viewChange.call(display);
-    }
-  });
+  function release() {
+    panning = false;
+  }
+  
+  display.$canvas.bind('mousedown', mouseDown);
+  display.$canvas.bind('mousemove', mouseMove);
+  display.$canvas.bind('mouseup', release);
+  display.$canvas.bind('mouseout', release);
 };
-
