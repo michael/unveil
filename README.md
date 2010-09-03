@@ -56,7 +56,7 @@ Actors as well as the whole Scene can now be specified declaratively using a sim
       framerate: 30,
       traverser: uv.traverser.BreadthFirst
       displays: [{
-        container: $('#canvas'),
+        container: 'canvas',
         width: 500,
         height: 320,
         zooming: true,

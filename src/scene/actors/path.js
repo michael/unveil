@@ -25,7 +25,13 @@ uv.Path.prototype.draw = function(ctx) {
     ctx.moveTo(v.x, v.y);
     
     while (v = points.shift()) {
-      ctx.lineTo(v.x, v.y);
+      if (v.cp1x && v.cp2x) {
+        ctx.bezierCurveTo(v.cp1x, v.cp1y, v.cp2x,v.cp2y, v.x, v.y);
+      } else if (v.cp1x) {
+        ctx.quadraticCurveTo(v.cp1x, v.cp1y, v.x, v.y);
+      } else {
+        ctx.lineTo(v.x, v.y);
+      }
     }
     
     if (this.p('fillStyle')) {
