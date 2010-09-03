@@ -19,7 +19,8 @@ uv.behaviors.Zoom = function(display) {
           1+0.005 * delta,
           uv.Point(display.scene.mouseX, display.scene.mouseY)
         );
-    display.tView = uv.behaviors.adjust(display, m);
+
+    display.tView = (delta < 0) ? uv.behaviors.adjust(display, m) : m;
     display.callbacks.viewChange.call(display);
   });
 };
