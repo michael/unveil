@@ -148,6 +148,10 @@ uv.Tween.prototype = {
     this.trigger('finish');
   },
   continueTo: function(finish, duration) {
+    if (this.isPlaying()) {
+      this.trigger('finish');
+    }
+    
   	this.begin = this._pos;
   	this.setFinish(finish);
   	if (this._duration != undefined) {
