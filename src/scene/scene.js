@@ -11,7 +11,8 @@ uv.Scene = function(properties) {
     width: 0,
     height: 0,
     fillStyle: '#fff',
-    framerate: 10,
+    idleFramerate: 0,
+    framerate: 50,
     traverser: uv.traverser.DepthFirst
   }, properties);
   
@@ -39,13 +40,13 @@ uv.Scene = function(properties) {
   }
   
   this.activeDisplay = this.displays[0];
-  
   this.fps = 0;
-  this.framerate = this.p('framerate');
+  
+  this.framerate = this.p('idleFramerate');
   
   // Commands hook in here
   this.commands = {};
-  this.register(uv.cmds.RequestFramerate, {framerate: 60});
+  this.register(uv.cmds.RequestFramerate, {framerate: this.p('framerate')});
   
   // Register actors
   if (properties.actors) {
@@ -53,10 +54,26 @@ uv.Scene = function(properties) {
       that.add(actorSpec);
     });
   }
+  
+  var timeout;
+  var requested = false;
+  
+  // Listen to interaction
+  this.bind('interact', function() {
+      if (!requested) {
+        that.execute(uv.cmds.RequestFramerate);
+        requested = true;
+      }
+      
+      clearTimeout(timeout);
+      timeout = setTimeout(function() {
+        requested = false;
+        that.unexecute(uv.cmds.RequestFramerate);
+      }, 1000);
+  });
 };
 
 uv.Scene.prototype = Object.extend(uv.Actor);
-
 
 uv.Scene.prototype.registerActor = function(actor) {
   var id = actor.id();
@@ -72,7 +89,6 @@ uv.Scene.prototype.registerActor = function(actor) {
   // Register as interactive
   if (actor.p('interactive')) {
     this.interactiveActors[actor.id()] = actor;
-    // this.interactiveActors.push(actor);
   }
 };
 
@@ -85,34 +101,37 @@ uv.Scene.prototype.get = function() {
   }
 };
 
-uv.Scene.prototype.start = function(options) {
-  var that = this,
-      opts = { framerate: 50, idleFramerate: 10 };
-      
-  _.extend(opts, options);
+uv.Scene.prototype.start = function() {
   this.running = true;
   this.trigger('start');
   this.loop();
   this.checkActiveActors();
 };
 
+uv.Scene.prototype.setFramerate = function(framerate) {
+  this.framerate = framerate;
+  clearTimeout(this.nextLoop);
+  clearTimeout(this.nextPick);
+  this.loop();
+  this.checkActiveActors();
+};
 
 // The draw loop
 
 uv.Scene.prototype.loop = function() {
   var that = this,
       start, duration;
-      
   
   if (this.running) {
+    this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
     start = new Date().getTime();
     this.trigger('frame');
     this.compileMatrix();
     this.refreshDisplays();
     duration = new Date().getTime()-start;
-    
-    this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
-    setTimeout(function() { that.loop(); }, (1000/that.framerate)-duration);
+    if (this.framerate > 0) {
+      this.nextLoop = setTimeout(function() { that.loop(); }, (1000/that.framerate)-duration);
+    }
   }
 };
 
@@ -144,7 +163,11 @@ uv.Scene.prototype.checkActiveActors = function() {
         }
       });
     }
-    setTimeout(function() { that.checkActiveActors(); }, (1000/10));
+    if (that.framerate > 0) {
+      this.nextPick = setTimeout(function() {
+        that.checkActiveActors(); 
+      }, 1000/Math.min(that.framerate, 15));
+    }
   }
 };
 

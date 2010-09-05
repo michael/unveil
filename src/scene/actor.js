@@ -129,7 +129,7 @@ uv.Actor.prototype.remove = function(matcher) {
       if (matcher(actor)) {
         that.scene.remove(actor.id());
       }
-    })
+    });
   } else {
     if (this.get('children', matcher)) {
       // Remove child
@@ -181,23 +181,22 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
       property: property,
       duration: duration || 1000
     });
+    
+    // Request a higher framerate for the transition
+    // and release it after completion.
+    if (scene.commands.RequestFramerate) {
+      this.tweens[property].bind('start', function() {
+        scene.execute(uv.cmds.RequestFramerate);
+      });
+      this.tweens[property].bind('finish', function() {
+        scene.unexecute(uv.cmds.RequestFramerate);
+      });      
+    }
   }
   
   if (easer) {
     this.tweens[property].easer = uv.Tween[easer];
   }
-  
-  // Request a higher framerate for the transition
-  // and release it after completion.
-  if (scene.commands.RequestFramerate) {
-    this.tweens[property].bind('start', function() {
-      scene.execute(uv.cmds.RequestFramerate);
-    });
-    this.tweens[property].bind('finish', function() {
-      scene.unexecute(uv.cmds.RequestFramerate);
-    });      
-  }
-
   this.tweens[property].continueTo(value, duration || 1000);
   return this.tweens[property];
 };
@@ -303,6 +302,8 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   }
   return this.active;
 };
+
+// Bounds used for mouse picking
 
 uv.Actor.prototype.drawBounds = function(ctx) {
   var bounds = this.bounds(),

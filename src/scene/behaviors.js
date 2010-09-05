@@ -2,7 +2,6 @@ uv.behaviors = {};
 
 uv.behaviors.adjust = function(display, m) {
   var b = display.bounds();
-  
   // clamp to scene boundaries
   if (display.bounded) {
     m.a = m.d = Math.max(1, m.a);
@@ -13,16 +12,17 @@ uv.behaviors.adjust = function(display, m) {
 };
 
 uv.behaviors.Zoom = function(display) {
-  display.$canvas.bind('mousewheel', function(event, delta) {
-    var m = display.tView.scale(
+  function mouseWheel(e) {
+    var delta = (e.wheelDelta / 120 || -e.detail),
+        m = display.tView.scale(
           1+0.005 * delta,
           1+0.005 * delta,
           uv.Point(display.scene.mouseX, display.scene.mouseY)
         );
-
     display.tView = (delta < 0) ? uv.behaviors.adjust(display, m) : m;
     display.callbacks.viewChange.call(display);
-  });
+  }
+  display.canvas.addEventListener("mousewheel", mouseWheel, false);
 };
 
 uv.behaviors.Pan = function(display) {
@@ -48,8 +48,8 @@ uv.behaviors.Pan = function(display) {
     panning = false;
   }
   
-  display.$canvas.bind('mousedown', mouseDown);
-  display.$canvas.bind('mousemove', mouseMove);
-  display.$canvas.bind('mouseup', release);
-  display.$canvas.bind('mouseout', release);
+  display.canvas.addEventListener("mousedown", mouseDown, false);
+  display.canvas.addEventListener("mousemove", mouseMove, false);
+  display.canvas.addEventListener("mouseup", release, false);
+  display.canvas.addEventListener("mouseout", release, false);
 };

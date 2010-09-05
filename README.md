@@ -53,8 +53,6 @@ to give the whole thing an even more declarative feel.
 Actors as well as the whole Scene can now be specified declaratively using a simple Specification Syntax.
 
     var scene = new Scene({
-      framerate: 30,
-      traverser: uv.traverser.BreadthFirst
       displays: [{
         container: 'canvas',
         width: 500,
@@ -112,3 +110,21 @@ Supported Browsers
 * Firefox 3.5+
 * Internet Explorer 9+
 * Opera 10+
+
+
+Roadmap
+--------------------------------------------------------------------------------
+
+**Unveil.js 0.1**
+
+* Display actors (actors that stick on on a display rather than on the scene)
+* API Docs
+* Remove all library dependencies (jQuery has already been tossed out, Underscore.js remaining)
+
+
+
+**Unveil.js Stars**
+
+There should be a dedicated place for commonly used custom actors (stars). I could imagine
+putting them in a Github repo, ready for reuse, contributions, etc. Eventually, an online index for 
+finding the right star for a certain job would also be nice.

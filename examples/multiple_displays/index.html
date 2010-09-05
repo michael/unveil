@@ -4,33 +4,32 @@
   <title>Unveil.js - Multiple displays</title>
   
   <!-- libraries -->
-  <script src="../../lib/jquery-1.4.2.js"></script>
-  <script src="../../lib/jquery.mousewheel.js"></script>
+  
   <script src="../../lib/protovis-d3.2.js"></script>
   <script src="../../lib/underscore.js"></script>
   <script src="../../unveil.js"></script>
   
   <script>
-    $(function() {
-      
+    window.onload = function() {
       var scene = new uv.Scene({
-            width: 800,
-            height: 500,
+            width: 500,
+            height: 250,
             fillStyle: '#ccc',
-            framerate: 30,
-            displays: [{
-              container: 'bigscreen',
-              width: 500,
-              height: 250,
-              panning: true,
-              zooming: true
-            },
-            {
-              container: 'miniscreen',
-              width: 200,
-              height: 200,
-              zooming: true
-            }
+            displays: [
+              {
+                container: 'bigscreen',
+                width: 500,
+                height: 250,
+                panning: true,
+                zooming: true
+              },
+              {
+                container: 'miniscreen',
+                width: 200,
+                height: 200,
+                panning: true,
+                zooming: true
+              }
             ],
             actors: [
               {
@@ -77,7 +76,6 @@
                 x: 400,
                 y: 40,
                 text: function() { return "FPS: "+parseInt(this.scene.fps, 10); },
-                fillStyle: 'black'
               },
               {
                 type: 'label',
@@ -90,6 +88,12 @@
                 x: 300,
                 y: 80,
                 text: function() { return "Displaypos: ("+this.scene.displays[0].mouseX+", "+this.scene.displays[0].mouseY+")"; }
+              },
+              {
+                type: 'label',
+                x: 300,
+                y: 100,
+                text: function() { return "Framerate Requests: "+ this.scene.commands.RequestFramerate.requests; }
               }
             ]
           });
@@ -106,9 +110,10 @@
       scene.get('animated_circle').bind('mouseout', function() {
         this.animate('radius', 30, 1000);
       });
-
+      
       scene.start();
-    });
+      
+    };
   </script>
   
   <link href="../styles.css" media="screen" rel="stylesheet" type="text/css" />

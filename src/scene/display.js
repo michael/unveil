@@ -9,16 +9,12 @@ uv.Display = function(scene, opts) {
   this.canvas.style.position = 'relative';
   this.element.appendChild(this.canvas);
 
-  this.$element = $(this.element);
-  this.$canvas = $(this.canvas);
-  
   this.width = opts.width;
   this.height = opts.height;
   
   this.bounded = opts.bounded || true;
   
-  this.$element.append(this.$canvas);
-  this.ctx = this.$canvas[0].getContext("2d");
+  this.ctx = this.canvas.getContext("2d");
   
   this.tView = uv.Matrix();
   
@@ -37,7 +33,8 @@ uv.Display = function(scene, opts) {
   
   // Register mouse events
   function mouseMove(e) {
-    var mat = that.tView.inverse();
+    var mat = that.tView.inverse(),
+        pos;
     
     if (e.offsetX) {
       pos = new uv.Point(e.offsetX, e.offsetY);
@@ -56,17 +53,26 @@ uv.Display = function(scene, opts) {
     }
   }
   
-  this.$canvas.bind('mousemove', mouseMove);
-  this.$canvas.bind('mouseout', function() {
+  function mouseOut() {
     that.scene.mouseX = NaN;
     that.scene.mouseY = NaN;
-  });
+  }
   
-  this.$canvas.bind('click', function() {
+  function interact() {
+    that.scene.trigger('interact');
+  }
+  
+  function click() {
     _.each(that.scene.activeActors, function(a) {
       a.trigger('click');
     });
-  });
+  }
+  
+  this.canvas.addEventListener("mousemove", interact, false);
+  this.canvas.addEventListener("mousemove", mouseMove, false);
+  this.canvas.addEventListener("mousewheel", interact, false);
+  this.canvas.addEventListener("mouseout", mouseOut, false);
+  this.canvas.addEventListener("click", click, false);
 };
 
 // Register callbacks
@@ -93,9 +99,13 @@ uv.Display.prototype.worldPos = function(pos) {
 // Yield bounds used for viewport constraining
 
 uv.Display.prototype.bounds = function() {
+  // Consider area that doesn't fit on the display
+  var dx = Math.max(0, this.scene.p('width')-this.width),
+      dy = Math.max(0, this.scene.p('width')-this.width);
+  
   return {
-      x: (1 - this.tView.a) * this.width,
-      y: (1 - this.tView.a) * this.height
+      x: (1 - this.tView.a) * this.width - this.tView.a*dx,
+      y: (1 - this.tView.a) * this.height - this.tView.a*dy
   };
 };
 

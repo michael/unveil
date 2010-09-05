@@ -17,12 +17,12 @@ uv.cmds.RequestFramerate.className = 'RequestFramerate';
 
 uv.cmds.RequestFramerate.prototype.execute = function() {
   this.requests += 1;
-  this.scene.framerate = this.framerate;
+  this.scene.setFramerate(this.framerate);
 };
 
 uv.cmds.RequestFramerate.prototype.unexecute = function() {
   this.requests -= 1;
   if (this.requests <= 0) {
-    this.scene.framerate = this.originalFramerate;
+    this.scene.setFramerate(this.originalFramerate);
   }
 };

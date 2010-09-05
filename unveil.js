@@ -3,7 +3,7 @@ var root = this;
 // Top level namespace
 var uv = {};
 
-// CONSTANTS
+// Constants
 uv.EPSILON = 0.0001;
 uv.MAX_FLOAT   = 3.4028235e+38;
 uv.MIN_FLOAT   = -3.4028235e+38;
@@ -43,40 +43,6 @@ Object.keys = function (obj) {
   return array;
 };
 
-
-function Class(proto) {
-  var self = this,
-      isSubclass = typeof this === 'function',
-      Class = proto.hasOwnProperty('constructor')
-        ? proto.constructor
-        : isSubclass 
-          ? (proto.constructor = function(){ self.apply(this, arguments) })
-          : (proto.constructor = function(){})
-  if (proto.hasOwnProperty('extend'))
-    extend(Class, proto.extend)
-  Class.prototype = proto
-  Class.extend = arguments.callee
-  if (isSubclass) {
-    Class.prototype.__proto__ = this.prototype
-    if ('extended' in this)
-      this.extended(Class)
-  }
-  return Class
-}
-
-Class.prototype = Function.prototype
-
-Class.prototype.include = function(proto){
-  extend(this.prototype, proto)
-  if ('included' in proto) proto.included(this)
-  return this
-}
-
-function extend(a, b) {
-  for (var key in b)
-    if (b.hasOwnProperty(key))
-      a[key] = b[key]
-}
 
 // SortedHash
 // =============================================================================
@@ -829,234 +795,6 @@ uv.Collection.transformers.group.params = {
 };
 
 
-uv.Collection.transformers.coOccurrences = function(c, params) {
-  if (!params.property || !params.knn) return c;
-  
-  var targetItems = {},
-      property = c.get('properties', params.property),
-      values = property.all('values');
-  
-  function coOccurrences(v1, v2) {
-    var items1 = v1.all('items'),
-        items2 = v2.all('items');
-    return items1.intersect(items2).length;
-  };
-  
-  function similarity(v1, v2) {
-    return 0.5* (coOccurrences(v1, v2) / coOccurrences(v1, v1)
-          + coOccurrences(v2, v1) / coOccurrences(v2, v2));
-  };
-  
-  // get property values
-  values.each(function(index, value) {
-    targetItems[value.val] = {
-      source: value.val,
-      "similar_items": {}
-    };
-
-    var similarItems = [];
-    
-    values.each(function (index, otherValue) {
-      var sim = similarity(value, otherValue);
-      if (sim>0 && value.val !== otherValue.val) {
-        similarItems.push({
-          "name": otherValue.val,
-          "number_of_cooccurrences": coOccurrences(value, otherValue),
-          "score": sim
-        });
-      }
-    });
-        
-    // sort by score
-    similarItems.sort(function(item1, item2) {
-      var value1 = item1.score,
-          value2 = item2.score;
-      return value1 === value2 ? 0 : (value1 > value2 ? -1 : 1);
-    });
-    
-    similarItems = similarItems.slice(0, params.knn);
-    
-    var similarItemsHash = {};
-    $.each(similarItems, function(index, item) {
-      similarItemsHash[item.name] = item;
-    });
-
-    targetItems[value.val].source = value.val;
-    targetItems[value.val].similar_items = similarItemsHash;
-  });
-
-  // construct a new collection that models coocurrences
-  var cspec = {
-    properties: {
-      source: {
-        name: "Source",
-        type: "string",
-        unique: true
-      },
-      similar_items: {
-        name: "Similar Items",
-        type: "collection",
-        unique: true,
-        properties: {
-          "name": {
-            name: 'Name',
-            type: 'string',
-            unique: true
-          },
-          "number_of_cooccurrences": {
-            name: 'Number of Co-occurrences',
-            type: 'number',
-            unique: true
-          },
-          "score": {
-            name: 'Similarity Score',
-            type: 'number',
-            unique: true
-          }
-        }
-      }
-    },
-    items: targetItems
-  };
-  return new uv.Collection(cspec);
-};
-
-// Operation specification
-uv.Collection.transformers.coOccurrences.label = "Similarity (COOC)";
-uv.Collection.transformers.coOccurrences.params = {
-  property: {
-    name: "Property",
-    type: "property"
-  },
-  knn: {
-    name: "K-nearest Neighbor",
-    type: "number"
-  }
-};
-uv.Collection.transformers.coOccurrencesBaccigalupo = function(c, params) {
-
-  // check for valid params
-  if (!params.property || !params.knn) return c;
-  
-  var targetItems = {},
-      property = c.get('properties', params.property),
-      values = property.all('values');
-  
-  function checkDistance(playlist, v1, v2, d) {
-    for (var i = 0; i<playlist.values(params.property).length-d; i++) {
-      
-      if (playlist.values(params.property).at(i)===v1.val && playlist.values(params.property).at(i+d+1)===v2.val) {
-        return true;
-      }
-    }
-    return false;
-  };
-  
-  function coOccurencesAtDistance(v1, v2, d) {
-    var items1 = v1.all('items'),
-        items2 = v2.all('items'),
-        playlists = items1.intersect(items2);
-        
-    return playlists.select(function(key, p) {
-      return checkDistance(p, v1, v2, d);
-    }).length;
-  };
-  
-  function similarity(v1, v2) {
-    return 1*coOccurencesAtDistance(v1, v2, 0) +
-           0.8* coOccurencesAtDistance(v1, v2, 1) +
-           0.64* coOccurencesAtDistance(v1, v2, 2);
-  };
-  
-  // get property values
-  values.each(function(index, value) {
-    targetItems[value.val] = {
-      source: value.val,
-      "similar_items": {}
-    };
-
-    var similarItems = [];
-    
-    values.each(function (index, otherValue) {
-      var sim = similarity(value, otherValue);
-      
-      if (sim>0 && value.val !== otherValue.val) {
-        similarItems.push({
-          "name": otherValue.val,
-          "number_of_cooccurrences": 0,
-          "score": sim
-        });
-      }
-    });
-    
-    // sort by score
-    similarItems.sort(function(item1, item2) {
-      var value1 = item1.score,
-          value2 = item2.score;
-      return value1 === value2 ? 0 : (value1 > value2 ? -1 : 1);
-    });
-    
-    similarItems = similarItems.slice(0, params.knn);
-    
-    var similarItemsHash = {};
-    $.each(similarItems, function(index, item) {
-      similarItemsHash[item.name] = item;
-    });
-    
-    targetItems[value.val].source = value.val;
-    targetItems[value.val].similar_items = similarItemsHash;
-    
-  });
-  
-  // construct a new collection that models coocurrences
-  var cspec = {
-    properties: {
-      source: {
-        name: "Source",
-        type: "string",
-        unique: true
-      },
-      similar_items: {
-        name: "Similar Items",
-        type: "collection",
-        unique: true,
-        properties: {
-          "name": {
-            name: 'Name',
-            type: 'string',
-            unique: true
-          },
-          "number_of_cooccurrences": {
-            name: 'Number of Co-occurrences',
-            type: 'number',
-            unique: true
-          },
-          "score": {
-            name: 'Similarity Score',
-            type: 'number',
-            unique: true
-          }
-        }
-      }
-    },
-    items: targetItems
-  };
-  
-  return new uv.Collection(cspec);
-};
-
-// Transformer specification
-uv.Collection.transformers.coOccurrencesBaccigalupo.label = "Co-Occurrences Baccigalupo";
-uv.Collection.transformers.coOccurrencesBaccigalupo.params = {
-  property: {
-    name: "Property",
-    type: "property"
-  },
-  knn: {
-    name: "K-nearest Neighbor",
-    type: "number"
-  }
-};
 uv.DataGraph = function(g) {
   uv.Node.call(this);
   var that = this;
@@ -1074,7 +812,13 @@ uv.DataGraph = function(g) {
   var resources = _.select(g, function(node, key) {
     if (node.type !== 'type') {
       var res = that.get('resources', key) || new uv.Resource(that, key, node);
+      
       that.set('resources', key, res);
+      
+      if (!that.get('types', node.type)) {
+        throw "Type '"+node.type+"' not found for "+key+"...";
+      }
+      
       that.get('types', node.type).set('resources', key, res);
       return true;
     }
@@ -1085,10 +829,32 @@ uv.DataGraph = function(g) {
   this.all('resources').each(function(index, r) {
     r.build();
   });
-  
 };
 
 uv.DataGraph.prototype = Object.extend(uv.Node);
+
+
+// Return a set of matching resources based on a conditions hash
+// 
+// Usage:
+// $ var items = graph.find({
+// $   type: '/type/document',
+// $   category: 'Conference Paper'
+// $ });
+
+uv.DataGraph.prototype.find = function(conditions) {
+  
+  this.all('resources').select(function(key, res) {
+    for(var k in conditions) {
+      if (key === 'type') {
+        if (conditions[k] !== res.type.key) return false;
+      } else {
+        if (conditions[k] !== res.get(k)) return false;
+      }
+    }
+    return true;
+  });
+};
 
 uv.VALUE_TYPES = [
   'string',
@@ -1152,16 +918,27 @@ uv.Resource.prototype.build = function() {
     var values = _.isArray(property) ? property : [property];
     var p = that.type.get('properties', key);
     
+    if (!p) {
+      throw "property "+key+" not found at "+that.type.key+" for resource "+that.key+"";
+    }
+    
+    // init key
+    that.replace(p.key, new uv.SortedHash());
+    
+    
     if (p.isObjectType()) {
       _.each(values, function(v, index) {
         var res = that.g.get('resources', v);
+        if (!res) {
+          throw "Can't reference "+v
+        }
         that.set(p.key, res.key, res);
       });
     } else {
       _.each(values, function(v, index) {
         var val = p.get('values', v);
         
-        // Check if this value is already registered
+        // Check if the value is already registered
         // on this property
         if (!val) {
           val = new uv.Node({value: v});
@@ -1695,7 +1472,7 @@ uv.Actor.prototype.remove = function(matcher) {
       if (matcher(actor)) {
         that.scene.remove(actor.id());
       }
-    })
+    });
   } else {
     if (this.get('children', matcher)) {
       // Remove child
@@ -1747,23 +1524,22 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
       property: property,
       duration: duration || 1000
     });
+    
+    // Request a higher framerate for the transition
+    // and release it after completion.
+    if (scene.commands.RequestFramerate) {
+      this.tweens[property].bind('start', function() {
+        scene.execute(uv.cmds.RequestFramerate);
+      });
+      this.tweens[property].bind('finish', function() {
+        scene.unexecute(uv.cmds.RequestFramerate);
+      });      
+    }
   }
   
   if (easer) {
     this.tweens[property].easer = uv.Tween[easer];
   }
-  
-  // Request a higher framerate for the transition
-  // and release it after completion.
-  if (scene.commands.RequestFramerate) {
-    this.tweens[property].bind('start', function() {
-      scene.execute(uv.cmds.RequestFramerate);
-    });
-    this.tweens[property].bind('finish', function() {
-      scene.unexecute(uv.cmds.RequestFramerate);
-    });      
-  }
-
   this.tweens[property].continueTo(value, duration || 1000);
   return this.tweens[property];
 };
@@ -1870,6 +1646,8 @@ uv.Actor.prototype.checkActive = function(ctx, mouseX, mouseY) {
   return this.active;
 };
 
+// Bounds used for mouse picking
+
 uv.Actor.prototype.drawBounds = function(ctx) {
   var bounds = this.bounds(),
       start, v;
@@ -1939,7 +1717,6 @@ uv.behaviors = {};
 
 uv.behaviors.adjust = function(display, m) {
   var b = display.bounds();
-  
   // clamp to scene boundaries
   if (display.bounded) {
     m.a = m.d = Math.max(1, m.a);
@@ -1950,15 +1727,17 @@ uv.behaviors.adjust = function(display, m) {
 };
 
 uv.behaviors.Zoom = function(display) {
-  display.$canvas.bind('mousewheel', function(event, delta) {
-    var m = display.tView.scale(
+  function mouseWheel(e) {
+    var delta = (e.wheelDelta / 120 || -e.detail),
+        m = display.tView.scale(
           1+0.005 * delta,
           1+0.005 * delta,
           uv.Point(display.scene.mouseX, display.scene.mouseY)
         );
-    display.tView = uv.behaviors.adjust(display, m);
+    display.tView = (delta < 0) ? uv.behaviors.adjust(display, m) : m;
     display.callbacks.viewChange.call(display);
-  });
+  }
+  display.canvas.addEventListener("mousewheel", mouseWheel, false);
 };
 
 uv.behaviors.Pan = function(display) {
@@ -1984,10 +1763,10 @@ uv.behaviors.Pan = function(display) {
     panning = false;
   }
   
-  display.$canvas.bind('mousedown', mouseDown);
-  display.$canvas.bind('mousemove', mouseMove);
-  display.$canvas.bind('mouseup', release);
-  display.$canvas.bind('mouseout', release);
+  display.canvas.addEventListener("mousedown", mouseDown, false);
+  display.canvas.addEventListener("mousemove", mouseMove, false);
+  display.canvas.addEventListener("mouseup", release, false);
+  display.canvas.addEventListener("mouseout", release, false);
 };
 uv.Display = function(scene, opts) {
   var that = this;
@@ -2000,16 +1779,12 @@ uv.Display = function(scene, opts) {
   this.canvas.style.position = 'relative';
   this.element.appendChild(this.canvas);
 
-  this.$element = $(this.element);
-  this.$canvas = $(this.canvas);
-  
   this.width = opts.width;
   this.height = opts.height;
   
   this.bounded = opts.bounded || true;
   
-  this.$element.append(this.$canvas);
-  this.ctx = this.$canvas[0].getContext("2d");
+  this.ctx = this.canvas.getContext("2d");
   
   this.tView = uv.Matrix();
   
@@ -2028,7 +1803,8 @@ uv.Display = function(scene, opts) {
   
   // Register mouse events
   function mouseMove(e) {
-    var mat = that.tView.inverse();
+    var mat = that.tView.inverse(),
+        pos;
     
     if (e.offsetX) {
       pos = new uv.Point(e.offsetX, e.offsetY);
@@ -2047,17 +1823,26 @@ uv.Display = function(scene, opts) {
     }
   }
   
-  this.$canvas.bind('mousemove', mouseMove);
-  this.$canvas.bind('mouseout', function() {
+  function mouseOut() {
     that.scene.mouseX = NaN;
     that.scene.mouseY = NaN;
-  });
+  }
   
-  this.$canvas.bind('click', function() {
+  function interact() {
+    that.scene.trigger('interact');
+  }
+  
+  function click() {
     _.each(that.scene.activeActors, function(a) {
       a.trigger('click');
     });
-  });
+  }
+  
+  this.canvas.addEventListener("mousemove", interact, false);
+  this.canvas.addEventListener("mousemove", mouseMove, false);
+  this.canvas.addEventListener("mousewheel", interact, false);
+  this.canvas.addEventListener("mouseout", mouseOut, false);
+  this.canvas.addEventListener("click", click, false);
 };
 
 // Register callbacks
@@ -2084,9 +1869,13 @@ uv.Display.prototype.worldPos = function(pos) {
 // Yield bounds used for viewport constraining
 
 uv.Display.prototype.bounds = function() {
+  // Consider area that doesn't fit on the display
+  var dx = Math.max(0, this.scene.p('width')-this.width),
+      dy = Math.max(0, this.scene.p('width')-this.width);
+  
   return {
-      x: (1 - this.tView.a) * this.width,
-      y: (1 - this.tView.a) * this.height
+      x: (1 - this.tView.a) * this.width - this.tView.a*dx,
+      y: (1 - this.tView.a) * this.height - this.tView.a*dy
   };
 };
 
@@ -2128,13 +1917,13 @@ uv.cmds.RequestFramerate.className = 'RequestFramerate';
 
 uv.cmds.RequestFramerate.prototype.execute = function() {
   this.requests += 1;
-  this.scene.framerate = this.framerate;
+  this.scene.setFramerate(this.framerate);
 };
 
 uv.cmds.RequestFramerate.prototype.unexecute = function() {
   this.requests -= 1;
   if (this.requests <= 0) {
-    this.scene.framerate = this.originalFramerate;
+    this.scene.setFramerate(this.originalFramerate);
   }
 };
 // Scene
@@ -2150,7 +1939,8 @@ uv.Scene = function(properties) {
     width: 0,
     height: 0,
     fillStyle: '#fff',
-    framerate: 10,
+    idleFramerate: 0,
+    framerate: 50,
     traverser: uv.traverser.DepthFirst
   }, properties);
   
@@ -2178,13 +1968,13 @@ uv.Scene = function(properties) {
   }
   
   this.activeDisplay = this.displays[0];
-  
   this.fps = 0;
-  this.framerate = this.p('framerate');
+  
+  this.framerate = this.p('idleFramerate');
   
   // Commands hook in here
   this.commands = {};
-  this.register(uv.cmds.RequestFramerate, {framerate: 60});
+  this.register(uv.cmds.RequestFramerate, {framerate: this.p('framerate')});
   
   // Register actors
   if (properties.actors) {
@@ -2192,10 +1982,26 @@ uv.Scene = function(properties) {
       that.add(actorSpec);
     });
   }
+  
+  var timeout;
+  var requested = false;
+  
+  // Listen to interaction
+  this.bind('interact', function() {
+      if (!requested) {
+        that.execute(uv.cmds.RequestFramerate);
+        requested = true;
+      }
+      
+      clearTimeout(timeout);
+      timeout = setTimeout(function() {
+        requested = false;
+        that.unexecute(uv.cmds.RequestFramerate);
+      }, 1000);
+  });
 };
 
 uv.Scene.prototype = Object.extend(uv.Actor);
-
 
 uv.Scene.prototype.registerActor = function(actor) {
   var id = actor.id();
@@ -2211,7 +2017,6 @@ uv.Scene.prototype.registerActor = function(actor) {
   // Register as interactive
   if (actor.p('interactive')) {
     this.interactiveActors[actor.id()] = actor;
-    // this.interactiveActors.push(actor);
   }
 };
 
@@ -2224,34 +2029,37 @@ uv.Scene.prototype.get = function() {
   }
 };
 
-uv.Scene.prototype.start = function(options) {
-  var that = this,
-      opts = { framerate: 50, idleFramerate: 10 };
-      
-  _.extend(opts, options);
+uv.Scene.prototype.start = function() {
   this.running = true;
   this.trigger('start');
   this.loop();
   this.checkActiveActors();
 };
 
+uv.Scene.prototype.setFramerate = function(framerate) {
+  this.framerate = framerate;
+  clearTimeout(this.nextLoop);
+  clearTimeout(this.nextPick);
+  this.loop();
+  this.checkActiveActors();
+};
 
 // The draw loop
 
 uv.Scene.prototype.loop = function() {
   var that = this,
       start, duration;
-      
   
   if (this.running) {
+    this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
     start = new Date().getTime();
     this.trigger('frame');
     this.compileMatrix();
     this.refreshDisplays();
     duration = new Date().getTime()-start;
-    
-    this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
-    setTimeout(function() { that.loop(); }, (1000/that.framerate)-duration);
+    if (this.framerate > 0) {
+      this.nextLoop = setTimeout(function() { that.loop(); }, (1000/that.framerate)-duration);
+    }
   }
 };
 
@@ -2283,7 +2091,11 @@ uv.Scene.prototype.checkActiveActors = function() {
         }
       });
     }
-    setTimeout(function() { that.checkActiveActors(); }, (1000/10));
+    if (that.framerate > 0) {
+      this.nextPick = setTimeout(function() {
+        that.checkActiveActors(); 
+      }, 1000/Math.min(that.framerate, 15));
+    }
   }
 };
 
@@ -2458,6 +2270,10 @@ uv.Tween.prototype = {
     this.trigger('finish');
   },
   continueTo: function(finish, duration) {
+    if (this.isPlaying()) {
+      this.trigger('finish');
+    }
+    
   	this.begin = this._pos;
   	this.setFinish(finish);
   	if (this._duration != undefined) {
@@ -2637,47 +2453,6 @@ uv.Label.prototype = Object.extend(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx) {
   ctx.font = this.p('font');
-  // Draw the label on a background rectangle
-  if (this.p('background')) {
-    var textWidth = ctx.measureText(this.p('text')).width;
-    
-    ctx.fillStyle = this.p('backgroundStyle');
-
-    function roundedRect(ctx, x, y, width, height, radius, stroke) {
-      ctx.beginPath();
-      ctx.moveTo(x + radius, y);
-      ctx.lineTo(x + width - radius, y);
-      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-      ctx.lineTo(x + width, y + height - radius);
-      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-      ctx.lineTo(x + radius, y + height);
-      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-      ctx.lineTo(x, y + radius);
-      ctx.quadraticCurveTo(x, y, x + radius, y);
-      ctx.closePath();
-      if (stroke)
-        ctx.stroke();
-      ctx.fill();
-    }
-    
-    var x, y, width, height;
-    
-    if (this.p('textAlign') == 'start') {
-      x = -5; y = -13;
-      width = textWidth+10;
-      height = 20;
-    } else if (this.p('textAlign') == 'center') {
-      x = -textWidth/2-5; y = -13;
-      width = textWidth+10;
-      height = 20;
-    } else if (this.p('textAlign') == 'right') {
-      x = -textWidth-5; y = -13;
-      width = textWidth+10;
-      height = 20;
-    }
-    
-    roundedRect(ctx, x, y, width, height, 5, this.p('lineWidth') > 0);
-  }
   
   ctx.textAlign = this.p('textAlign');
   ctx.fillText(this.p('text'), 0, 0);
@@ -2750,7 +2525,13 @@ uv.Path.prototype.draw = function(ctx) {
     ctx.moveTo(v.x, v.y);
     
     while (v = points.shift()) {
-      ctx.lineTo(v.x, v.y);
+      if (v.cp1x && v.cp2x) {
+        ctx.bezierCurveTo(v.cp1x, v.cp1y, v.cp2x,v.cp2y, v.x, v.y);
+      } else if (v.cp1x) {
+        ctx.quadraticCurveTo(v.cp1x, v.cp1y, v.x, v.y);
+      } else {
+        ctx.lineTo(v.x, v.y);
+      }
     }
     
     if (this.p('fillStyle')) {
@@ -2763,65 +2544,6 @@ uv.Path.prototype.draw = function(ctx) {
     ctx.closePath();
   }
 };
-
-// Abstract Visualization
-// ----------------------------------------------------------------------------
-// 
-// Functionality is shared with all implemented visualizations
-
-uv.Visualization = new Class({
-  constructor: function (collection, options) {
-      this.collection = collection;
-      this.measures = options.measures;
-      this.params = options.params;
-      this.$canvas = options.canvas || $('#canvas');
-      
-      // default margin
-      this.margin = {top: 20, right: 20, bottom: 20, left: 20};
-  },
-  // Checks if the constructed instance conforms to the visualization spec
-  isValid: function() {
-    var that = this,
-        idx = 0, // measure index
-        valid = true;
-    
-    // checks for a given measure if it conforms to a given spec
-    function isComplient(idx, mspec) {
-      var p = that.property(idx);
-
-      // handle optional measures
-      if (mspec.optional && !p)
-        return true;
-      
-      return (p && mspec.types.indexOf(p.type) >= 0 && (p.unique === mspec.unique || mspec.unique === undefined));
-    }
-    
-    $.each(this.constructor.spec.measures, function(index, mspec) {
-      var count;
-      if (mspec.cardinality === "*") {
-        count = that.measures.length-idx; // remaining unchecked measures
-      } else {
-        count = mspec.cardinality;
-      }
-      for (var i=0; i<count; i++) {
-        if (!isComplient(idx, mspec)) {
-          valid = false;
-        }
-        idx += 1;
-      }
-    });
-    
-    return idx >= this.measures.length ? valid : false;
-  },
-  // returns a property object at given index i
-  property: function(i) {
-    return this.collection.get('properties', this.measures[i]);
-  },
-  render: function() {
-    this.$canvas.html('render() is not implemented.');
-  }
-});
-
 // export namespace
 if (root !== 'undefined') root.uv = uv;
 

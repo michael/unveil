@@ -20,16 +20,27 @@ uv.Resource.prototype.build = function() {
     var values = _.isArray(property) ? property : [property];
     var p = that.type.get('properties', key);
     
+    if (!p) {
+      throw "property "+key+" not found at "+that.type.key+" for resource "+that.key+"";
+    }
+    
+    // init key
+    that.replace(p.key, new uv.SortedHash());
+    
+    
     if (p.isObjectType()) {
       _.each(values, function(v, index) {
         var res = that.g.get('resources', v);
+        if (!res) {
+          throw "Can't reference "+v
+        }
         that.set(p.key, res.key, res);
       });
     } else {
       _.each(values, function(v, index) {
         var val = p.get('values', v);
         
-        // Check if this value is already registered
+        // Check if the value is already registered
         // on this property
         if (!val) {
           val = new uv.Node({value: v});
