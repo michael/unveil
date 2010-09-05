@@ -29,8 +29,6 @@ files = [
   'src/collection/collection.js'
   'src/collection/criterion.js'
   'src/collection/transformers/group.js'
-  'src/collection/transformers/co_occurrences.js'
-  'src/collection/transformers/co_occurrences_baccigalupo.js'
   'src/data_graph/data_graph.js'
   'src/data_graph/type.js'
   'src/data_graph/resource.js'
@@ -46,7 +44,6 @@ files = [
   'src/scene/actors/label.js'
   'src/scene/actors/circle.js'
   'src/scene/actors/path.js'
-  'src/visualization/visualization.js'
   'src/outro.js'
 ]
 

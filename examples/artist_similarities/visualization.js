@@ -1,3 +1,38 @@
+function Class(proto) {
+  var self = this,
+      isSubclass = typeof this === 'function',
+      Class = proto.hasOwnProperty('constructor')
+        ? proto.constructor
+        : isSubclass 
+          ? (proto.constructor = function(){ self.apply(this, arguments) })
+          : (proto.constructor = function(){})
+  if (proto.hasOwnProperty('extend'))
+    extend(Class, proto.extend)
+  Class.prototype = proto
+  Class.extend = arguments.callee
+  if (isSubclass) {
+    Class.prototype.__proto__ = this.prototype
+    if ('extended' in this)
+      this.extended(Class)
+  }
+  return Class
+}
+
+Class.prototype = Function.prototype
+
+Class.prototype.include = function(proto){
+  extend(this.prototype, proto)
+  if ('included' in proto) proto.included(this)
+  return this
+}
+
+function extend(a, b) {
+  for (var key in b)
+    if (b.hasOwnProperty(key))
+      a[key] = b[key]
+}
+
+
 // Abstract Visualization
 // ----------------------------------------------------------------------------
 // 

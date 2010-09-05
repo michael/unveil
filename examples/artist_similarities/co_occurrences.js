@@ -90,7 +90,7 @@ uv.Collection.transformers.coOccurrences = function(c, params) {
   return new uv.Collection(cspec);
 };
 
-// Operation specification
+// Transformer specification
 uv.Collection.transformers.coOccurrences.label = "Similarity (COOC)";
 uv.Collection.transformers.coOccurrences.params = {
   property: {

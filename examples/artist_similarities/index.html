@@ -5,11 +5,17 @@
   
   <!-- libraries -->
   <script src="../../lib/jquery-1.4.2.js"></script>
-  <script src="../../lib/jquery.mousewheel.js"></script>
   <script src="../../lib/protovis-d3.2.js"></script>
   <script src="../../lib/underscore.js"></script>
   
   <script src="../../unveil.js"></script>
+  
+  <!-- collection transformers -->
+  <script src="./co_occurrences.js"></script>
+  <script src="./co_occurrences_baccigalupo.js"></script>
+  
+  <!-- visualization API -->
+  <script src="./visualization.js"></script>
   
   <!-- visualizations -->
   <script src="./barchart_matrix.js"></script>
@@ -43,11 +49,8 @@
             measures: [],
             params: {property: 'similar_items', nested_property: 'score'}
           });
-          
           $('#hint').hide();
-          
           vis.render();
-          
         }, 100);
       });
       
