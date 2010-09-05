@@ -45,7 +45,7 @@ uv.Actor = function(properties) {
 // Registration point for custom actors
 uv.Actor.registeredActors = {};
 
-uv.Actor.prototype = Object.extend(uv.Node);
+uv.Actor.prototype = uv.extend(uv.Node);
 
 
 // Bind event

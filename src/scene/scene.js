@@ -73,7 +73,7 @@ uv.Scene = function(properties) {
   });
 };
 
-uv.Scene.prototype = Object.extend(uv.Actor);
+uv.Scene.prototype = uv.extend(uv.Actor);
 
 uv.Scene.prototype.registerActor = function(actor) {
   var id = actor.id();

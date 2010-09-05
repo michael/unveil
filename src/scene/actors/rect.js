@@ -14,7 +14,7 @@ uv.Rect = function(properties) {
 
 uv.Actor.registeredActors.rect = uv.Rect;
 
-uv.Rect.prototype = Object.extend(uv.Actor);
+uv.Rect.prototype = uv.extend(uv.Actor);
 
 uv.Rect.prototype.bounds = function() {
   return [

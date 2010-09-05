@@ -9,41 +9,12 @@ uv.MAX_FLOAT   = 3.4028235e+38;
 uv.MIN_FLOAT   = -3.4028235e+38;
 uv.MAX_INT     = 2147483647;
 uv.MIN_INT     = -2147483648;
-uv.PI          = Math.PI;
-uv.TWO_PI      = 2 * uv.PI;
-uv.HALF_PI     = uv.PI / 2;
-uv.THIRD_PI    = uv.PI / 3;
-uv.QUARTER_PI  = uv.PI / 4;
-uv.DEG_TO_RAD  = uv.PI / 180;
-uv.RAD_TO_DEG  = 180 / uv.PI;
 
-
-Object.extend = function (f) {
+uv.extend = function (f) {
   function G() {}
   G.prototype = f.prototype || f;
   return new G();
 };
-
-
-Object.create = function (o) {
-  function F() {}
-  F.prototype = o;
-  return new F();
-};
-
-
-Object.keys = function (obj) {
-  var array = [],
-      prop;
-  for (prop in obj) {
-    if (obj.hasOwnProperty(prop)) {
-      array.push(prop);
-    }
-  }
-  return array;
-};
-
-
 // SortedHash
 // =============================================================================
 
@@ -482,7 +453,7 @@ uv.Value = function (value) {
   uv.Node.call(this, {value: value});
 };
 
-uv.Value.prototype = Object.extend(uv.Node);
+uv.Value.prototype = uv.extend(uv.Node);
 
 // Returns a copy without items
 // used by uv.Collection#filter
@@ -532,7 +503,7 @@ uv.Item = function (collection, key, attributes, nested) {
   collection.set('items', key, this);
 };
 
-uv.Item.prototype = Object.extend(uv.Node);
+uv.Item.prototype = uv.extend(uv.Node);
 
 // return the type of a specific property
 uv.Item.prototype.type = function (property) {
@@ -572,7 +543,7 @@ uv.Property = function (collection, key, options) {
   }
 };
 
-uv.Property.prototype = Object.extend(uv.Node);
+uv.Property.prototype = uv.extend(uv.Node);
 
 // Returns a copy without values
 // used by Collection#filter
@@ -634,7 +605,7 @@ uv.Collection = function (options) {
 // The is where transformers have to register
 uv.Collection.transformers = {};
 
-uv.Collection.prototype = Object.extend(uv.Node);
+uv.Collection.prototype = uv.extend(uv.Node);
 
 uv.Collection.prototype.filter = function(criteria) {
   var c2 = new uv.Collection();
@@ -831,7 +802,7 @@ uv.DataGraph = function(g) {
   });
 };
 
-uv.DataGraph.prototype = Object.extend(uv.Node);
+uv.DataGraph.prototype = uv.extend(uv.Node);
 
 
 // Return a set of matching resources based on a conditions hash
@@ -895,7 +866,7 @@ uv.Type = function(g, key, type) {
   });
 };
 
-uv.Type.prototype = Object.extend(uv.Node);
+uv.Type.prototype = uv.extend(uv.Node);
 uv.Resource = function(g, key, data) {
   uv.Node.call(this);
   
@@ -907,7 +878,7 @@ uv.Resource = function(g, key, data) {
   this.data = data;
 };
 
-uv.Resource.prototype = Object.extend(uv.Node);
+uv.Resource.prototype = uv.extend(uv.Node);
 
 uv.Resource.prototype.build = function() {
   var that = this;
@@ -1388,7 +1359,7 @@ uv.Actor = function(properties) {
 // Registration point for custom actors
 uv.Actor.registeredActors = {};
 
-uv.Actor.prototype = Object.extend(uv.Node);
+uv.Actor.prototype = uv.extend(uv.Node);
 
 
 // Bind event
@@ -2001,7 +1972,7 @@ uv.Scene = function(properties) {
   });
 };
 
-uv.Scene.prototype = Object.extend(uv.Actor);
+uv.Scene.prototype = uv.extend(uv.Actor);
 
 uv.Scene.prototype.registerActor = function(actor) {
   var id = actor.id();
@@ -2411,7 +2382,7 @@ uv.Rect = function(properties) {
 
 uv.Actor.registeredActors.rect = uv.Rect;
 
-uv.Rect.prototype = Object.extend(uv.Actor);
+uv.Rect.prototype = uv.extend(uv.Actor);
 
 uv.Rect.prototype.bounds = function() {
   return [
@@ -2449,7 +2420,7 @@ uv.Label = function(properties) {
 
 uv.Actor.registeredActors.label = uv.Label;
 
-uv.Label.prototype = Object.extend(uv.Actor);
+uv.Label.prototype = uv.extend(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx) {
   ctx.font = this.p('font');
@@ -2473,7 +2444,7 @@ uv.Circle = function(properties) {
 
 uv.Actor.registeredActors.circle = uv.Circle;
 
-uv.Circle.prototype = Object.extend(uv.Actor);
+uv.Circle.prototype = uv.extend(uv.Actor);
 
 uv.Circle.prototype.bounds = function() {
   return [
@@ -2513,7 +2484,7 @@ uv.Path = function(properties) {
 
 uv.Actor.registeredActors.path = uv.Path;
 
-uv.Path.prototype = Object.extend(uv.Actor);
+uv.Path.prototype = uv.extend(uv.Actor);
 
 uv.Path.prototype.draw = function(ctx) {
   var points = [].concat(this.p('points')),

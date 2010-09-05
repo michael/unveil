@@ -13,7 +13,7 @@ uv.Path = function(properties) {
 
 uv.Actor.registeredActors.path = uv.Path;
 
-uv.Path.prototype = Object.extend(uv.Actor);
+uv.Path.prototype = uv.extend(uv.Actor);
 
 uv.Path.prototype.draw = function(ctx) {
   var points = [].concat(this.p('points')),

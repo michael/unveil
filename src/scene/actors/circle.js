@@ -13,7 +13,7 @@ uv.Circle = function(properties) {
 
 uv.Actor.registeredActors.circle = uv.Circle;
 
-uv.Circle.prototype = Object.extend(uv.Actor);
+uv.Circle.prototype = uv.extend(uv.Actor);
 
 uv.Circle.prototype.bounds = function() {
   return [

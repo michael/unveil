@@ -34,7 +34,7 @@ uv.DataGraph = function(g) {
   });
 };
 
-uv.DataGraph.prototype = Object.extend(uv.Node);
+uv.DataGraph.prototype = uv.extend(uv.Node);
 
 
 // Return a set of matching resources based on a conditions hash

@@ -37,4 +37,4 @@ uv.Type = function(g, key, type) {
   });
 };
 
-uv.Type.prototype = Object.extend(uv.Node);
+uv.Type.prototype = uv.extend(uv.Node);

@@ -38,7 +38,7 @@ uv.Item = function (collection, key, attributes, nested) {
   collection.set('items', key, this);
 };
 
-uv.Item.prototype = Object.extend(uv.Node);
+uv.Item.prototype = uv.extend(uv.Node);
 
 // return the type of a specific property
 uv.Item.prototype.type = function (property) {

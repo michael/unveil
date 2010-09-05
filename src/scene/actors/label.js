@@ -15,7 +15,7 @@ uv.Label = function(properties) {
 
 uv.Actor.registeredActors.label = uv.Label;
 
-uv.Label.prototype = Object.extend(uv.Actor);
+uv.Label.prototype = uv.extend(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx) {
   ctx.font = this.p('font');

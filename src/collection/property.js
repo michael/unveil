@@ -22,7 +22,7 @@ uv.Property = function (collection, key, options) {
   }
 };
 
-uv.Property.prototype = Object.extend(uv.Node);
+uv.Property.prototype = uv.extend(uv.Node);
 
 // Returns a copy without values
 // used by Collection#filter

@@ -10,7 +10,7 @@ uv.Value = function (value) {
   uv.Node.call(this, {value: value});
 };
 
-uv.Value.prototype = Object.extend(uv.Node);
+uv.Value.prototype = uv.extend(uv.Node);
 
 // Returns a copy without items
 // used by uv.Collection#filter

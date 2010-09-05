@@ -9,7 +9,7 @@ uv.Resource = function(g, key, data) {
   this.data = data;
 };
 
-uv.Resource.prototype = Object.extend(uv.Node);
+uv.Resource.prototype = uv.extend(uv.Node);
 
 uv.Resource.prototype.build = function() {
   var that = this;

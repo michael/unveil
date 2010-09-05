@@ -24,7 +24,7 @@ uv.Collection = function (options) {
 // The is where transformers have to register
 uv.Collection.transformers = {};
 
-uv.Collection.prototype = Object.extend(uv.Node);
+uv.Collection.prototype = uv.extend(uv.Node);
 
 uv.Collection.prototype.filter = function(criteria) {
   var c2 = new uv.Collection();
