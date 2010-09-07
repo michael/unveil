@@ -25,7 +25,7 @@ uv.Rect.prototype.bounds = function() {
   ];
 };
 
-uv.Rect.prototype.draw = function(ctx) {
+uv.Rect.prototype.draw = function(ctx, tView) {
   if (this.p('fillStyle')) {
     ctx.fillRect(0, 0, this.p('width'), this.p('height'));
   }

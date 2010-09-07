@@ -24,7 +24,7 @@ uv.Circle.prototype.bounds = function() {
   ];
 };
 
-uv.Circle.prototype.draw = function(ctx) {
+uv.Circle.prototype.draw = function(ctx, tView) {  
   ctx.fillStyle = this.p('fillStyle');
   ctx.strokeStyle = this.p('strokeStyle');
   ctx.lineWidth = this.p('lineWidth');

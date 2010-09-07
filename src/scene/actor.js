@@ -23,10 +23,7 @@ uv.Actor = function(properties) {
     lineJoin: 'miter',
     globalAlpha: 1,
     miterLimit: 10,
-    
-    visible: true,
-    preserveShape: false,
-    sticky: false
+    visible: true
   }, properties);
   
   // init children
@@ -118,6 +115,7 @@ uv.Actor.prototype.add = function(spec) {
       actor.add(actorSpec);
     });
   }
+  return actor;
 };
 
 
@@ -205,6 +203,15 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
 // Dynamic Matrices
 // -----------------------------------------------------------------------------
 
+// TODO: allow users to specify the transformation order (rotate, translate, scale)
+
+uv.Actor.prototype.tShape = function(x, y) {
+  return uv.Matrix()
+         .translate(this.p('localX'), this.p('localY'))
+         .rotate(this.p('localRotation'))
+         .scale(this.p('localScaleX'), this.p('localScaleY'));
+};
+
 uv.Actor.prototype.tWorldParent = function() {
   if (this.parent) {
     return this.parent._tWorld;
@@ -221,13 +228,6 @@ uv.Actor.prototype.tWorld = function() {
          .scale(this.p('scaleX'), this.p('scaleY'));
 };
 
-uv.Actor.prototype.tShape = function(x, y) {
-  return uv.Matrix()
-         .translate(this.p('localX'), this.p('localY'))
-         .rotate(this.p('localRotation'))
-         .scale(this.p('localScaleX'), this.p('localScaleY'));
-};
-
 // Compiles and caches the current World Transformation Matrix
 
 uv.Actor.prototype.compileMatrix = function() {
@@ -239,26 +239,6 @@ uv.Actor.prototype.compileMatrix = function() {
       child.compileMatrix();
     });
   }
-};
-
-// Calculate WorldView Transformation Matrix
-
-uv.Actor.prototype.tWorldView = function(tView) {  
-  var t, pos,
-      view = this.properties.sticky ? uv.Matrix() : tView;
-  
-  if (this.properties.preserveShape) {
-    t = view.concat(this._tWorld);
-    pos = t.transformPoint(uv.Point(0,0));
-    t = uv.Matrix()
-        .translate(pos.x, pos.y)
-        .concat(this.tShape());
-  } else {
-    t = this.tShape()
-        .concat(view)
-        .concat(this._tWorld);
-  }
-  return t;
 };
 
 
@@ -318,14 +298,24 @@ uv.Actor.prototype.drawBounds = function(ctx) {
 };
 
 
-// Draws the Actor to a display
-
 uv.Actor.prototype.render = function(ctx, tView) {
-  var that = this,
-      t = this.tWorldView(tView);
-      
   if (!this.p('visible')) return;
-  ctx.setTransform(t.a, t.b, t.c, t.d, t.tx, t.ty);                 
   this.applyStyles(ctx);
-  this.draw(ctx);
+  this.transform(ctx, tView);
+  this.draw(ctx, tView);
 };
+
+
+// Applies the transformation matrix
+uv.Actor.prototype.transform = function(ctx, tView) {
+  var m = this.tShape().concat(tView).concat(this._tWorld),
+      t;
+  
+  if (this.p('transformMode') === 'coords') {
+    // Extract the translation of the matrix
+    t = m.transformPoint(uv.Point(0,0));
+    ctx.setTransform(1, 0, 0, 1, t.x, t.y);
+  } else {
+    ctx.setTransform(m.a, m.b, m.c, m.d, m.tx, m.ty);
+  }
+}

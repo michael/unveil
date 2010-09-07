@@ -17,7 +17,7 @@ uv.Actor.registeredActors.label = uv.Label;
 
 uv.Label.prototype = uv.extend(uv.Actor);
 
-uv.Label.prototype.draw = function(ctx) {
+uv.Label.prototype.draw = function(ctx, tView) {
   ctx.font = this.p('font');
   
   ctx.textAlign = this.p('textAlign');

@@ -1337,10 +1337,7 @@ uv.Actor = function(properties) {
     lineJoin: 'miter',
     globalAlpha: 1,
     miterLimit: 10,
-    
-    visible: true,
-    preserveShape: false,
-    sticky: false
+    visible: true
   }, properties);
   
   // init children
@@ -1432,6 +1429,7 @@ uv.Actor.prototype.add = function(spec) {
       actor.add(actorSpec);
     });
   }
+  return actor;
 };
 
 
@@ -1519,6 +1517,15 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
 // Dynamic Matrices
 // -----------------------------------------------------------------------------
 
+// TODO: allow users to specify the transformation order (rotate, translate, scale)
+
+uv.Actor.prototype.tShape = function(x, y) {
+  return uv.Matrix()
+         .translate(this.p('localX'), this.p('localY'))
+         .rotate(this.p('localRotation'))
+         .scale(this.p('localScaleX'), this.p('localScaleY'));
+};
+
 uv.Actor.prototype.tWorldParent = function() {
   if (this.parent) {
     return this.parent._tWorld;
@@ -1535,13 +1542,6 @@ uv.Actor.prototype.tWorld = function() {
          .scale(this.p('scaleX'), this.p('scaleY'));
 };
 
-uv.Actor.prototype.tShape = function(x, y) {
-  return uv.Matrix()
-         .translate(this.p('localX'), this.p('localY'))
-         .rotate(this.p('localRotation'))
-         .scale(this.p('localScaleX'), this.p('localScaleY'));
-};
-
 // Compiles and caches the current World Transformation Matrix
 
 uv.Actor.prototype.compileMatrix = function() {
@@ -1553,26 +1553,6 @@ uv.Actor.prototype.compileMatrix = function() {
       child.compileMatrix();
     });
   }
-};
-
-// Calculate WorldView Transformation Matrix
-
-uv.Actor.prototype.tWorldView = function(tView) {  
-  var t, pos,
-      view = this.properties.sticky ? uv.Matrix() : tView;
-  
-  if (this.properties.preserveShape) {
-    t = view.concat(this._tWorld);
-    pos = t.transformPoint(uv.Point(0,0));
-    t = uv.Matrix()
-        .translate(pos.x, pos.y)
-        .concat(this.tShape());
-  } else {
-    t = this.tShape()
-        .concat(view)
-        .concat(this._tWorld);
-  }
-  return t;
 };
 
 
@@ -1632,18 +1612,27 @@ uv.Actor.prototype.drawBounds = function(ctx) {
 };
 
 
-// Draws the Actor to a display
-
 uv.Actor.prototype.render = function(ctx, tView) {
-  var that = this,
-      t = this.tWorldView(tView);
-      
   if (!this.p('visible')) return;
-  ctx.setTransform(t.a, t.b, t.c, t.d, t.tx, t.ty);                 
   this.applyStyles(ctx);
-  this.draw(ctx);
+  this.transform(ctx, tView);
+  this.draw(ctx, tView);
 };
 
+
+// Applies the transformation matrix
+uv.Actor.prototype.transform = function(ctx, tView) {
+  var m = this.tShape().concat(tView).concat(this._tWorld),
+      t;
+  
+  if (this.p('transformMode') === 'coords') {
+    // Extract the translation of the matrix
+    t = m.transformPoint(uv.Point(0,0));
+    ctx.setTransform(1, 0, 0, 1, t.x, t.y);
+  } else {
+    ctx.setTransform(m.a, m.b, m.c, m.d, m.tx, m.ty);
+  }
+}
 uv.traverser = {};
 
 uv.traverser.BreadthFirst = function(root) {
@@ -1709,6 +1698,7 @@ uv.behaviors.Zoom = function(display) {
     display.callbacks.viewChange.call(display);
   }
   display.canvas.addEventListener("mousewheel", mouseWheel, false);
+  display.canvas.addEventListener("DOMMouseScroll", mouseWheel, false);
 };
 
 uv.behaviors.Pan = function(display) {
@@ -1810,6 +1800,7 @@ uv.Display = function(scene, opts) {
   }
   
   this.canvas.addEventListener("mousemove", interact, false);
+  this.canvas.addEventListener("DOMMouseScroll", interact, false);
   this.canvas.addEventListener("mousemove", mouseMove, false);
   this.canvas.addEventListener("mousewheel", interact, false);
   this.canvas.addEventListener("mouseout", mouseOut, false);
@@ -2393,7 +2384,7 @@ uv.Rect.prototype.bounds = function() {
   ];
 };
 
-uv.Rect.prototype.draw = function(ctx) {
+uv.Rect.prototype.draw = function(ctx, tView) {
   if (this.p('fillStyle')) {
     ctx.fillRect(0, 0, this.p('width'), this.p('height'));
   }
@@ -2422,7 +2413,7 @@ uv.Actor.registeredActors.label = uv.Label;
 
 uv.Label.prototype = uv.extend(uv.Actor);
 
-uv.Label.prototype.draw = function(ctx) {
+uv.Label.prototype.draw = function(ctx, tView) {
   ctx.font = this.p('font');
   
   ctx.textAlign = this.p('textAlign');
@@ -2455,7 +2446,7 @@ uv.Circle.prototype.bounds = function() {
   ];
 };
 
-uv.Circle.prototype.draw = function(ctx) {
+uv.Circle.prototype.draw = function(ctx, tView) {  
   ctx.fillStyle = this.p('fillStyle');
   ctx.strokeStyle = this.p('strokeStyle');
   ctx.lineWidth = this.p('lineWidth');
@@ -2477,24 +2468,51 @@ uv.Path = function(properties) {
   uv.Actor.call(this, _.extend({
     points: [],
     lineWidth: 1,
-    strokeStyle: '#000',
-    fillStyle: null
+    strokeStyle: '#000'
   }, properties));
+  
+  this.transformedPoints = this.points = [].concat(this.p('points'));
 };
 
 uv.Actor.registeredActors.path = uv.Path;
 
 uv.Path.prototype = uv.extend(uv.Actor);
 
-uv.Path.prototype.draw = function(ctx) {
-  var points = [].concat(this.p('points')),
+uv.Path.prototype.transform = function(ctx, tView) {
+  if (this.p('transformMode') === 'coords') {
+    var m = this.tShape().concat(tView).concat(this._tWorld);
+    
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    this.transformedPoints = _.map(this.points, function(p) {
+      var tp   = m.transformPoint(p),
+          tcp1 = m.transformPoint(uv.Point(p.cp1x, p.cp1y)),
+          tcp2 = m.transformPoint(uv.Point(p.cp2x, p.cp2y)),
+          result;
+      result = {x: tp.x, y: tp.y};
+      if (p.cp1x && p.cp1y) {
+        result.cp1x = tcp1.x;
+        result.cp1y = tcp1.y;        
+      }
+      if (p.cp2x && p.cp2y) {
+        result.cp2x = tcp2.x;
+        result.cp2y = tcp2.y;        
+      }
+      return result;
+    });
+  } else {
+    uv.Actor.prototype.transform.call(this, ctx, tView);
+  }
+};
+
+
+uv.Path.prototype.draw = function(ctx, tView) {  
+  var points = [].concat(this.transformedPoints),
       v;
   
-  if (this.p('points').length >= 1) {
+  if (points.length >= 1) {
     ctx.beginPath();
     v = points.shift();
     ctx.moveTo(v.x, v.y);
-    
     while (v = points.shift()) {
       if (v.cp1x && v.cp2x) {
         ctx.bezierCurveTo(v.cp1x, v.cp1y, v.cp2x,v.cp2y, v.x, v.y);
@@ -2504,17 +2522,11 @@ uv.Path.prototype.draw = function(ctx) {
         ctx.lineTo(v.x, v.y);
       }
     }
-    
-    if (this.p('fillStyle')) {
-      ctx.fill();
-    }
-    if (this.p('strokeStyle')) {
-      ctx.stroke();
-    }
-    
+    ctx.stroke();
     ctx.closePath();
   }
 };
+
 // export namespace
 if (root !== 'undefined') root.uv = uv;
 
