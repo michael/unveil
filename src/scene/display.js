@@ -69,6 +69,7 @@ uv.Display = function(scene, opts) {
   }
   
   this.canvas.addEventListener("mousemove", interact, false);
+  this.canvas.addEventListener("DOMMouseScroll", interact, false);
   this.canvas.addEventListener("mousemove", mouseMove, false);
   this.canvas.addEventListener("mousewheel", interact, false);
   this.canvas.addEventListener("mouseout", mouseOut, false);

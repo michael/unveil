@@ -23,6 +23,7 @@ uv.behaviors.Zoom = function(display) {
     display.callbacks.viewChange.call(display);
   }
   display.canvas.addEventListener("mousewheel", mouseWheel, false);
+  display.canvas.addEventListener("DOMMouseScroll", mouseWheel, false);
 };
 
 uv.behaviors.Pan = function(display) {
