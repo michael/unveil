@@ -7,7 +7,7 @@ uv.VALUE_TYPES = [
 ];
 
 uv.isValueType = function (type) {
-  return _.include(uv.VALUE_TYPES, type);
+  return uv.include(uv.VALUE_TYPES, type);
 };
 
 uv.Type = function(g, key, type) {
@@ -19,7 +19,7 @@ uv.Type = function(g, key, type) {
   this.name = type.name;
   
   // extract properties
-  _.each(type.properties, function(property, key) {
+  uv.each(type.properties, function(property, key) {
     var p = new uv.Node();
     p.key = key;
     p.unique = property.unique;
@@ -37,4 +37,4 @@ uv.Type = function(g, key, type) {
   });
 };
 
-uv.Type.prototype = uv.extend(uv.Node);
+uv.Type.prototype = uv.inherit(uv.Node);

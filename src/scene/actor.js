@@ -5,7 +5,7 @@ uv.Actor = function(properties) {
   uv.Node.call(this);
   this.childCount = 0;
   
-  this.properties = _.extend({
+  this.properties = uv.extend({
     x: 0,
     y: 0,
     scaleX: 1,
@@ -42,7 +42,7 @@ uv.Actor = function(properties) {
 // Registration point for custom actors
 uv.Actor.registeredActors = {};
 
-uv.Actor.prototype = uv.extend(uv.Node);
+uv.Actor.prototype = uv.inherit(uv.Node);
 
 
 // Bind event
@@ -60,9 +60,9 @@ uv.Actor.prototype.bind = function(name, fn) {
 uv.Actor.prototype.trigger = function(name) {
   var that = this;
   if (this.handlers[name]) {
-    _.each(this.handlers[name], function(fn) {
-      fn.apply(that, []);
-    });
+    for (var key in this.handlers[name]) {
+      this.handlers[name][key].apply(that, []);
+    }
   }
 };
 
@@ -111,7 +111,8 @@ uv.Actor.prototype.add = function(spec) {
   
   // Register children
   if (spec.actors) {
-    _.each(spec.actors, function(actorSpec) {
+    
+    spec.actors.forEach(function(actorSpec) {
       actor.add(actorSpec);
     });
   }
@@ -123,7 +124,7 @@ uv.Actor.prototype.add = function(spec) {
 uv.Actor.prototype.remove = function(matcher) {
   var that = this;
   if (matcher instanceof Function) {
-    _.each(this.traverse(), function(actor) {
+    this.traverse().forEach(function(actor) {
       if (matcher(actor)) {
         that.scene.remove(actor.id());
       }
@@ -246,10 +247,10 @@ uv.Actor.prototype.compileMatrix = function() {
 // -----------------------------------------------------------------------------
 
 uv.Actor.prototype.update = function() {
-  // update motion tweens
-  _.each(this.tweens, function(t) {
-    t.tick();
-  });
+  // Update motion tweens
+  for (var key in this.tweens) {
+    this.tweens[key].tick();
+  }
 };
 
 uv.Actor.prototype.applyStyles = function(ctx) {
@@ -310,7 +311,6 @@ uv.Actor.prototype.render = function(ctx, tView) {
 uv.Actor.prototype.transform = function(ctx, tView) {
   var m = this.tShape().concat(tView).concat(this._tWorld),
       t;
-  
   if (this.p('transformMode') === 'coords') {
     // Extract the translation of the matrix
     t = m.transformPoint(uv.Point(0,0));
@@ -318,4 +318,4 @@ uv.Actor.prototype.transform = function(ctx, tView) {
   } else {
     ctx.setTransform(m.a, m.b, m.c, m.d, m.tx, m.ty);
   }
-}
+};

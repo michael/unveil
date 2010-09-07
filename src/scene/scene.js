@@ -7,7 +7,7 @@ uv.Scene = function(properties) {
   // super call
   uv.Actor.call(this, properties);
   
-  _.extend(this.properties, {
+  uv.extend(this.properties, {
     width: 0,
     height: 0,
     fillStyle: '#fff',
@@ -34,7 +34,7 @@ uv.Scene = function(properties) {
   // Attached Displays
   this.displays = [];
   if (properties.displays) {
-    _.each(properties.displays, function(display) {
+    uv.each(properties.displays, function(display) {
       that.displays.push(new uv.Display(that, display));
     });    
   }
@@ -50,7 +50,7 @@ uv.Scene = function(properties) {
   
   // Register actors
   if (properties.actors) {
-    _.each(properties.actors, function(actorSpec) {
+    uv.each(properties.actors, function(actorSpec) {
       that.add(actorSpec);
     });
   }
@@ -73,7 +73,7 @@ uv.Scene = function(properties) {
   });
 };
 
-uv.Scene.prototype = uv.extend(uv.Actor);
+uv.Scene.prototype = uv.inherit(uv.Actor);
 
 uv.Scene.prototype.registerActor = function(actor) {
   var id = actor.id();
@@ -149,15 +149,15 @@ uv.Scene.prototype.checkActiveActors = function() {
     if (this.scene.mouseX !== NaN) {
       
       this.activeActors = [];
-      _.each(this.interactiveActors, function(actor) {
+      uv.each(this.interactiveActors, function(actor) {
         var active = actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
         if (active) {
           that.activeActors.push(actor);
-          if (!_.include(prevActiveActors, actor)) {
+          if (!uv.include(prevActiveActors, actor)) {
             actor.trigger('mouseover');
           }
         } else {
-          if (_.include(prevActiveActors, actor)) {
+          if (uv.include(prevActiveActors, actor)) {
             actor.trigger('mouseout');
           }
         }
@@ -173,7 +173,7 @@ uv.Scene.prototype.checkActiveActors = function() {
 
 
 uv.Scene.prototype.refreshDisplays = function() {
-  _.each(this.displays, function(d) {
+  uv.each(this.displays, function(d) {
     d.refresh();
   });
 };

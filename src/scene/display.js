@@ -63,7 +63,7 @@ uv.Display = function(scene, opts) {
   }
   
   function click() {
-    _.each(that.scene.activeActors, function(a) {
+    uv.each(that.scene.activeActors, function(a) {
       a.trigger('click');
     });
   }
@@ -123,7 +123,7 @@ uv.Display.prototype.refresh = function() {
   
   that.actors = this.scene.traverse();
   that.actors.shift();
-  _.each(that.actors, function(actor, index) {
+  uv.each(that.actors, function(actor, index) {
     actor.render(that.ctx, that.tView);
   });
   

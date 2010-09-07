@@ -63,19 +63,19 @@ test("Actor#remove", function() {
   
   scene.remove('my_rect');
   ok(scene.all('children').length === 1);
-  ok(_.keys(scene.actors).length === 4);
+  ok(Object.keys(scene.actors).length === 4);
   ok(!scene.actors['my_rect']);
   ok(!scene.interactiveActors['my_rect']);
   
   scene.remove('my_label');
   ok(scene.get('my_circle').all('children').length === 2);
-  ok(_.keys(scene.actors).length === 3);
+  ok(Object.keys(scene.actors).length === 3);
   
   // Using a matcher function (for batch removals)
   scene.remove(function(a) {
     return a.p('text') === 'Search me'
   });
-  ok(_.keys(scene.actors).length === 1);
+  ok(Object.keys(scene.actors).length === 1);
   ok(!scene.get('my_third_label'));
   ok(!scene.get('my_second_label'));
 });

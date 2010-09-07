@@ -3,7 +3,7 @@ uv.DataGraph = function(g) {
   var that = this;
   
   // schema nodes
-  var types = _.select(g, function(node, key) {
+  var types = uv.select(g, function(node, key) {
     if (node.type === 'type') {
       that.set('types', key, new uv.Type(this, key, node));
       return true;
@@ -12,7 +12,7 @@ uv.DataGraph = function(g) {
   });
   
   // data nodes
-  var resources = _.select(g, function(node, key) {
+  var resources = uv.select(g, function(node, key) {
     if (node.type !== 'type') {
       var res = that.get('resources', key) || new uv.Resource(that, key, node);
       
@@ -34,7 +34,7 @@ uv.DataGraph = function(g) {
   });
 };
 
-uv.DataGraph.prototype = uv.extend(uv.Node);
+uv.DataGraph.prototype = uv.inherit(uv.Node);
 
 
 // Return a set of matching resources based on a conditions hash

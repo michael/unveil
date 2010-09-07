@@ -119,8 +119,6 @@ Roadmap
 
 * Display actors (actors that stick on on a display rather than on the scene)
 * API Docs
-* Remove all library dependencies (jQuery has already been tossed out, Underscore.js remaining)
-
 
 
 **Unveil.js Stars**

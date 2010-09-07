@@ -9,15 +9,16 @@ uv.Resource = function(g, key, data) {
   this.data = data;
 };
 
-uv.Resource.prototype = uv.extend(uv.Node);
+uv.Resource.prototype = uv.inherit(uv.Node);
 
 uv.Resource.prototype.build = function() {
   var that = this;
-  _.each(this.data.properties, function(property, key) {
+  
+  uv.each(this.data.properties, function(property, key) {
     
     // Ask the schema wheter this property holds a
     // value type or an object type
-    var values = _.isArray(property) ? property : [property];
+    var values = Array.isArray(property) ? property : [property];
     var p = that.type.get('properties', key);
     
     if (!p) {
@@ -27,17 +28,16 @@ uv.Resource.prototype.build = function() {
     // init key
     that.replace(p.key, new uv.SortedHash());
     
-    
     if (p.isObjectType()) {
-      _.each(values, function(v, index) {
+      uv.each(values, function(v, index) {
         var res = that.g.get('resources', v);
         if (!res) {
-          throw "Can't reference "+v
+          throw "Can't reference "+v;
         }
         that.set(p.key, res.key, res);
       });
     } else {
-      _.each(values, function(v, index) {
+      uv.each(values, function(v, index) {
         var val = p.get('values', v);
         
         // Check if the value is already registered

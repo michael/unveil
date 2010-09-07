@@ -133,7 +133,7 @@ uv.Node.prototype.toString = function() {
   var str = "Node#"+this.nodeId+" {\n",
       that = this;
       
-  _.each(this._properties, function(node, key) {
+  uv.each(this._properties, function(node, key) {
     str += "  "+key+": "+that.values(key).values()+"\n";
   });
   

@@ -45,7 +45,7 @@ uv.Tween.prototype = {
   trigger: function(name) {
     var that = this;
     if (this.handlers[name]) {
-      _.each(this.handlers[name], function(fn) {
+      uv.each(this.handlers[name], function(fn) {
         fn.apply(that, []);
       });
     }

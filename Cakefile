@@ -4,7 +4,7 @@
 fs            = require 'fs'
 sys           = require 'sys'
 CoffeeScript  = require 'coffee-script'
-{helpers}     = require './lib/helpers'
+{helpers}     = require 'coffee-script/lib/helpers'
 {spawn, exec} = require 'child_process'
 
 # ANSI terminal colors.

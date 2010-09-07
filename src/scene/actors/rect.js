@@ -3,7 +3,7 @@
 
 uv.Rect = function(properties) {
   // super call
-  uv.Actor.call(this, _.extend({
+  uv.Actor.call(this, uv.extend({
     width: 0,
     height: 0,
     fillStyle: '#777',
@@ -14,7 +14,7 @@ uv.Rect = function(properties) {
 
 uv.Actor.registeredActors.rect = uv.Rect;
 
-uv.Rect.prototype = uv.extend(uv.Actor);
+uv.Rect.prototype = uv.inherit(uv.Actor);
 
 uv.Rect.prototype.bounds = function() {
   return [

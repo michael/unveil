@@ -3,7 +3,7 @@
 
 uv.Path = function(properties) {
   // super call
-  uv.Actor.call(this, _.extend({
+  uv.Actor.call(this, uv.extend({
     points: [],
     lineWidth: 1,
     strokeStyle: '#000'
@@ -14,14 +14,14 @@ uv.Path = function(properties) {
 
 uv.Actor.registeredActors.path = uv.Path;
 
-uv.Path.prototype = uv.extend(uv.Actor);
+uv.Path.prototype = uv.inherit(uv.Actor);
 
 uv.Path.prototype.transform = function(ctx, tView) {
   if (this.p('transformMode') === 'coords') {
     var m = this.tShape().concat(tView).concat(this._tWorld);
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.transformedPoints = _.map(this.points, function(p) {
+    this.transformedPoints = this.points.map(function(p) {
       var tp   = m.transformPoint(p),
           tcp1 = m.transformPoint(uv.Point(p.cp1x, p.cp1y)),
           tcp2 = m.transformPoint(uv.Point(p.cp2x, p.cp2y)),

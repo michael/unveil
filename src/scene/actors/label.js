@@ -2,7 +2,7 @@
 // =============================================================================
 uv.Label = function(properties) {
   // super call
-  uv.Actor.call(this, _.extend({
+  uv.Actor.call(this, uv.extend({
     text: '',
     textAlign: 'start',
     font: '12px Helvetica, Arial',
@@ -15,7 +15,7 @@ uv.Label = function(properties) {
 
 uv.Actor.registeredActors.label = uv.Label;
 
-uv.Label.prototype = uv.extend(uv.Actor);
+uv.Label.prototype = uv.inherit(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx, tView) {
   ctx.font = this.p('font');

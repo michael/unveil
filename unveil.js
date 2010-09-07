@@ -1,19 +1,62 @@
 (function() {
 var root = this;
-// Top level namespace
+// Unveil.js
+// =============================================================================
+
 var uv = {};
 
 // Constants
-uv.EPSILON = 0.0001;
+// -----------------------------------------------------------------------------
+
+uv.EPSILON     = 0.0001;
 uv.MAX_FLOAT   = 3.4028235e+38;
 uv.MIN_FLOAT   = -3.4028235e+38;
 uv.MAX_INT     = 2147483647;
 uv.MIN_INT     = -2147483648;
 
-uv.extend = function (f) {
+// Utilities
+// -----------------------------------------------------------------------------
+
+uv.inherit = function (f) {
   function G() {}
   G.prototype = f.prototype || f;
   return new G();
+};
+
+uv.each = function(obj, iterator, context) {
+  if (obj.forEach) {
+    obj.forEach(iterator, context);
+  } else {
+    for (var key in obj) {
+      if (hasOwnProperty.call(obj, key)) iterator.call(context, obj[key], key, obj);
+    }
+  }
+  return obj;
+};
+
+uv.rest = function(array, index, guard) {
+  return Array.prototype.slice.call(array, (index === undefined || guard) ? 1 : index);
+};
+
+uv.include = function(arr, target) {
+  return arr.indexOf(target) != -1;
+};
+
+uv.select = uv.filter = function(obj, iterator, context) {
+  if (obj.filter === Array.prototype.filter)
+    return obj.filter(iterator, context);
+  var results = [];
+  uv.each(obj, function(value, index, list) {
+    iterator.call(context, value, index, list) && results.push(value);
+  });
+  return results;
+};
+
+uv.extend = function(obj) {
+  uv.rest(arguments).forEach(function(source) {
+    for (var prop in source) obj[prop] = source[prop];
+  });
+  return obj;
 };
 // SortedHash
 // =============================================================================
@@ -27,11 +70,11 @@ uv.SortedHash = function (data) {
   this.length = 0;
   
   if (data instanceof Array) {
-    _.each(data, function(datum, index) {
+    uv.each(data, function(datum, index) {
       that.set(index, datum);
     });
   } else if (data instanceof Object) {
-    _.each(data, function(datum, key) {
+    uv.each(data, function(datum, key) {
       that.set(key, datum);
     });
   }
@@ -43,7 +86,7 @@ uv.SortedHash = function (data) {
 uv.SortedHash.prototype.clone = function () {
   var copy = new uv.SortedHash();
   copy.length = this.length;
-  _.each(this.data, function(value, key) {
+  uv.each(this.data, function(value, key) {
     copy.data[key] = value;
   });
   copy.keyOrder = this.keyOrder.slice(0, this.keyOrder.length);
@@ -113,7 +156,7 @@ uv.SortedHash.prototype.key = function (index) {
 //   * [Function] 
 uv.SortedHash.prototype.each = function (f) {
   var that = this;
-  _.each(this.keyOrder, function(key, index) {
+  uv.each(this.keyOrder, function(key, index) {
     f.call(that, index, that.data[key]);
   })
   return this;
@@ -124,7 +167,7 @@ uv.SortedHash.prototype.each = function (f) {
 //   * [Function] 
 uv.SortedHash.prototype.eachKey = function (f) {
   var that = this;
-  _.each(this.keyOrder, function (key, index) {
+  uv.each(this.keyOrder, function (key, index) {
     f.call(that, key, that.data[key]);
   });
   return this;
@@ -432,7 +475,7 @@ uv.Node.prototype.toString = function() {
   var str = "Node#"+this.nodeId+" {\n",
       that = this;
       
-  _.each(this._properties, function(node, key) {
+  uv.each(this._properties, function(node, key) {
     str += "  "+key+": "+that.values(key).values()+"\n";
   });
   
@@ -453,7 +496,7 @@ uv.Value = function (value) {
   uv.Node.call(this, {value: value});
 };
 
-uv.Value.prototype = uv.extend(uv.Node);
+uv.Value.prototype = uv.inherit(uv.Node);
 
 // Returns a copy without items
 // used by uv.Collection#filter
@@ -503,7 +546,7 @@ uv.Item = function (collection, key, attributes, nested) {
   collection.set('items', key, this);
 };
 
-uv.Item.prototype = uv.extend(uv.Node);
+uv.Item.prototype = uv.inherit(uv.Node);
 
 // return the type of a specific property
 uv.Item.prototype.type = function (property) {
@@ -543,7 +586,7 @@ uv.Property = function (collection, key, options) {
   }
 };
 
-uv.Property.prototype = uv.extend(uv.Node);
+uv.Property.prototype = uv.inherit(uv.Node);
 
 // Returns a copy without values
 // used by Collection#filter
@@ -605,7 +648,7 @@ uv.Collection = function (options) {
 // The is where transformers have to register
 uv.Collection.transformers = {};
 
-uv.Collection.prototype = uv.extend(uv.Node);
+uv.Collection.prototype = uv.inherit(uv.Node);
 
 uv.Collection.prototype.filter = function(criteria) {
   var c2 = new uv.Collection();
@@ -771,7 +814,7 @@ uv.DataGraph = function(g) {
   var that = this;
   
   // schema nodes
-  var types = _.select(g, function(node, key) {
+  var types = uv.select(g, function(node, key) {
     if (node.type === 'type') {
       that.set('types', key, new uv.Type(this, key, node));
       return true;
@@ -780,7 +823,7 @@ uv.DataGraph = function(g) {
   });
   
   // data nodes
-  var resources = _.select(g, function(node, key) {
+  var resources = uv.select(g, function(node, key) {
     if (node.type !== 'type') {
       var res = that.get('resources', key) || new uv.Resource(that, key, node);
       
@@ -802,7 +845,7 @@ uv.DataGraph = function(g) {
   });
 };
 
-uv.DataGraph.prototype = uv.extend(uv.Node);
+uv.DataGraph.prototype = uv.inherit(uv.Node);
 
 
 // Return a set of matching resources based on a conditions hash
@@ -836,7 +879,7 @@ uv.VALUE_TYPES = [
 ];
 
 uv.isValueType = function (type) {
-  return _.include(uv.VALUE_TYPES, type);
+  return uv.include(uv.VALUE_TYPES, type);
 };
 
 uv.Type = function(g, key, type) {
@@ -848,7 +891,7 @@ uv.Type = function(g, key, type) {
   this.name = type.name;
   
   // extract properties
-  _.each(type.properties, function(property, key) {
+  uv.each(type.properties, function(property, key) {
     var p = new uv.Node();
     p.key = key;
     p.unique = property.unique;
@@ -866,7 +909,7 @@ uv.Type = function(g, key, type) {
   });
 };
 
-uv.Type.prototype = uv.extend(uv.Node);
+uv.Type.prototype = uv.inherit(uv.Node);
 uv.Resource = function(g, key, data) {
   uv.Node.call(this);
   
@@ -878,15 +921,16 @@ uv.Resource = function(g, key, data) {
   this.data = data;
 };
 
-uv.Resource.prototype = uv.extend(uv.Node);
+uv.Resource.prototype = uv.inherit(uv.Node);
 
 uv.Resource.prototype.build = function() {
   var that = this;
-  _.each(this.data.properties, function(property, key) {
+  
+  uv.each(this.data.properties, function(property, key) {
     
     // Ask the schema wheter this property holds a
     // value type or an object type
-    var values = _.isArray(property) ? property : [property];
+    var values = Array.isArray(property) ? property : [property];
     var p = that.type.get('properties', key);
     
     if (!p) {
@@ -896,17 +940,16 @@ uv.Resource.prototype.build = function() {
     // init key
     that.replace(p.key, new uv.SortedHash());
     
-    
     if (p.isObjectType()) {
-      _.each(values, function(v, index) {
+      uv.each(values, function(v, index) {
         var res = that.g.get('resources', v);
         if (!res) {
-          throw "Can't reference "+v
+          throw "Can't reference "+v;
         }
         that.set(p.key, res.key, res);
       });
     } else {
-      _.each(values, function(v, index) {
+      uv.each(values, function(v, index) {
         var val = p.get('values', v);
         
         // Check if the value is already registered
@@ -1319,7 +1362,7 @@ uv.Actor = function(properties) {
   uv.Node.call(this);
   this.childCount = 0;
   
-  this.properties = _.extend({
+  this.properties = uv.extend({
     x: 0,
     y: 0,
     scaleX: 1,
@@ -1356,7 +1399,7 @@ uv.Actor = function(properties) {
 // Registration point for custom actors
 uv.Actor.registeredActors = {};
 
-uv.Actor.prototype = uv.extend(uv.Node);
+uv.Actor.prototype = uv.inherit(uv.Node);
 
 
 // Bind event
@@ -1374,9 +1417,9 @@ uv.Actor.prototype.bind = function(name, fn) {
 uv.Actor.prototype.trigger = function(name) {
   var that = this;
   if (this.handlers[name]) {
-    _.each(this.handlers[name], function(fn) {
-      fn.apply(that, []);
-    });
+    for (var key in this.handlers[name]) {
+      this.handlers[name][key].apply(that, []);
+    }
   }
 };
 
@@ -1425,7 +1468,8 @@ uv.Actor.prototype.add = function(spec) {
   
   // Register children
   if (spec.actors) {
-    _.each(spec.actors, function(actorSpec) {
+    
+    spec.actors.forEach(function(actorSpec) {
       actor.add(actorSpec);
     });
   }
@@ -1437,7 +1481,7 @@ uv.Actor.prototype.add = function(spec) {
 uv.Actor.prototype.remove = function(matcher) {
   var that = this;
   if (matcher instanceof Function) {
-    _.each(this.traverse(), function(actor) {
+    this.traverse().forEach(function(actor) {
       if (matcher(actor)) {
         that.scene.remove(actor.id());
       }
@@ -1560,10 +1604,10 @@ uv.Actor.prototype.compileMatrix = function() {
 // -----------------------------------------------------------------------------
 
 uv.Actor.prototype.update = function() {
-  // update motion tweens
-  _.each(this.tweens, function(t) {
-    t.tick();
-  });
+  // Update motion tweens
+  for (var key in this.tweens) {
+    this.tweens[key].tick();
+  }
 };
 
 uv.Actor.prototype.applyStyles = function(ctx) {
@@ -1624,7 +1668,6 @@ uv.Actor.prototype.render = function(ctx, tView) {
 uv.Actor.prototype.transform = function(ctx, tView) {
   var m = this.tShape().concat(tView).concat(this._tWorld),
       t;
-  
   if (this.p('transformMode') === 'coords') {
     // Extract the translation of the matrix
     t = m.transformPoint(uv.Point(0,0));
@@ -1632,7 +1675,7 @@ uv.Actor.prototype.transform = function(ctx, tView) {
   } else {
     ctx.setTransform(m.a, m.b, m.c, m.d, m.tx, m.ty);
   }
-}
+};
 uv.traverser = {};
 
 uv.traverser.BreadthFirst = function(root) {
@@ -1794,7 +1837,7 @@ uv.Display = function(scene, opts) {
   }
   
   function click() {
-    _.each(that.scene.activeActors, function(a) {
+    uv.each(that.scene.activeActors, function(a) {
       a.trigger('click');
     });
   }
@@ -1854,7 +1897,7 @@ uv.Display.prototype.refresh = function() {
   
   that.actors = this.scene.traverse();
   that.actors.shift();
-  _.each(that.actors, function(actor, index) {
+  uv.each(that.actors, function(actor, index) {
     actor.render(that.ctx, that.tView);
   });
   
@@ -1897,7 +1940,7 @@ uv.Scene = function(properties) {
   // super call
   uv.Actor.call(this, properties);
   
-  _.extend(this.properties, {
+  uv.extend(this.properties, {
     width: 0,
     height: 0,
     fillStyle: '#fff',
@@ -1924,7 +1967,7 @@ uv.Scene = function(properties) {
   // Attached Displays
   this.displays = [];
   if (properties.displays) {
-    _.each(properties.displays, function(display) {
+    uv.each(properties.displays, function(display) {
       that.displays.push(new uv.Display(that, display));
     });    
   }
@@ -1940,7 +1983,7 @@ uv.Scene = function(properties) {
   
   // Register actors
   if (properties.actors) {
-    _.each(properties.actors, function(actorSpec) {
+    uv.each(properties.actors, function(actorSpec) {
       that.add(actorSpec);
     });
   }
@@ -1963,7 +2006,7 @@ uv.Scene = function(properties) {
   });
 };
 
-uv.Scene.prototype = uv.extend(uv.Actor);
+uv.Scene.prototype = uv.inherit(uv.Actor);
 
 uv.Scene.prototype.registerActor = function(actor) {
   var id = actor.id();
@@ -2039,15 +2082,15 @@ uv.Scene.prototype.checkActiveActors = function() {
     if (this.scene.mouseX !== NaN) {
       
       this.activeActors = [];
-      _.each(this.interactiveActors, function(actor) {
+      uv.each(this.interactiveActors, function(actor) {
         var active = actor.checkActive(ctx, that.scene.mouseX, that.scene.mouseY);
         if (active) {
           that.activeActors.push(actor);
-          if (!_.include(prevActiveActors, actor)) {
+          if (!uv.include(prevActiveActors, actor)) {
             actor.trigger('mouseover');
           }
         } else {
-          if (_.include(prevActiveActors, actor)) {
+          if (uv.include(prevActiveActors, actor)) {
             actor.trigger('mouseout');
           }
         }
@@ -2063,7 +2106,7 @@ uv.Scene.prototype.checkActiveActors = function() {
 
 
 uv.Scene.prototype.refreshDisplays = function() {
-  _.each(this.displays, function(d) {
+  uv.each(this.displays, function(d) {
     d.refresh();
   });
 };
@@ -2129,7 +2172,7 @@ uv.Tween.prototype = {
   trigger: function(name) {
     var that = this;
     if (this.handlers[name]) {
-      _.each(this.handlers[name], function(fn) {
+      uv.each(this.handlers[name], function(fn) {
         fn.apply(that, []);
       });
     }
@@ -2362,7 +2405,7 @@ uv.Tween.strongEaseInOut = function(t,b,c,d) {
 
 uv.Rect = function(properties) {
   // super call
-  uv.Actor.call(this, _.extend({
+  uv.Actor.call(this, uv.extend({
     width: 0,
     height: 0,
     fillStyle: '#777',
@@ -2373,7 +2416,7 @@ uv.Rect = function(properties) {
 
 uv.Actor.registeredActors.rect = uv.Rect;
 
-uv.Rect.prototype = uv.extend(uv.Actor);
+uv.Rect.prototype = uv.inherit(uv.Actor);
 
 uv.Rect.prototype.bounds = function() {
   return [
@@ -2398,7 +2441,7 @@ uv.Rect.prototype.draw = function(ctx, tView) {
 // =============================================================================
 uv.Label = function(properties) {
   // super call
-  uv.Actor.call(this, _.extend({
+  uv.Actor.call(this, uv.extend({
     text: '',
     textAlign: 'start',
     font: '12px Helvetica, Arial',
@@ -2411,7 +2454,7 @@ uv.Label = function(properties) {
 
 uv.Actor.registeredActors.label = uv.Label;
 
-uv.Label.prototype = uv.extend(uv.Actor);
+uv.Label.prototype = uv.inherit(uv.Actor);
 
 uv.Label.prototype.draw = function(ctx, tView) {
   ctx.font = this.p('font');
@@ -2425,7 +2468,7 @@ uv.Label.prototype.draw = function(ctx, tView) {
 
 uv.Circle = function(properties) {
   // super call
-  uv.Actor.call(this, _.extend({
+  uv.Actor.call(this, uv.extend({
     radius: 20,
     strokeWeight: 2,
     lineWidth: 3,
@@ -2435,7 +2478,7 @@ uv.Circle = function(properties) {
 
 uv.Actor.registeredActors.circle = uv.Circle;
 
-uv.Circle.prototype = uv.extend(uv.Actor);
+uv.Circle.prototype = uv.inherit(uv.Actor);
 
 uv.Circle.prototype.bounds = function() {
   return [
@@ -2465,7 +2508,7 @@ uv.Circle.prototype.draw = function(ctx, tView) {
 
 uv.Path = function(properties) {
   // super call
-  uv.Actor.call(this, _.extend({
+  uv.Actor.call(this, uv.extend({
     points: [],
     lineWidth: 1,
     strokeStyle: '#000'
@@ -2476,14 +2519,14 @@ uv.Path = function(properties) {
 
 uv.Actor.registeredActors.path = uv.Path;
 
-uv.Path.prototype = uv.extend(uv.Actor);
+uv.Path.prototype = uv.inherit(uv.Actor);
 
 uv.Path.prototype.transform = function(ctx, tView) {
   if (this.p('transformMode') === 'coords') {
     var m = this.tShape().concat(tView).concat(this._tWorld);
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.transformedPoints = _.map(this.points, function(p) {
+    this.transformedPoints = this.points.map(function(p) {
       var tp   = m.transformPoint(p),
           tcp1 = m.transformPoint(uv.Point(p.cp1x, p.cp1y)),
           tcp2 = m.transformPoint(uv.Point(p.cp2x, p.cp2y)),

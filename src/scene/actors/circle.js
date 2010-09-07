@@ -3,7 +3,7 @@
 
 uv.Circle = function(properties) {
   // super call
-  uv.Actor.call(this, _.extend({
+  uv.Actor.call(this, uv.extend({
     radius: 20,
     strokeWeight: 2,
     lineWidth: 3,
@@ -13,7 +13,7 @@ uv.Circle = function(properties) {
 
 uv.Actor.registeredActors.circle = uv.Circle;
 
-uv.Circle.prototype = uv.extend(uv.Actor);
+uv.Circle.prototype = uv.inherit(uv.Actor);
 
 uv.Circle.prototype.bounds = function() {
   return [
