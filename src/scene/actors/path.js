@@ -6,7 +6,8 @@ uv.Path = function(properties) {
   uv.Actor.call(this, uv.extend({
     points: [],
     lineWidth: 1,
-    strokeStyle: '#000'
+    strokeStyle: '#000',
+    fillStyle: ''
   }, properties));
   
   this.transformedPoints = this.points = [].concat(this.p('points'));
@@ -17,6 +18,7 @@ uv.Actor.registeredActors.path = uv.Path;
 uv.Path.prototype = uv.inherit(uv.Actor);
 
 uv.Path.prototype.transform = function(ctx, tView) {
+  this.transformedPoints = this.points = [].concat(this.p('points'));
   if (this.p('transformMode') === 'coords') {
     var m = this.tShape().concat(tView).concat(this._tWorld);
     
@@ -60,7 +62,13 @@ uv.Path.prototype.draw = function(ctx, tView) {
         ctx.lineTo(v.x, v.y);
       }
     }
-    ctx.stroke();
+    if (this.p('lineWidth') > 0 && this.p('strokeStyle') !== '') {
+      ctx.stroke();
+    }
+    
+    if (this.p('fillStyle') !== '') {
+      ctx.fill();
+    }
     ctx.closePath();
   }
 };
