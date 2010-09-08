@@ -158,7 +158,7 @@ uv.SortedHash.prototype.each = function (f) {
   var that = this;
   uv.each(this.keyOrder, function(key, index) {
     f.call(that, index, that.data[key]);
-  })
+  });
   return this;
 };
 
@@ -980,40 +980,35 @@ uv.Resource.prototype.get = function(property, key) {
   }
 };
 
-/**
-* Matrix.js v1.1.0
-* 
-* Copyright (c) 2010 STRd6
-*
-* Permission is hereby granted, free of charge, to any person obtaining a copy
-* of this software and associated documentation files (the "Software"), to deal
-* in the Software without restriction, including without limitation the rights
-* to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-* copies of the Software, and to permit persons to whom the Software is
-* furnished to do so, subject to the following conditions:
-*
-* The above copyright notice and this permission notice shall be included in
-* all copies or substantial portions of the Software.
-*
-* THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-* IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-* FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-* AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-* LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-* OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-* THE SOFTWARE.
-*
-* Loosely based on flash:
-* http://www.adobe.com/livedocs/flash/9.0/ActionScriptLangRefV3/flash/geom/Matrix.html
-*/
+// Matrix.js v1.1.0
+// ==========================================================================
+// Copyright (c) 2010 STRd6
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+// THE SOFTWARE.
+// 
+// Loosely based on flash:
+// http://www.adobe.com/livedocs/flash/9.0/ActionScriptLangRefV3/flash/geom/Matrix.html
+
 (function() {
   /**
    * Create a new point with given x and y coordinates. If no arguments are given
    * defaults to (0, 0).
-   * @name Point
-   * @param {Number} [x]
-   * @param {Number} [y]
-   * @constructor
    */
   function Point(x, y) {
     return {
@@ -1041,7 +1036,7 @@ uv.Resource.prototype.get = function(property, key) {
       add: function(other) {
         return Point(this.x + other.x, this.y + other.y);
       }
-    }
+    };
   }
 
   /**
@@ -1066,7 +1061,7 @@ uv.Resource.prototype.get = function(property, key) {
       p2.y - p1.y,
       p2.x - p1.x
     );
-  }
+  };
 
   /**
    * <pre>
@@ -1253,7 +1248,7 @@ uv.Resource.prototype.get = function(property, key) {
       translate: function(tx, ty) {
         return this.concat(Matrix.translation(tx, ty));
       }
-    }
+    };
   }
 
   /**
@@ -1772,32 +1767,36 @@ uv.behaviors.Pan = function(display) {
   display.canvas.addEventListener("mouseup", release, false);
   display.canvas.addEventListener("mouseout", release, false);
 };
-uv.Display = function(scene, opts) {
+uv.Display = function(scene, properties) {
   var that = this;
   
+  // super call
+  uv.Actor.call(this, uv.extend({
+    fillStyle: ''
+  }, properties));
+  
   this.scene = scene;
-  this.element = document.getElementById(opts.container);
+  this.element = document.getElementById(properties.container);
   this.canvas = document.createElement("canvas");
-  this.canvas.setAttribute('width', opts.width);
-  this.canvas.setAttribute('height', opts.height);
+  this.canvas.setAttribute('width', properties.width);
+  this.canvas.setAttribute('height', properties.height);
   this.canvas.style.position = 'relative';
   this.element.appendChild(this.canvas);
 
-  this.width = opts.width;
-  this.height = opts.height;
+  this.width = properties.width;
+  this.height = properties.height;
   
-  this.bounded = opts.bounded || true;
+  this.bounded = properties.bounded || true;
   
   this.ctx = this.canvas.getContext("2d");
-  
   this.tView = uv.Matrix();
   
   // attach behaviors
-  if (opts.zooming) {
+  if (properties.zooming) {
     this.zoombehavior = new uv.behaviors.Zoom(this);
   }
   
-  if (opts.panning) {
+  if (properties.panning) {
     this.panbehavior = new uv.behaviors.Pan(this);
   }
   
@@ -1818,8 +1817,7 @@ uv.Display = function(scene, opts) {
     
     if (pos) {
       that.mouseX = pos.x;
-      that.mouseY = pos.y;    
-
+      that.mouseY = pos.y;
       worldPos = mat.transformPoint(pos);
       that.scene.mouseX = parseInt(worldPos.x, 10);
       that.scene.mouseY = parseInt(worldPos.y, 10);
@@ -1850,6 +1848,9 @@ uv.Display = function(scene, opts) {
   this.canvas.addEventListener("click", click, false);
 };
 
+
+uv.Display.prototype = uv.inherit(uv.Actor);
+
 // Register callbacks
 uv.Display.prototype.on = function(name, fn) {
   this.callbacks[name] = fn;
@@ -1875,30 +1876,43 @@ uv.Display.prototype.worldPos = function(pos) {
 
 uv.Display.prototype.bounds = function() {
   // Consider area that doesn't fit on the display
-  var dx = Math.max(0, this.scene.p('width')-this.width),
-      dy = Math.max(0, this.scene.p('width')-this.width);
+  var dx = Math.max(0, this.scene.p('width') - this.width),
+      dy = Math.max(0, this.scene.p('width') - this.width);
   
   return {
-      x: (1 - this.tView.a) * this.width - this.tView.a*dx,
-      y: (1 - this.tView.a) * this.height - this.tView.a*dy
+      x: (1 - this.tView.a) * this.width - this.tView.a * dx,
+      y: (1 - this.tView.a) * this.height - this.tView.a * dy
   };
 };
 
 // Updates the display (on every frame)
 
 uv.Display.prototype.refresh = function() {
-  var that = this;
+  var that = this,
+      actors,
+      displayActors;
+
+
+  this.ctx.clearRect(0,0, this.width, this.height);
+  // Scene background
+  if (this.scene.p('fillStyle') !== '') {
+    this.ctx.fillStyle = this.scene.p('fillStyle');
+    this.ctx.fillRect(0, 0, this.width, this.height);    
+  }
   
-  // draw the scene
-  this.ctx.clearRect(0,0, this.width,this.height);
-  this.ctx.fillStyle = this.scene.p('fillStyle');
-  this.ctx.fillRect(0, 0, this.width, this.height);
   this.ctx.save();
   
-  that.actors = this.scene.traverse();
-  that.actors.shift();
-  uv.each(that.actors, function(actor, index) {
+  actors = this.scene.traverse();
+  actors.shift();
+  uv.each(actors, function(actor, index) {
     actor.render(that.ctx, that.tView);
+  });
+  
+  // Draw the display components
+  displayActors = this.traverse();
+  actors.shift();
+  uv.each(displayActors, function(actor, index) {
+    actor.render(that.ctx, uv.Matrix());
   });
   
   this.ctx.restore();
@@ -1938,16 +1952,15 @@ uv.Scene = function(properties) {
   var that = this;
   
   // super call
-  uv.Actor.call(this, properties);
-  
-  uv.extend(this.properties, {
+  uv.Actor.call(this, uv.extend({
     width: 0,
     height: 0,
-    fillStyle: '#fff',
+    fillStyle: '',
     idleFramerate: 0,
     framerate: 50,
     traverser: uv.traverser.DepthFirst
-  }, properties);
+  }, properties));
+  
   
   this.mouseX = NaN;
   this.mouseY = NaN;
@@ -1997,7 +2010,6 @@ uv.Scene = function(properties) {
         that.execute(uv.cmds.RequestFramerate);
         requested = true;
       }
-      
       clearTimeout(timeout);
       timeout = setTimeout(function() {
         requested = false;
@@ -2107,8 +2119,15 @@ uv.Scene.prototype.checkActiveActors = function() {
 
 uv.Scene.prototype.refreshDisplays = function() {
   uv.each(this.displays, function(d) {
+    d.compileMatrix();
     d.refresh();
   });
+};
+
+uv.Scene.prototype.display = function(display) {
+  var d = new uv.Display(this, display);
+  this.displays.push(d);
+  return d;
 };
 
 // Commands
@@ -2511,7 +2530,8 @@ uv.Path = function(properties) {
   uv.Actor.call(this, uv.extend({
     points: [],
     lineWidth: 1,
-    strokeStyle: '#000'
+    strokeStyle: '#000',
+    fillStyle: ''
   }, properties));
   
   this.transformedPoints = this.points = [].concat(this.p('points'));
@@ -2522,6 +2542,7 @@ uv.Actor.registeredActors.path = uv.Path;
 uv.Path.prototype = uv.inherit(uv.Actor);
 
 uv.Path.prototype.transform = function(ctx, tView) {
+  this.transformedPoints = this.points = [].concat(this.p('points'));
   if (this.p('transformMode') === 'coords') {
     var m = this.tShape().concat(tView).concat(this._tWorld);
     
@@ -2565,7 +2586,13 @@ uv.Path.prototype.draw = function(ctx, tView) {
         ctx.lineTo(v.x, v.y);
       }
     }
-    ctx.stroke();
+    if (this.p('lineWidth') > 0 && this.p('strokeStyle') !== '') {
+      ctx.stroke();
+    }
+    
+    if (this.p('fillStyle') !== '') {
+      ctx.fill();
+    }
     ctx.closePath();
   }
 };

@@ -5,16 +5,15 @@ uv.Scene = function(properties) {
   var that = this;
   
   // super call
-  uv.Actor.call(this, properties);
-  
-  uv.extend(this.properties, {
+  uv.Actor.call(this, uv.extend({
     width: 0,
     height: 0,
-    fillStyle: '#fff',
+    fillStyle: '',
     idleFramerate: 0,
     framerate: 50,
     traverser: uv.traverser.DepthFirst
-  }, properties);
+  }, properties));
+  
   
   this.mouseX = NaN;
   this.mouseY = NaN;
@@ -64,7 +63,6 @@ uv.Scene = function(properties) {
         that.execute(uv.cmds.RequestFramerate);
         requested = true;
       }
-      
       clearTimeout(timeout);
       timeout = setTimeout(function() {
         requested = false;
@@ -174,8 +172,15 @@ uv.Scene.prototype.checkActiveActors = function() {
 
 uv.Scene.prototype.refreshDisplays = function() {
   uv.each(this.displays, function(d) {
+    d.compileMatrix();
     d.refresh();
   });
+};
+
+uv.Scene.prototype.display = function(display) {
+  var d = new uv.Display(this, display);
+  this.displays.push(d);
+  return d;
 };
 
 // Commands

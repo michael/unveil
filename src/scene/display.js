@@ -1,29 +1,33 @@
-uv.Display = function(scene, opts) {
+uv.Display = function(scene, properties) {
   var that = this;
   
+  // super call
+  uv.Actor.call(this, uv.extend({
+    fillStyle: ''
+  }, properties));
+  
   this.scene = scene;
-  this.element = document.getElementById(opts.container);
+  this.element = document.getElementById(properties.container);
   this.canvas = document.createElement("canvas");
-  this.canvas.setAttribute('width', opts.width);
-  this.canvas.setAttribute('height', opts.height);
+  this.canvas.setAttribute('width', properties.width);
+  this.canvas.setAttribute('height', properties.height);
   this.canvas.style.position = 'relative';
   this.element.appendChild(this.canvas);
 
-  this.width = opts.width;
-  this.height = opts.height;
+  this.width = properties.width;
+  this.height = properties.height;
   
-  this.bounded = opts.bounded || true;
+  this.bounded = properties.bounded || true;
   
   this.ctx = this.canvas.getContext("2d");
-  
   this.tView = uv.Matrix();
   
   // attach behaviors
-  if (opts.zooming) {
+  if (properties.zooming) {
     this.zoombehavior = new uv.behaviors.Zoom(this);
   }
   
-  if (opts.panning) {
+  if (properties.panning) {
     this.panbehavior = new uv.behaviors.Pan(this);
   }
   
@@ -44,8 +48,7 @@ uv.Display = function(scene, opts) {
     
     if (pos) {
       that.mouseX = pos.x;
-      that.mouseY = pos.y;    
-
+      that.mouseY = pos.y;
       worldPos = mat.transformPoint(pos);
       that.scene.mouseX = parseInt(worldPos.x, 10);
       that.scene.mouseY = parseInt(worldPos.y, 10);
@@ -76,6 +79,9 @@ uv.Display = function(scene, opts) {
   this.canvas.addEventListener("click", click, false);
 };
 
+
+uv.Display.prototype = uv.inherit(uv.Actor);
+
 // Register callbacks
 uv.Display.prototype.on = function(name, fn) {
   this.callbacks[name] = fn;
@@ -101,30 +107,43 @@ uv.Display.prototype.worldPos = function(pos) {
 
 uv.Display.prototype.bounds = function() {
   // Consider area that doesn't fit on the display
-  var dx = Math.max(0, this.scene.p('width')-this.width),
-      dy = Math.max(0, this.scene.p('width')-this.width);
+  var dx = Math.max(0, this.scene.p('width') - this.width),
+      dy = Math.max(0, this.scene.p('width') - this.width);
   
   return {
-      x: (1 - this.tView.a) * this.width - this.tView.a*dx,
-      y: (1 - this.tView.a) * this.height - this.tView.a*dy
+      x: (1 - this.tView.a) * this.width - this.tView.a * dx,
+      y: (1 - this.tView.a) * this.height - this.tView.a * dy
   };
 };
 
 // Updates the display (on every frame)
 
 uv.Display.prototype.refresh = function() {
-  var that = this;
+  var that = this,
+      actors,
+      displayActors;
+
+
+  this.ctx.clearRect(0,0, this.width, this.height);
+  // Scene background
+  if (this.scene.p('fillStyle') !== '') {
+    this.ctx.fillStyle = this.scene.p('fillStyle');
+    this.ctx.fillRect(0, 0, this.width, this.height);    
+  }
   
-  // draw the scene
-  this.ctx.clearRect(0,0, this.width,this.height);
-  this.ctx.fillStyle = this.scene.p('fillStyle');
-  this.ctx.fillRect(0, 0, this.width, this.height);
   this.ctx.save();
   
-  that.actors = this.scene.traverse();
-  that.actors.shift();
-  uv.each(that.actors, function(actor, index) {
+  actors = this.scene.traverse();
+  actors.shift();
+  uv.each(actors, function(actor, index) {
     actor.render(that.ctx, that.tView);
+  });
+  
+  // Draw the display components
+  displayActors = this.traverse();
+  actors.shift();
+  uv.each(displayActors, function(actor, index) {
+    actor.render(that.ctx, uv.Matrix());
   });
   
   this.ctx.restore();

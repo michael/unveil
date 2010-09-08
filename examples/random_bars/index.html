@@ -44,7 +44,7 @@
           colors = pv.Scale.linear(data).range('lightblue', 'darkblue');
       
       // Add some actors to the scene
-      _.each(data, function(datum, index) {
+      uv.each(data, function(datum, index) {
         scene.add({
           type: 'rect',
           x: 50+35*index,

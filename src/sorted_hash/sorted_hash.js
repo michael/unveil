@@ -98,7 +98,7 @@ uv.SortedHash.prototype.each = function (f) {
   var that = this;
   uv.each(this.keyOrder, function(key, index) {
     f.call(that, index, that.data[key]);
-  })
+  });
   return this;
 };
 

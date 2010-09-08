@@ -53,13 +53,6 @@ to give the whole thing an even more declarative feel.
 Actors as well as the whole Scene can now be specified declaratively using a simple Specification Syntax.
 
     var scene = new Scene({
-      displays: [{
-        container: 'canvas',
-        width: 500,
-        height: 320,
-        zooming: true,
-        paning: true
-      }],
       actors: [
         {
           id: 'moving_rect',
@@ -85,6 +78,30 @@ Actors as well as the whole Scene can now be specified declaratively using a sim
         }
       ]
     });
+    
+After you you've set up your Scene, you need to specify at least one display:
+
+    var display = scene.display({
+      container: 'canvas',
+      width: 500,
+      height: 320,
+      zooming: true,
+      paning: true
+    });
+    
+You can attach actors to displays as well. Those objects are typically unaffected by
+view transformations, so they stick on their original display position. Display
+objects are meant as an overlay to be drawn after the scene objects.
+
+    display.add({
+      {
+        type: 'label',
+        text: function() { return 'Frames per second: '+ this.scene.fps }
+        x: 300,
+        y: 20
+      }
+    });
+
 
 Since all actors have a unique id you can reference them programmatically and add special behavior (e.g. animation).
 
@@ -118,6 +135,8 @@ Roadmap
 **Unveil.js 0.1**
 
 * Display actors (actors that stick on on a display rather than on the scene)
+* Add an API to get the top most active actor in case there is more than one
+  object under the cursor.
 * API Docs
 
 
