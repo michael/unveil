@@ -52,7 +52,7 @@ to give the whole thing an even more declarative feel.
 
 Actors as well as the whole Scene can now be specified declaratively using a simple Specification Syntax.
 
-    var scene = new Scene({
+    var scene = new uv.Scene({
       actors: [
         {
           id: 'moving_rect',

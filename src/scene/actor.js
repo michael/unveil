@@ -23,7 +23,8 @@ uv.Actor = function(properties) {
     lineJoin: 'miter',
     globalAlpha: 1,
     miterLimit: 10,
-    visible: true
+    visible: true,
+    transformMode: 'object'
   }, properties);
   
   // init children
@@ -120,6 +121,16 @@ uv.Actor.prototype.add = function(spec) {
 };
 
 
+uv.Actor.prototype.get = function() {
+  if (arguments.length === 1) {
+    return this.scene.actors[arguments[0]];
+  } else {
+    // Delegate to Node#get
+    return uv.Node.prototype.get.call(this, arguments[0], arguments[1]);
+  }
+};
+
+
 // Remove child by ID
 uv.Actor.prototype.remove = function(matcher) {
   var that = this;
@@ -192,7 +203,6 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
       });      
     }
   }
-  
   if (easer) {
     this.tweens[property].easer = uv.Tween[easer];
   }
@@ -311,7 +321,7 @@ uv.Actor.prototype.render = function(ctx, tView) {
 uv.Actor.prototype.transform = function(ctx, tView) {
   var m = this.tShape().concat(tView).concat(this._tWorld),
       t;
-  if (this.p('transformMode') === 'coords') {
+  if (this.p('transformMode') === 'origin') {
     // Extract the translation of the matrix
     t = m.transformPoint(uv.Point(0,0));
     ctx.setTransform(1, 0, 0, 1, t.x, t.y);
