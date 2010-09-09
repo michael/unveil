@@ -37,7 +37,9 @@ visualization, which you can use as a starting point.
 Examples
 --------------------------------------------------------------------------------
 
+* [Linechart](http://dejavis.org/linechart) (sandboxed)
 * [Scatterplot](http://dejavis.org/scatterplot) (sandboxed)
+* [Bullets](http://dejavis.org/bullets) (sandboxed)
 * [Stacks](http://dejavis.org/stacks) (sandboxed)
 * [Random Bars](http://quasipartikel.at/unveil/examples/random_bars.html)
 * [Linechart](http://quasipartikel.at/unveil/examples/linechart.html)
