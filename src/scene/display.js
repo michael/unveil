@@ -30,11 +30,7 @@ uv.Display = function(scene, properties) {
   if (properties.panning) {
     this.panbehavior = new uv.behaviors.Pan(this);
   }
-  
-  // Callbacks
-  this.callbacks = {};
-  this.callbacks.viewChange = function() { };
-  
+    
   // Register mouse events
   function mouseMove(e) {
     var mat = that.tView.inverse(),
@@ -79,13 +75,7 @@ uv.Display = function(scene, properties) {
   this.canvas.addEventListener("click", click, false);
 };
 
-
 uv.Display.prototype = uv.inherit(uv.Actor);
-
-// Register callbacks
-uv.Display.prototype.on = function(name, fn) {
-  this.callbacks[name] = fn;
-};
 
 // Convert world pos to display pos
 

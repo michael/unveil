@@ -157,7 +157,7 @@ uv.Tween.prototype = {
   	if (this._duration != undefined) {
   		this.setDuration(duration);
   	}
-  	this.start();
+    this.start();
   },
   resume: function() {
   	this.fixTime();

@@ -1375,7 +1375,8 @@ uv.Actor = function(properties) {
     lineJoin: 'miter',
     globalAlpha: 1,
     miterLimit: 10,
-    visible: true
+    visible: true,
+    transformMode: 'object'
   }, properties);
   
   // init children
@@ -1472,6 +1473,16 @@ uv.Actor.prototype.add = function(spec) {
 };
 
 
+uv.Actor.prototype.get = function() {
+  if (arguments.length === 1) {
+    return this.scene.actors[arguments[0]];
+  } else {
+    // Delegate to Node#get
+    return uv.Node.prototype.get.call(this, arguments[0], arguments[1]);
+  }
+};
+
+
 // Remove child by ID
 uv.Actor.prototype.remove = function(matcher) {
   var that = this;
@@ -1544,7 +1555,6 @@ uv.Actor.prototype.animate = function(property, value, duration, easer) {
       });      
     }
   }
-  
   if (easer) {
     this.tweens[property].easer = uv.Tween[easer];
   }
@@ -1663,7 +1673,7 @@ uv.Actor.prototype.render = function(ctx, tView) {
 uv.Actor.prototype.transform = function(ctx, tView) {
   var m = this.tShape().concat(tView).concat(this._tWorld),
       t;
-  if (this.p('transformMode') === 'coords') {
+  if (this.p('transformMode') === 'origin') {
     // Extract the translation of the matrix
     t = m.transformPoint(uv.Point(0,0));
     ctx.setTransform(1, 0, 0, 1, t.x, t.y);
@@ -1733,7 +1743,7 @@ uv.behaviors.Zoom = function(display) {
           uv.Point(display.scene.mouseX, display.scene.mouseY)
         );
     display.tView = (delta < 0) ? uv.behaviors.adjust(display, m) : m;
-    display.callbacks.viewChange.call(display);
+    display.trigger('viewChange');
   }
   display.canvas.addEventListener("mousewheel", mouseWheel, false);
   display.canvas.addEventListener("DOMMouseScroll", mouseWheel, false);
@@ -1756,6 +1766,7 @@ uv.behaviors.Pan = function(display) {
         y = (display.mouseY - p.y),
         m = uv.Matrix.translation(x, y).concat(view);
     display.tView = uv.behaviors.adjust(display, m);
+    display.trigger('viewChange');
   }
   
   function release() {
@@ -1799,11 +1810,7 @@ uv.Display = function(scene, properties) {
   if (properties.panning) {
     this.panbehavior = new uv.behaviors.Pan(this);
   }
-  
-  // Callbacks
-  this.callbacks = {};
-  this.callbacks.viewChange = function() { };
-  
+    
   // Register mouse events
   function mouseMove(e) {
     var mat = that.tView.inverse(),
@@ -1848,13 +1855,7 @@ uv.Display = function(scene, properties) {
   this.canvas.addEventListener("click", click, false);
 };
 
-
 uv.Display.prototype = uv.inherit(uv.Actor);
-
-// Register callbacks
-uv.Display.prototype.on = function(name, fn) {
-  this.callbacks[name] = fn;
-};
 
 // Convert world pos to display pos
 
@@ -2037,15 +2038,6 @@ uv.Scene.prototype.registerActor = function(actor) {
   }
 };
 
-uv.Scene.prototype.get = function() {
-  if (arguments.length === 1) {
-    return this.actors[arguments[0]];
-  } else {
-    // Delegate to Node#get
-    return uv.Node.prototype.get.call(this, arguments[0], arguments[1]);
-  }
-};
-
 uv.Scene.prototype.start = function() {
   this.running = true;
   this.trigger('start');
@@ -2070,14 +2062,18 @@ uv.Scene.prototype.loop = function() {
   if (this.running) {
     this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
     start = new Date().getTime();
-    this.trigger('frame');
-    this.compileMatrix();
-    this.refreshDisplays();
+    this.render();
     duration = new Date().getTime()-start;
     if (this.framerate > 0) {
       this.nextLoop = setTimeout(function() { that.loop(); }, (1000/that.framerate)-duration);
     }
   }
+};
+
+uv.Scene.prototype.render = function() {
+  this.trigger('frame');
+  this.compileMatrix();
+  this.refreshDisplays();
 };
 
 uv.Scene.prototype.stop = function(options) {
@@ -2303,7 +2299,7 @@ uv.Tween.prototype = {
   	if (this._duration != undefined) {
   		this.setDuration(duration);
   	}
-  	this.start();
+    this.start();
   },
   resume: function() {
   	this.fixTime();

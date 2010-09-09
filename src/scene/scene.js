@@ -90,15 +90,6 @@ uv.Scene.prototype.registerActor = function(actor) {
   }
 };
 
-uv.Scene.prototype.get = function() {
-  if (arguments.length === 1) {
-    return this.actors[arguments[0]];
-  } else {
-    // Delegate to Node#get
-    return uv.Node.prototype.get.call(this, arguments[0], arguments[1]);
-  }
-};
-
 uv.Scene.prototype.start = function() {
   this.running = true;
   this.trigger('start');
@@ -123,14 +114,18 @@ uv.Scene.prototype.loop = function() {
   if (this.running) {
     this.fps = (1000/duration < that.framerate) ? 1000/duration : that.framerate;
     start = new Date().getTime();
-    this.trigger('frame');
-    this.compileMatrix();
-    this.refreshDisplays();
+    this.render();
     duration = new Date().getTime()-start;
     if (this.framerate > 0) {
       this.nextLoop = setTimeout(function() { that.loop(); }, (1000/that.framerate)-duration);
     }
   }
+};
+
+uv.Scene.prototype.render = function() {
+  this.trigger('frame');
+  this.compileMatrix();
+  this.refreshDisplays();
 };
 
 uv.Scene.prototype.stop = function(options) {

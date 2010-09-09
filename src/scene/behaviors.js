@@ -20,7 +20,7 @@ uv.behaviors.Zoom = function(display) {
           uv.Point(display.scene.mouseX, display.scene.mouseY)
         );
     display.tView = (delta < 0) ? uv.behaviors.adjust(display, m) : m;
-    display.callbacks.viewChange.call(display);
+    display.trigger('viewChange');
   }
   display.canvas.addEventListener("mousewheel", mouseWheel, false);
   display.canvas.addEventListener("DOMMouseScroll", mouseWheel, false);
@@ -43,6 +43,7 @@ uv.behaviors.Pan = function(display) {
         y = (display.mouseY - p.y),
         m = uv.Matrix.translation(x, y).concat(view);
     display.tView = uv.behaviors.adjust(display, m);
+    display.trigger('viewChange');
   }
   
   function release() {
