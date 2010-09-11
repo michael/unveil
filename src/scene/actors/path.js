@@ -19,7 +19,7 @@ uv.Path.prototype = uv.inherit(uv.Actor);
 
 uv.Path.prototype.transform = function(ctx, tView) {
   this.transformedPoints = this.points = [].concat(this.p('points'));
-  if (this.p('transformMode') === 'coords') {
+  if (this.p('transformMode') === 'origin') {
     var m = this.tShape().concat(tView).concat(this._tWorld);
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);

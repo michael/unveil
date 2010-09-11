@@ -179,35 +179,20 @@ uv.Actor.prototype.property = function(property, value) {
 
 uv.Actor.prototype.p = uv.Actor.prototype.property;
 
-
 // Registers a Tween on demand
 
-uv.Actor.prototype.animate = function(property, value, duration, easer) {
-  var scene = this.scene;
-  
-  if (!this.tweens[property]) {
-    this.tweens[property] = new uv.Tween({
-      obj: this.properties,
-      property: property,
-      duration: duration || 1000
-    });
-    
-    // Request a higher framerate for the transition
-    // and release it after completion.
-    if (scene.commands.RequestFramerate) {
-      this.tweens[property].bind('start', function() {
-        scene.execute(uv.cmds.RequestFramerate);
-      });
-      this.tweens[property].bind('finish', function() {
-        scene.unexecute(uv.cmds.RequestFramerate);
-      });      
-    }
-  }
-  if (easer) {
-    this.tweens[property].easer = uv.Tween[easer];
-  }
-  this.tweens[property].continueTo(value, duration || 1000);
-  return this.tweens[property];
+uv.Actor.prototype.animate = function(properties, duration, easing) {
+  var scene = this.scene,
+	    tween = new uv.Tween(this.properties)
+    		.to(duration || 1, properties)
+    		.easing(easing || uv.Tween.Easing.Expo.EaseInOut)
+    		.onComplete(function() {
+    		  scene.unexecute(uv.cmds.RequestFramerate);
+    		  // Remove from registered tweens
+    		  uv.TweenManager.remove(tween);
+    		});
+  scene.execute(uv.cmds.RequestFramerate);
+  return tween.start();
 };
 
 
@@ -258,9 +243,7 @@ uv.Actor.prototype.compileMatrix = function() {
 
 uv.Actor.prototype.update = function() {
   // Update motion tweens
-  for (var key in this.tweens) {
-    this.tweens[key].tick();
-  }
+  uv.TweenManager.update();
 };
 
 uv.Actor.prototype.applyStyles = function(ctx) {

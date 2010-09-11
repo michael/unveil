@@ -4,9 +4,6 @@
   <title>Unveil.js - Multiple displays</title>
   
   <!-- libraries -->
-  
-  <script src="../../lib/protovis-d3.2.js"></script>
-  <script src="../../lib/underscore.js"></script>
   <script src="../../unveil.js"></script>
   
   <script>
@@ -15,23 +12,20 @@
             width: 500,
             height: 250,
             fillStyle: '#ccc',
-            displays: [
-              {
-                container: 'bigscreen',
-                width: 500,
-                height: 250,
-                panning: true,
-                zooming: true
-              },
-              {
-                container: 'miniscreen',
-                width: 200,
-                height: 200,
-                panning: true,
-                zooming: true
-              }
-            ],
             actors: [
+              {
+                type: 'path',
+                x: 0,
+                y: 0,
+                transformMode: 'origin',
+                lineWidth: 3,
+                points: [
+                  { x: 0, y: 0 },
+                  { x: 20, y: 100, cp1x: 1, cp1y: 60, cp2x: 20, cp2y: 40 },
+                  { x: 50, y: 30, cp1x: 20, cp1y: 50, cp2x: 20, cp2y: 40 },
+                  { x: 100, y: 120 }
+                ]
+              },
               {
                 type: "rect",
                 id: "blue_rect",
@@ -46,10 +40,9 @@
                 actors: [
                   {
                     type: 'label',
-                    textAlign: 'center',
                     text: "click me!",
                     fillStyle: 'white',
-                    x: 50,
+                    x: 20,
                     y: 50
                   },
                   {
@@ -70,49 +63,65 @@
                     ]
                   }
                 ]
-              },
-              {
-                type: 'label',
-                x: 400,
-                y: 40,
-                text: function() { return "FPS: "+parseInt(this.scene.fps, 10); },
-              },
-              {
-                type: 'label',
-                x: 300,
-                y: 60,
-                text: function() { return "Worldpos: ("+this.scene.mouseX+", "+this.scene.mouseY+")"; }
-              },
-              {
-                type: 'label',
-                x: 300,
-                y: 80,
-                text: function() { return "Displaypos: ("+this.scene.displays[0].mouseX+", "+this.scene.displays[0].mouseY+")"; }
-              },
-              {
-                type: 'label',
-                x: 300,
-                y: 100,
-                text: function() { return "Framerate Requests: "+ this.scene.commands.RequestFramerate.requests; }
               }
             ]
           });
+          
+      var display = scene.display({
+        container: 'bigscreen',
+        width: 500,
+        height: 250,
+        panning: true,
+        zooming: true
+      });
+      
+      display.add({
+        type: 'label',
+        x: 400,
+        y: 40,
+        text: function() { return "FPS: "+parseInt(this.scene.fps, 10); }
+      });
+      
+      display.add({
+        type: 'label',
+        x: 300,
+        y: 80,
+        text: function() {
+          return "Displaypos: ("+this.scene.displays[0].mouseX +
+          ", " + this.scene.displays[0].mouseY+")";
+        }
+      });
+      
+      display.add({
+        type: 'label',
+        x: 300,
+        y: 60,
+        text: function() {
+          return "Worldpos: ("+this.scene.mouseX + ", "+this.scene.mouseY+")";
+        }
+      });
+      
+      var display2 = scene.display({
+          container: 'miniscreen',
+          width: 200,
+          height: 200,
+          panning: true,
+          zooming: true
+      });
       
       scene.get('blue_rect').bind('click', function() {
-        this.animate('x', 100, 1200);
-        this.animate('y', 120, 1500, 'elasticEaseInOut');
+        this.animate({x: 100, y: 120}, 1.5);
       });
       
       scene.get('animated_circle').bind('mouseover', function() {
-        this.animate('radius', 50, 1000, 'elasticEaseInOut');
+        this.animate({radius: 50}, 1);
       });
       
       scene.get('animated_circle').bind('mouseout', function() {
-        this.animate('radius', 30, 1000);
+        this.animate({radius: 30}, 1);
       });
       
       scene.start();
-      
     };
   </script>
   
@@ -121,10 +130,10 @@
 <body>
   <h1>Unveil.js - Multiple displays (Zoom and Pan using the mouse / mousewheel)</h1>
   <div id="canvas">
-    <div id="bigscreen">
+    <div id="bigscreen" style="float: left;">
 
     </div>
-    <div id="miniscreen">
+    <div id="miniscreen" style="float: left;">
 
     </div>
   </div>
@@ -152,15 +161,5 @@
     <p>Source Code is available at <a href="http://github.com/michael/unveil">Github</a></p>
     <div class="notice">A <a href="http://quasipartikel.at">Quasipartikel</a> production</div>
   </div>
-  
-  <script type="text/javascript"> 
-  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
-  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
-  </script> 
-  <script type="text/javascript"> 
-  try {
-  var pageTracker = _gat._getTracker("UA-10368067-1");
-  pageTracker._trackPageview();
-  } catch(err) {}</script>
 </body>
 </html>

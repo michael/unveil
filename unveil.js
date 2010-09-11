@@ -1531,35 +1531,20 @@ uv.Actor.prototype.property = function(property, value) {
 
 uv.Actor.prototype.p = uv.Actor.prototype.property;
 
-
 // Registers a Tween on demand
 
-uv.Actor.prototype.animate = function(property, value, duration, easer) {
-  var scene = this.scene;
-  
-  if (!this.tweens[property]) {
-    this.tweens[property] = new uv.Tween({
-      obj: this.properties,
-      property: property,
-      duration: duration || 1000
-    });
-    
-    // Request a higher framerate for the transition
-    // and release it after completion.
-    if (scene.commands.RequestFramerate) {
-      this.tweens[property].bind('start', function() {
-        scene.execute(uv.cmds.RequestFramerate);
-      });
-      this.tweens[property].bind('finish', function() {
-        scene.unexecute(uv.cmds.RequestFramerate);
-      });      
-    }
-  }
-  if (easer) {
-    this.tweens[property].easer = uv.Tween[easer];
-  }
-  this.tweens[property].continueTo(value, duration || 1000);
-  return this.tweens[property];
+uv.Actor.prototype.animate = function(properties, duration, easing) {
+  var scene = this.scene,
+	    tween = new uv.Tween(this.properties)
+    		.to(duration || 1, properties)
+    		.easing(easing || uv.Tween.Easing.Expo.EaseInOut)
+    		.onComplete(function() {
+    		  scene.unexecute(uv.cmds.RequestFramerate);
+    		  // Remove from registered tweens
+    		  uv.TweenManager.remove(tween);
+    		});
+  scene.execute(uv.cmds.RequestFramerate);
+  return tween.start();
 };
 
 
@@ -1610,9 +1595,7 @@ uv.Actor.prototype.compileMatrix = function() {
 
 uv.Actor.prototype.update = function() {
   // Update motion tweens
-  for (var key in this.tweens) {
-    this.tweens[key].tick();
-  }
+  uv.TweenManager.update();
 };
 
 uv.Actor.prototype.applyStyles = function(ctx) {
@@ -2140,281 +2123,228 @@ uv.Scene.prototype.execute = function(cmd) {
 uv.Scene.prototype.unexecute = function(cmd) {
   this.commands[cmd.className].unexecute();
 };
-// Tween
-// =============================================================================
-//
-// Adapted from EASING EQUATIONS (R. Penner) and JSTween (P. Maegerman)
+/**
+ * @author sole / http://soledadpenades.com/
+ * @author mr.doob / http://mrdoob.com/
+ * Easing equations by Robert Penner http://www.robertpenner.com/easing/ (BSD license)
+ */
+ 
+uv.TweenManager = uv.TweenManager || ( function() {
+	var i, time, tweens = [];
 
-uv.Tween = function(opts) {
-  this.prop = opts.property;
-  this.obj = opts.obj;
-  this.begin = opts.begin || opts.obj[this.prop];
-  this._pos = this.begin;
-  this.setDuration(opts.duration);
-  
-  this.easer = opts.easer || uv.Tween.strongEaseInOut;
-  this.setFinish(opts.finish || opts.obj[this.prop]);
-  
-  // event handlers
-  this.handlers = {};
-};
+	this.add = function (tween) {
+		tweens.push(tween);
+	};
 
-uv.Tween.prototype = {
-  obj: new Object(),
-  easer: function (t, b, c, d) { return c*t/d + b; },
-  begin: 0,
-  change: 0,
-  prevTime: 0,
-  prevPos: 0,
-  looping: false,
-  _playing: false,
-  _duration: 0,
-  _time: 0,
-  _pos: 0,
-  _position: 0,
-  _startTime: 0,
-  _finish: 0,
-  name: '',
-  suffixe: '',
-  // Bind event handler
-  bind: function(name, fn) {
-    if (!this.handlers[name]) {
-      this.handlers[name] = [];
-    }
-    this.handlers[name].push(fn);
-  },
-  // Trigger event
-  trigger: function(name) {
-    var that = this;
-    if (this.handlers[name]) {
-      uv.each(this.handlers[name], function(fn) {
-        fn.apply(that, []);
-      });
-    }
-  },
-  setTime: function(t) {
-  	this.prevTime = this._time;
-  	if (t > this.getDuration()) {
-  		if (this.looping) {
-  			this.rewind (t - this._duration);
-  			this.update();
-  			// execute onLooped callback
-  		} else {
-  			this._time = this._duration;
-  			this.update();
-        this.stop();
-  		}
-  	} else if (t < 0) {
-  		this.rewind();
-  		this.update();
-  	} else {
-  		this._time = t;
-  		this.update();
-  	}
-  },
-  getTime: function(){
-  	return this._time;
-  },
-  setDuration: function(d){
-  	this._duration = (d == null || d <= 0) ? 0.2 : d / 1000;
-  },
-  getDuration: function(){
-  	return this._duration;
-  },
-  setPosition: function(p){
-  	this.prevPos = this._pos;
-  	this.obj[this.prop] = p;
-  	this._pos = p;
-  	// execute onPositionChanged callback
-  },
-  getPosition: function(t) {
-  	if (t == undefined) t = this._time;
-  	return this.easer(t, this.begin, this.change, this._duration);
-  },
-  setFinish: function(f) {
-  	this.change = f - this.begin;
-  },
-  getFinish: function() {
-  	return this.begin + this.change;
-  },
-  isPlaying: function() {
-    return this._playing;
-  },
-  init: function(obj, prop, easer, begin, finish, duration, suffixe) {
-  	if (!arguments.length) return;
-  	this._listeners = new Array();
-  	this.addListener(this);
-  	this.obj = obj;
-  	this.prop = prop;
-  	this.begin = begin;
-  	this._pos = begin;
-  	this.setDuration(duration);
-  	if (easer!=null && easer!='') {
-  		this.easer = easer;
-  	}
-  	this.setFinish(finish);
-  },
-  
-  start: function() {
-  	this.rewind();
-  	this._playing = true;
-  	this.trigger('start');
-  },
-  rewind: function(t) {
-  	this.reset();
-  	this._time = (t == undefined) ? 0 : t;
-  	this.fixTime();
-  	this.update();
-  },
-  fforward: function() {
-  	this._time = this._duration;
-  	this.fixTime();
-  	this.update();
-  },
-  update: function() {
-  	this.setPosition(this.getPosition(this._time));
-  },
-  tick: function() {
-    if (this._playing) {
-      this.nextFrame();
-    }
-  },
-  nextFrame: function() {
-  	this.setTime((this.getTimer() - this._startTime) / 1000);
-  },
-  reset: function() {
-    this._playing = false;
-  },
-  stop: function() {
-    this._playing = false;    
-    this.trigger('finish');
-  },
-  continueTo: function(finish, duration) {
-    if (this.isPlaying()) {
-      this.trigger('finish');
-    }
-    
-  	this.begin = this._pos;
-  	this.setFinish(finish);
-  	if (this._duration != undefined) {
-  		this.setDuration(duration);
-  	}
-    this.start();
-  },
-  resume: function() {
-  	this.fixTime();
-  	this._playing = true;
-  	// executing onResumed callback
-  },
-  yoyo: function () {
-  	this.continueTo(this.begin,this._time);
-  },
-  fixTime: function() {
-  	this._startTime = this.getTimer() - this._time * 1000;
-  },
-  getTimer: function() {
-  	return new Date().getTime() - this._time;
-  }
-};
+	this.remove = function (tween) {
+		for (var i = 0, l = tweens.length; i < l; i++) {
+			if (tween == tweens[ i ]) {
+				tweens.splice(i, 1);
+				return;
+			}
+		}
+	};
+	
+	this.update = function() {
+		i = 0;
+		time = new Date().getTime();
+		while( i < tweens.length ) {
+			tweens[ i ].update( time ) ? i++ : tweens.splice( i, 1 );
+		}
+	};
+	return this;
+})(),
 
-// Easing functions
-uv.Tween.backEaseIn = function(t,b,c,d,a,p) {
-	if (s == undefined) var s = 1.70158;
-	return c*(t/=d)*t*((s+1)*t - s) + b;
-};
+// uv.Tween = uv.Tween || {};
 
-uv.Tween.backEaseOut = function(t,b,c,d,a,p) {
-	if (s === undefined) var s = 1.70158;
-	return c*((t=t/d-1)*t*((s+1)*t + s) + 1) + b;
-};
+uv.Tween = function ( object ) {
+	uv.TweenManager.add( this );
 
-uv.Tween.backEaseInOut = function(t,b,c,d,a,p) {
-	if (s == undefined) var s = 1.70158; 
-	if ((t/=d/2) < 1) return c/2*(t*t*(((s*=(1.525))+1)*t - s)) + b;
-	return c/2*((t-=2)*t*(((s*=(1.525))+1)*t + s) + 2) + b;
-};
+	var _object = object,
+	_valuesStart = {},
+	_valuesChange = {},
+	_valuesTo = {},
+	_duration = 1000,
+	_delayTime = 0,
+	_startTime = null,
+	_easingFunction = uv.Tween.Easing.Back.EaseInOut,
+	_nextTween = null,
+	_onUpdateFunction = null,
+	_onCompleteFunction = null,
+	_completed = false;
 
-uv.Tween.elasticEaseIn = function(t,b,c,d,a,p) {
-  var s;
-	if (t==0) return b;  
-	if ((t/=d)==1) return b+c;  
-	if (!p) p=d*0.3;
-	if (!a || a < Math.abs(c)) {
-		a=c; s=p/4;
+	this.to = function( duration, properties ) {
+		_duration = duration * 1000;
+		for ( var property in properties ) {
+			if ( _object[ property ] === null ) {
+				continue;
+			}
+			// The current values are read when the tween starts;
+			// here we only store the final desired values
+			_valuesTo[ property ] = properties[ property ];
+		}
+		return this;
+	};
+
+	this.start = function() {
+		_completed = false;
+		_startTime = new Date().getTime() + _delayTime;
+		for ( var property in _valuesTo ) {
+			if ( _object[ property ] === null ) {
+				continue;
+			}
+			_valuesStart[ property ] = _object[ property ];
+			_valuesChange[ property ] = _valuesTo[ property ] - _object[ property ];
+		}
+		return this;
 	}
-	else 
-		s = p/(2*Math.PI) * Math.asin (c/a);
 
-	return -(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-};
+	this.delay = function ( amount ) {
+		_delayTime = amount * 1000;
+		return this;
+	};
 
-uv.Tween.elasticEaseOut = function (t,b,c,d,a,p) {
-  var s;
-	if (t==0) return b;  if ((t/=d)==1) return b+c;  if (!p) p=d*0.3;
-	if (!a || a < Math.abs(c)) { a=c; s=p/4; }
-	else s = p/(2*Math.PI) * Math.asin (c/a);
-	return (a*Math.pow(2,-10*t) * Math.sin( (t*d-s)*(2*Math.PI)/p ) + c + b);
-};
+	this.easing = function ( easing ) {
+		_easingFunction = easing;
+		return this;
+	};
 
-uv.Tween.elasticEaseInOut = function (t,b,c,d,a,p) {
-  var s;
-	if (t==0) return b;  if ((t/=d/2)==2) return b+c;  if (!p) p=d*(0.3*1.5);
-	if (!a || a < Math.abs(c)) { a=c; s=p/4; }
-	else s = p/(2*Math.PI) * Math.asin (c/a);
-	if (t < 1) return -0.5*(a*Math.pow(2,10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )) + b;
-	return a*Math.pow(2,-10*(t-=1)) * Math.sin( (t*d-s)*(2*Math.PI)/p )*0.5 + c + b;
-};
-
-uv.Tween.bounceEaseOut = function(t,b,c,d) {
-	if ((t/=d) < (1/2.75)) {
-		return c*(7.5625*t*t) + b;
-	} else if (t < (2/2.75)) {
-		return c*(7.5625*(t-=(1.5/2.75))*t + 0.75) + b;
-	} else if (t < (2.5/2.75)) {
-		return c*(7.5625*(t-=(2.25/2.75))*t + 0.9375) + b;
-	} else {
-		return c*(7.5625*(t-=(2.625/2.75))*t + 0.984375) + b;
+	this.chain = function ( chainedTween ) {
+		_nextTween = chainedTween;
 	}
+
+	this.onUpdate = function ( onUpdateFunction ) {
+		_onUpdateFunction = onUpdateFunction;
+		return this;
+	};
+
+	this.onComplete = function ( onCompleteFunction ) {
+		_onCompleteFunction = onCompleteFunction;
+		return this;
+	};
+
+	this.update = function ( time ) {
+		var property, elapsed;
+
+		if ( time < _startTime || _startTime === null) {
+			return true;
+		}
+
+		if ( _completed ) {
+			return (_nextTween === null);
+		}
+		elapsed = time - _startTime;
+
+		if( elapsed > _duration ) {
+
+			_completed = true;
+			_startTime = null;
+
+			if(_onCompleteFunction !== null) {
+				_onCompleteFunction();
+			}
+
+			if(_nextTween !== null) {
+				_nextTween.start();
+				return true; // this tween cannot be safely destroyed
+			} else {
+				return false; // no associated tweens, tween can be destroyed
+			}
+		}
+
+		for ( property in _valuesChange ) {
+			_object[ property ] = _easingFunction(elapsed, _valuesStart[ property ], _valuesChange[ property ], _duration );
+		}
+
+		if ( _onUpdateFunction !== null ) {
+			_onUpdateFunction.apply(_object);
+		}
+		return true;
+	};
+
+	this.destroy = function () {
+		uv.TweenManager.remove(this);
+	};
 };
 
-uv.Tween.bounceEaseIn = function(t,b,c,d) {
-	return c - Tween.bounceEaseOut (d-t, 0, c, d) + b;
+
+uv.Tween.Easing = { Back: {}, Elastic: {}, Expo: {}, Linear: {} };
+
+uv.Tween.Easing.Back.EaseIn = function( t, b, c, d ) {
+	var s = 1.70158;
+	return c * ( t /= d  ) * t * ( ( s + 1 ) * t - s ) + b;
 };
 
-uv.Tween.bounceEaseInOut = function(t,b,c,d) {
-	if (t < d/2) return Tween.bounceEaseIn (t*2, 0, c, d) * 0.5 + b;
-	else return Tween.bounceEaseOut (t*2-d, 0, c, d) * 0.5 + c*0.5 + b;
+uv.Tween.Easing.Back.EaseOut = function( t, b, c, d ) {
+	var s = 1.70158;
+	return c * ( ( t = t / d - 1 ) * t * ( ( s + 1 ) * t + s ) + 1 ) + b;
 };
 
-uv.Tween.strongEaseInOut = function(t,b,c,d) {
-	return c*(t/=d)*t*t*t*t + b;
+uv.Tween.Easing.Back.EaseInOut = function( t, b, c, d ) {
+	var s = 1.70158;
+	if ( ( t /= d / 2 ) < 1 ) return c / 2 * ( t * t * ( ( ( s *= ( 1.525 ) ) + 1 ) * t - s ) ) + b;
+	return c / 2 * ( ( t -= 2 ) * t * ( ( ( s *= ( 1.525 ) ) + 1 ) * t + s ) + 2 ) + b;
 };
 
-uv.Tween.regularEaseIn = function(t,b,c,d) {
-	return c*(t/=d)*t + b;
+uv.Tween.Easing.Elastic.EaseIn = function( t, b, c, d ) {
+	if ( t == 0 ) return b;
+	if ( ( t /= d ) == 1 ) return b + c;
+	var p = d * .3;
+	var a = c;
+	var s = p / 4;
+	return - ( a * Math.pow( 2, 10 * ( t -= 1 ) ) * Math.sin( ( t * d - s ) * ( 2 * Math.PI ) / p ) ) + b;
 };
 
-uv.Tween.regularEaseOut = function(t,b,c,d) {
-	return -c *(t/=d)*(t-2) + b;
+uv.Tween.Easing.Elastic.EaseOut = function( t, b, c, d ) {
+	if ( t == 0 ) return b;
+	if ( ( t /= d ) == 1 ) return b + c;
+	var p = d * .3;
+	var a = c;
+	var s = p / 4;
+	return ( a * Math.pow( 2, - 10 * t ) * Math.sin( ( t * d - s ) * ( 2 * Math.PI ) / p ) + c + b );
 };
 
-uv.Tween.regularEaseInOut = function(t,b,c,d) {
-	if ((t/=d/2) < 1) return c/2*t*t + b;
-	return -c/2 * ((--t)*(t-2) - 1) + b;
+uv.Tween.Easing.Elastic.EaseInOut = function(t, b, c, d) {
+	if ( t == 0 ) return b;
+	if ( ( t /= d / 2 ) == 2 ) return b + c;
+	var p = d * ( .3 * 1.5 );
+	var a = c;
+	var s = p / 4;
+	if ( t < 1 ) return - .5 * ( a * Math.pow( 2, 10 * ( t -= 1 ) ) * Math.sin( ( t * d - s ) * ( 2 * Math.PI ) / p ) ) + b;
+	return a * Math.pow( 2, - 10 * ( t -= 1 ) ) * Math.sin( ( t * d - s ) * ( 2 * Math.PI ) / p ) * .5 + c + b;
 };
 
-uv.Tween.strongEaseIn = function(t,b,c,d) {
-	return c*(t/=d)*t*t*t*t + b;
+uv.Tween.Easing.Expo.EaseIn = function(t, b, c, d) {
+	return ( t == 0) ? b : c * Math.pow( 2, 10 * ( t / d - 1 ) ) + b;
 };
 
-uv.Tween.strongEaseOut = function(t,b,c,d) {
-	return c*((t=t/d-1)*t*t*t*t + 1) + b;
+uv.Tween.Easing.Expo.EaseOut = function(t, b, c, d) {
+	return ( t == d ) ? b + c : c * ( - Math.pow( 2, - 10 * t / d) + 1) + b;
 };
 
-uv.Tween.strongEaseInOut = function(t,b,c,d) {
-	if ((t/=d/2) < 1) return c/2*t*t*t*t*t + b;
-	return c/2*((t-=2)*t*t*t*t + 2) + b;
+uv.Tween.Easing.Expo.EaseInOut = function(t, b, c, d) {
+	if ( t == 0 ) return b;
+	if ( t == d ) return b+c;
+	if ( ( t /= d / 2 ) < 1) return c / 2 * Math.pow( 2, 10 * ( t - 1 ) ) + b;
+	return c / 2 * ( - Math.pow( 2, - 10 * --t ) + 2) + b;
 };
+
+uv.Tween.Easing.Linear.EaseNone = function (t, b, c, d) {
+		return c*t/d + b;
+};
+
+uv.Tween.Easing.Linear.EaseIn = function (t, b, c, d) {
+		return c*t/d + b;
+};
+
+uv.Tween.Easing.Linear.EaseOut = function (t, b, c, d) {
+		return c*t/d + b;
+};
+
+uv.Tween.Easing.Linear.EaseInOut = function (t, b, c, d) {
+		return c*t/d + b;
+};
+
 // Rect
 // =============================================================================
 
@@ -2539,7 +2469,7 @@ uv.Path.prototype = uv.inherit(uv.Actor);
 
 uv.Path.prototype.transform = function(ctx, tView) {
   this.transformedPoints = this.points = [].concat(this.p('points'));
-  if (this.p('transformMode') === 'coords') {
+  if (this.p('transformMode') === 'origin') {
     var m = this.tShape().concat(tView).concat(this._tWorld);
     
     ctx.setTransform(1, 0, 0, 1, 0, 0);
