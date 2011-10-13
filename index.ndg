@@ -13,11 +13,82 @@ is designed to be used with any other visualization library. So in the first
 place, it suggests a different approach on how you deal with domain data in a
 visualization scenario.
 
+
 **Note:**
 
 This documentation is generated on the fly using the "Ndogen"[http://github.com/oliver----/ndogen] documentation generator.
 Since this instant doc-generation part is under heavy development, you'll
 experience some glitches. We're working on it! Please have a look at the "raw markup"[http://github.com/michael/unveil/blob/master/index.ndg] too.
+
+
+
+The data visualization process
+================================================================================
+
+When faced with a data visualization task you'll usually go through a workflow
+that looks like this:
+
+1. Data aggregation 
+--------------------------------------------------------------------------------
+
+This includes querying and preparing data, which is not covered by Unveil.js. 
+However the outcome of this process should be a collection of data items
+represented in a uniform Collection format (JSON), ideally served dynamically
+through a webservice. 
+
+
+I've recently implemented such an aggregation service that uses data from
+Freebase (in this example music artist data). Therefore I've used "Acre"[http://acre.freebase.com/]
+,a hosted platform that allows you to build applications or services from Freebase
+data.
+
+"This simple Acre script"[http://acre.freebase.com/#!path=//collections.ma.user.dev/artists] queries
+the Freebase.com graph for music artists of certain genres. It processes that data and translate
+it into the Unveil.js Collection format. The result is a web service that turns freebase data
+into a Collection on the fly. And here is the "result"[http://collections.freebaseapps.com/artists].
+
+
+Btw: I just used Freebase Acre for the first time. It's simply perfect for on-the-fly data-aggregation on the Freebase graph. 
+The collection of music artists I'm using for the stacks example is gained using this simple acre-script: 
+http://acre.freebase.com/#!path=//collections.ma.user.dev/artists 
+-> results in http://collections.freebaseapps.com/artists 
+
+
+2. Visualization 
+--------------------------------------------------------------------------------
+
+Now that you have a ready-to-be-visualized collection you can start implementing
+a visualization, or use that aggregated data to power an existing vis.
+
+The Unveil.js visualization should operate directly on the Collection passed to
+the constructor. If I 've got it right you shouldn't need additional
+data-structures for holding domain data (except for your visualization's state, of course) .
+
+
+For querying within a Collection (which happens in memory) you can just traverse
+the graph. Since every item / property / value has a unique key you can efficiently
+access items in O(1). 
+
+Here's some more documentation regarding Collections I haven't migrated to the unveil doc page: 
+
+http://github.com/michael/unveil/tree/master/src/collection 
+There's also a Criterion API for querying data within a collection. 
+http://github.com/michael/unveil/blob/master/test/collection/testsuit... 
+And there's the concept of collection Transformers. Transformers turn collections into modified collections. 
+http://github.com/michael/unveil/tree/master/src/collection/transformers
+
+
+
+
+DataGraph API
+================================================================================
+
+You'd want to use the DataGraph API when it comes to visualizing linked data.
+The DataGraph format takes the idea of the Semantic Web, tries to reduce the
+complexity and applies the concepts if RDF to a local visualization scenario.
+
+
+
 
 
 Collection API
@@ -502,7 +573,7 @@ encouraged to create your own ones, suitable for your needs.
 
 $ uv.Bar = function(properties) {
 $   // super call
-$   uv.Actor.call(this, _.extend({
+$   uv.Actor.call(this, uv.extend({
 $     width: 30,
 $     height: 50,
 $     strokeWeight: 2,
@@ -514,7 +585,7 @@ $ };
 
 **Every Actor inherits from uv.Actor:**
 
-$ uv.Bar.prototype = Object.extend(uv.Actor);
+$ uv.Bar.prototype = uv.extend(uv.Actor);
 
 
 **Implement a draw method, which takes a Canvas 2D context:**
@@ -618,7 +689,7 @@ Commands
 *Commands* are used to modify properties on the scene. They can be executed
 one or many times, and they can be unexecuted to recover the original state.
 
-Suche commands are a powerful abstraction for modifying state. Implement your own
+Such commands are a powerful abstraction for modifying state. Implement your own
 commands whenever it makes sense.
 
 What always annoyed me is the problem of high CPU-consumption that canvas-based visualizations
@@ -683,7 +754,7 @@ be saved. ;-)
 Modification Matrix
 --------------------------------------------------------------------------------
 
-While most often specifying properties (x, y, scaleX, scaleY, rotation) on the an
+While most often specifying properties (x, y, scaleX, scaleY, rotation) on the
 Actor suffices, there may be cases where you need more control. Therefore
 Actors expose a so called *Modification Matrix*, which can be directly modified
 by the user. 
@@ -696,14 +767,14 @@ $ b.translate(40,40);
 $ // scale around this point (= new origin)
 $ b.scale(1.5, 1.5);
 $ // rotate 45°
-$ b.rotate(uv.PI/4);
+$ b.rotate(Math.PI/4);
 $ // move the coordinate system back
 $ b.translate(-40, -40);
 
 
 To calculate the resulting transformation matrix for drawing, it is
-initialized with the specified properties and then multiplied with the modification
-matrix.
+initialized with the values of the specified properties and then multiplied with
+the modification matrix.
 
 
 Examples

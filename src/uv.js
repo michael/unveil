@@ -40,6 +40,10 @@ uv.include = function(arr, target) {
   return arr.indexOf(target) != -1;
 };
 
+uv.isArray = function(obj) {
+  return toString.call(obj) === '[object Array]';
+};
+
 uv.select = uv.filter = function(obj, iterator, context) {
   if (obj.filter === Array.prototype.filter)
     return obj.filter(iterator, context);

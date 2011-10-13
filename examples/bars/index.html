@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Unveil.js - Bars</title>
+  
+  <!-- libraries -->
+  <script src="../../lib/protovis-d3.2.js"></script>
+  <script src="../../lib/jquery-1.6.4.js"></script>
+  <script src="../../lib/underscore.js"></script>
+  <script src="../../lib/data.js"></script>
+  <script src="../../unveil.js"></script>
+
+  <script>
+    window.onload = function() {
+      var countries_data = {
+        "properties": {
+          "name": {"name": "Country Name",
+            "type": "string", "unique": true },
+          "official_language": {"name": "Official Language",
+             "type": "string", "unique": true },
+          "population": { "name": "Population",
+             "type": "number", "unique": true },
+          "gdp": { "name": "GDP per capita",
+            "type": "number", "unique": true }
+        },
+        "items": {
+          "at": {
+            "name": "Austria",
+            "official_language": "German",
+            "population": 8356700,
+            "gdp": 39.761
+          },
+          "de": {
+            "name": "Germany",
+            "official_language": "German",
+            "population": 82062200,
+            "gdp": 46.860
+          },
+          "usa": {
+            "name": "United States of America",
+            "official_language": "English",
+            "population": 310955497,
+            "gdp": 36.081
+          }
+        }
+      };
+      
+      var countries = new Data.Collection(countries_data);
+      var property = "population";
+      
+      // Create scene
+      var scene = new uv.Scene({
+            displays: [{
+              container: 'canvas',
+              width: 300,
+              height: 300
+            }]
+      });
+      
+      // Scale values to fit on bars
+      function y(val) {
+        var dMax = countries.properties().get(property).aggregate(Data.Aggregators.MAX);
+            oMax = 200;
+        return parseInt(val/dMax * oMax);
+      }
+      
+      // Initialize
+      countries.items().each(function(c, key, index) {
+        scene.add({
+          id: "country_"+key,
+          type: 'rect',
+          x: 50+35*index,
+          y: 280,
+          width: 30,
+          height: -parseInt(y(c.get(property)), 10),
+          fillStyle: function() {
+            return this.active ? 'orange' : 'blue'; 
+          },
+          interactive: true,
+          actors: [
+            {
+              type: 'label',
+              x: 15,
+              y: 20,
+              width: 30,
+              height: 20,
+              text: function() { return c._id.toUpperCase() },
+              textAlign: 'center',
+              fillStyle: '#444'
+            }
+          ]
+        });
+      });
+      
+      // Update
+      function update() {
+        property = $('#property').val();
+        
+        countries.items().each(function(c, key, index) {
+          scene.get("country_"+key).animate({height: -parseInt(y(c.get(property)), 10)}, 1.0);
+        });
+      }
+      
+      $('#property').change(update);
+      
+      scene.start();
+    };
+  </script>
+
+  <link href="../styles.css" media="screen" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <h1>Unveil.js - Bars</h1>
+  <div id="canvas">
+    
+  </div>
+  <div id="info">
+    <h3>Choose property</h3>
+    <select id="property">
+      <option value="population">Population</option>
+      <option value="gdp">GDP per capita</option>
+    </select>
+    
+    <h3>About</h3>
+    <!-- A framework for data-driven visualizations based on Collections. -->
+    <p><strong>Unveil.js</strong> provides a simple abstraction layer for visualizations to ease
+    the process of creating re-usable charts. To accomplish this, a data-driven methodology is used.
+    </p><p>
+    
+
+    
+    <h3>Code</h3>
+    
+    <p>Source Code is available at <a href="http://github.com/michael/unveil">Github</a></p>
+    
+    <div class="notice">A <a href="http://quasipartikel.at">Quasipartikel</a> production</div>
+  </div>
+  
+  <script type="text/javascript"> 
+  var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+  document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+  </script> 
+  <script type="text/javascript"> 
+  try {
+  var pageTracker = _gat._getTracker("UA-10368067-1");
+  pageTracker._trackPageview();
+  } catch(err) {}</script>
+</body>
+</html>

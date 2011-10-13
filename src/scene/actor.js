@@ -2,7 +2,7 @@
 // =============================================================================
 
 uv.Actor = function(properties) {
-  uv.Node.call(this);
+  Data.Node.call(this);
   this.childCount = 0;
   
   this.properties = uv.extend({
@@ -28,7 +28,7 @@ uv.Actor = function(properties) {
   }, properties);
   
   // init children
-  this.replace('children', new uv.SortedHash());
+  this.replace('children', new Data.Hash());
   
   // Init motion tween container
   this.tweens = {};
@@ -43,7 +43,7 @@ uv.Actor = function(properties) {
 // Registration point for custom actors
 uv.Actor.registeredActors = {};
 
-uv.Actor.prototype = uv.inherit(uv.Node);
+uv.Actor.prototype = uv.inherit(Data.Node);
 
 
 // Bind event
@@ -126,7 +126,7 @@ uv.Actor.prototype.get = function() {
     return this.scene.actors[arguments[0]];
   } else {
     // Delegate to Node#get
-    return uv.Node.prototype.get.call(this, arguments[0], arguments[1]);
+    return Data.Node.prototype.get.call(this, arguments[0], arguments[1]);
   }
 };
 
@@ -151,9 +151,9 @@ uv.Actor.prototype.remove = function(matcher) {
     }
 
     // Children hunt
-    this.all('children').each(function(index, child) {
+    this.all('children').each(function(child, key, i) {
       child.remove(matcher);
-    });    
+    });
   }
 };
 
@@ -231,7 +231,7 @@ uv.Actor.prototype.compileMatrix = function() {
   this._tWorld = this.tWorld();
 
   if (this.all('children')) {
-    this.all('children').each(function(i, child) {
+    this.all('children').each(function(child, key, i) {
       child.compileMatrix();
     });
   }

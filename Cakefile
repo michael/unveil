@@ -19,19 +19,6 @@ compressionCmd = 'java -jar ./lib/compiler.jar --js unveil.js --js_output_file u
 files = [
   'src/intro.js'
   'src/uv.js'
-  'src/sorted_hash/sorted_hash.js'
-  'src/sorted_hash/aggregators.js'
-  'src/sorted_hash/comparators.js'
-  'src/node/node.js'
-  'src/collection/value.js'
-  'src/collection/item.js'
-  'src/collection/property.js'
-  'src/collection/collection.js'
-  'src/collection/criterion.js'
-  'src/collection/transformers/group.js'
-  'src/data_graph/data_graph.js'
-  'src/data_graph/type.js'
-  'src/data_graph/resource.js'
   'src/scene/matrix.js'
   'src/scene/actor.js'
   'src/scene/traverser.js'
@@ -51,12 +38,12 @@ files = [
 # Run a CoffeeScript through the node/coffee interpreter.
 run = (args) ->
   proc =         spawn 'bin/coffee', args
-  proc.stderr.on 'data', (buffer) -> puts buffer.toString()
+  proc.stderr.on 'data', (buffer) -> console.log buffer.toString()
   proc.on        'exit', (status) -> process.exit(1) if status != 0
 
 # Log a message with a color.
 log = (message, color, explanation) ->
-  puts "#{color or ''}#{message}#{reset} #{explanation or ''}"
+  console.log "#{color or ''}#{message}#{reset} #{explanation or ''}"
 
 # Build from source
 build = ->

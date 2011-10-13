@@ -11,7 +11,7 @@ uv.traverser.BreadthFirst = function(root) {
     if (node.p('visible')) {
       nodes.push(node);
       // Enqueue children
-      node.all('children').each(function(index, node) {
+      node.all('children').each(function(node, key, index) {
         queue.push(node);
       });
     }
@@ -30,7 +30,7 @@ uv.traverser.DepthFirst = function(root) {
     if (node.p('visible')) {
       nodes.push(node);
       // Push children
-      node.all('children').each(function(index, node) {
+      node.all('children').each(function(node, key, index) {
         stack.push(node);
       });
     }
