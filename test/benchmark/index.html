@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+	<title>Unveil.js - Performance comparison with D3.js</title>
+  <script src="../../lib/jquery-1.6.4.js"></script>
+  <script src="../../lib/underscore.js"></script>
+  <script src="../../lib/data.js"></script>
+  <script src="../../unveil.js"></script>
+	<script type="text/javascript" src="d3.js"></script>
+	<link href="../../examples/styles.css" media="screen" rel="stylesheet" type="text/css" />
+	
+	<style type="text/css">
+	  
+	  path {
+	    stroke-width: 2;
+	    fill: none;	    
+	  }
+	  
+		line {
+		    stroke: black;
+		}
+
+		text {
+		    font-family: Arial;
+		    font-size: 9pt;
+		}
+	</style>
+	
+	
+	<script type="text/javascript">
+	
+	window.onload = function() {
+	  
+	  
+    // Common
+    // --------------
+    
+    // Data structure used to collect benchmark results
+    var results = {
+      "unveil": [],
+      "d3": []
+    };
+    
+    // Unveil.js
+    // --------------
+    
+     // Create scene
+     var scene = new uv.Scene({
+            displays: [{
+              container: 'canvas',
+              width: 300,
+              height: 300
+            }]
+     });
+     
+     var frameCount;
+     
+     // Initialize Scatterplot
+     function init(n) {
+       scene.replace('children', new Data.Hash());
+       
+       for (var i=0; i < n; i++) {
+         scene.add({
+           type: 'circle',
+           x: Math.random()*300,
+           y: Math.random()*300,
+           radius: 2
+         });
+       }
+     
+       scene.render();
+       
+     }
+     
+     // Update
+     function run(frames, callback) {
+       
+       frameCount = 0;
+       var start = new Date().getTime();
+       
+       function draw() {
+         scene.all('children').each(function(obj) {
+           obj.p('x', Math.random()*300);
+           obj.p('y', Math.random()*300);
+         });
+         scene.render();
+         frameCount+=1;
+         
+         if (frameCount < frames) {
+           setTimeout(draw, 0);
+         } else {
+           callback(1000*frames/(new Date().getTime() - start));
+         }
+       }
+       draw();
+     }
+     
+    
+     // D3.js
+     // --------------
+    
+     var data;
+     var vis;
+    
+     function genData(n) {
+       return d3.range(n).map(function(d) {
+         return {
+           x: Math.random()*300, 
+           y: Math.random()*300
+         }
+       });
+     }
+    
+     function initD3(n) {
+       data = genData(n);
+    
+        d3.selectAll('#canvas *').remove();
+    
+        vis = d3.select("#canvas")
+           .append("svg:svg")
+            .attr("class", "chart")
+            .attr("width", 420)
+            .attr("height", 20 * data.length);
+    
+        var circles = vis.selectAll("circle")
+            .data(data)
+            .enter().append("svg:circle")
+              .style("fill", "steelblue")
+              .attr('cx', function(d) { return d.x; })
+              .attr('cy', function(d) { return d.y; })
+              .attr('r', 2)
+     }
+    
+     function runD3(frames, callback) {
+       frameCount = 0;
+       var start = new Date().getTime();
+    
+       function draw() {
+    
+         data = genData(data.length);
+    
+         vis.selectAll("circle")
+           .data(data)
+           .attr('cx', function(d) { return d.x; })
+           .attr('cy', function(d) { return d.y; })
+    
+         frameCount+=1;
+         if (frameCount < frames) {
+           setTimeout(draw, 0);
+         } else {
+           callback(1000*frames/(new Date().getTime() - start));
+         }
+       }
+       draw();
+     }
+    
+    
+    function benchmarkUnveil(objects, callback) {
+      var n = objects.pop();
+      
+      var start = new Date().getTime();
+      init(n);
+      var initTime = new Date().getTime() - start;
+      
+      console.log("running test for n="+n);
+      run(40, function(fps) {
+        results["unveil"].push({
+          objects: n,
+          init: initTime,
+          fps: fps
+        });
+        console.log("FPS:"+fps);
+        objects.length > 0 ? benchmarkUnveil(objects, callback) : callback();
+      });
+    }
+    
+    
+    function benchmarkD3(objects, callback) {
+      var n = objects.pop();
+      var start = new Date().getTime();
+      initD3(n);
+      var initTime = new Date().getTime() - start;
+    
+      console.log("running test for n="+n);
+      runD3(40, function(fps) {
+        results["d3"].push({
+          objects: n,
+          init: initTime,
+          fps: fps
+        });
+        console.log("FPS:"+fps);
+        objects.length > 0 ? benchmarkD3(objects, callback) : callback();
+      });
+    }
+    
+    
+    // Results Presentation
+    // --------------
+
+	  function plotResults() {
+	    // Draws a single linechart
+  	  function addLinechart(data, property) {
+      	var	w = 400,
+      		h = 200,
+      		margin = 20,
+
+          ymax = d3.max(data["unveil"].map(function(d) { return d[property]; })
+                   .concat(data["d3"].map(function(d) { return d[property]; }))),
+          xmax = d3.max(data["unveil"].map(function(d) { return d.objects; })),
+          xmin = d3.min(data["unveil"].map(function(d) { return d.objects; })),
+
+      		y = d3.scale.linear().domain([0, ymax]).range([0 + margin, h - margin]),
+      		x = d3.scale.linear().domain([xmin, xmax]).range([0 + margin, w - margin]);
+
+      		var vis = d3.select("#canvas")
+      		    .append("svg:svg")
+      		    .attr("width", w+50)
+      		    .attr("height", h+30)
+
+      		var g = vis.append("svg:g")
+      		    .attr("transform", "translate(50, 200)");
+
+      		var line = d3.svg.line()
+      		    .x(function(d,i) { return x(d.objects); })
+      		    .y(function(d) { return -1 * y(d[property]); })
+
+      		g.append("svg:path").attr("d", line(data["unveil"]))
+      		                    .attr("stroke", "steelblue");
+          g.append("svg:path").attr("d", line(data["d3"]))
+                              .attr("stroke", "#ff7f0e")
+
+      		g.append("svg:line")
+      		    .attr("x1", x(xmin))
+      		    .attr("y1", -1 * y(0))
+      		    .attr("x2", x(xmax))
+      		    .attr("y2", -1 * y(0))
+
+          vis.append("svg:text")
+             .text(property == "init" ? "Initialization time (ms)" : "Frame Rate (fps)")
+             .attr("transform", "translate(20, 150) rotate(-90) ");
+          
+         vis.append("svg:text")
+            .text("Number of Data Points")
+            .attr("transform", "translate(160, 230)");
+            
+          g.append("svg:text")
+             .text("Unveil.js")
+             .attr("fill", "steelblue")
+             .attr("x", x(xmin))
+             .attr("y", -10-1*y(data["unveil"][0][property]));
+             
+          g.append("svg:text")
+             .text("D3.js")
+             .attr("fill", "#ff7f0e")
+             .attr("x", x(xmin))
+             .attr("y", -10-1*y(data["d3"][0][property]));             
+          
+          g.selectAll(".xLabel")
+              .data(data["unveil"])
+              .enter().append("svg:text")
+              .attr("class", "xLabel")
+              .text(function(d) { return d.objects; })
+              .attr("x", function(d) { return x(d.objects) })
+              .attr("y", 0)
+              .attr("text-anchor", "middle")
+
+          
+          g.selectAll(".yLabel")
+              .data(y.ticks(4))
+              .enter().append("svg:text")
+              .attr("class", "yLabel")
+              .text(String)
+              .attr("x", -10)
+              .attr("y", function(d) { return -1 * y(d) })
+              .attr("text-anchor", "right")
+              .attr("dy", 4)
+          
+
+          g.selectAll(".yTicks")
+              .data(y.ticks(4))
+              .enter().append("svg:line")
+              .attr("class", "yTicks")
+              .attr("y1", function(d) { return -1 * y(d); })
+              .attr("x1", x(xmin-0.4))
+              .attr("y2", function(d) { return -1 * y(d); })
+              .attr("x2", x(xmin-0.2))
+  	  }
+
+
+      // Reset plotarea
+      d3.selectAll('#canvas *').remove();
+
+      // Add Linechart
+      addLinechart(results, "init");
+  	  addLinechart(results, "fps");
+	  }
+	  
+	  
+    console.log("running tests for Unveil.js");
+    benchmarkUnveil([100, 500, 1000].reverse(), function() {
+      
+      console.log("running tests for D3.js");
+      benchmarkD3([100, 500, 1000].reverse(), function() {
+        console.log('NOW REEADY.');
+        console.log(results);
+        plotResults();
+      });
+    });
+	}
+
+	</script>
+	
+  </head>
+  <body>
+		
+	  <h1>Unveil.js - Performance comparison with D3.js</h1>
+    <div id="canvas">
+    </div>
+    <div id="info">
+      <h3>About</h3>
+      <p><strong>Unveil.js</strong> provides a simple abstraction layer for visualizations to ease
+      the process of creating re-usable charts. To accomplish this, a data-driven methodology is used.
+      </p><p>
+
+      <h3>Code</h3>
+
+      <p>Source Code is available at <a href="http://github.com/michael/unveil">Github</a></p>
+
+      <div class="notice">A <a href="http://quasipartikel.at">Quasipartikel</a> production</div>
+    </div>
+		
+  </body>
+</html>
