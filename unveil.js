@@ -651,8 +651,7 @@ uv.Actor.prototype.tWorldParent = function() {
 };
 
 uv.Actor.prototype.tWorld = function() {
-  return uv.Matrix()
-         .concat(this.tWorldParent())
+  return this.tWorldParent()
          .translate(this.p('x'), this.p('y'))
          .rotate(this.p('rotation'))
          .scale(this.p('scaleX'), this.p('scaleY'));
@@ -1498,7 +1497,7 @@ uv.Circle = function(properties) {
   uv.Actor.call(this, uv.extend({
     radius: 20,
     strokeWeight: 2,
-    lineWidth: 3,
+    lineWidth: 0,
     strokeStyle: '#fff'
   }, properties));
 };

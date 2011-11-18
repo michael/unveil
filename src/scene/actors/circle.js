@@ -6,7 +6,7 @@ uv.Circle = function(properties) {
   uv.Actor.call(this, uv.extend({
     radius: 20,
     strokeWeight: 2,
-    lineWidth: 3,
+    lineWidth: 0,
     strokeStyle: '#fff'
   }, properties));
 };
